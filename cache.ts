@@ -1,0 +1,24 @@
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
+
+type TokenCache = {
+  getToken: (key: string) => Promise<string | null>;
+  saveToken: (key: string, token: string) => Promise<void>;
+};
+
+const createTokenCache = (): TokenCache => ({
+  getToken: async (key: string) => {
+    try {
+      const item = await SecureStore.getItemAsync(key);
+      return item;
+    } catch {
+      await SecureStore.deleteItemAsync(key);
+      return null;
+    }
+  },
+  saveToken: (key: string, token: string) =>
+    SecureStore.setItemAsync(key, token),
+});
+
+export const tokenCache =
+  Platform.OS !== "web" ? createTokenCache() : undefined;
