@@ -50,7 +50,8 @@ http.route({
     const eventType = evt.type;
 
     if (eventType === "user.created") {
-      const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+      const { id, email_addresses, first_name, last_name, image_url } =
+        evt.data;
 
       const email = email_addresses[0].email_address;
       const name = `${first_name || ""} ${last_name || ""}`.trim();
@@ -59,7 +60,7 @@ http.route({
         await ctx.runMutation(api.users.createUser, {
           email,
           fullname: name,
-          image: image_url,
+          profileImage: image_url,
           clerkId: id,
           username: email.split("@")[0],
         });

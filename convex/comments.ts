@@ -17,19 +17,20 @@ export const addComment = mutation({
       userId: currentUser?._id,
       postId: args.postId,
       content: args.content,
+      createdAt: Date.now(),
     });
 
-    // increment comment count by 1
     await ctx.db.patch(args.postId, { comments: post.comments + 1 });
 
-    // create a notification if it's not my own post
-    if (post.userId !== currentUser._id) {
+    if (post.createdBy !== currentUser._id) {
       await ctx.db.insert("notifications", {
-        receiverId: post.userId,
+        receiverId: post.createdBy,
         senderId: currentUser._id,
         type: "comment",
         postId: args.postId,
         commentId,
+        isRead: false,
+        createdAt: Date.now(),
       });
     }
 
@@ -52,7 +53,7 @@ export const getComments = query({
           ...comment,
           user: {
             fullname: user!.fullname,
-            image: user!.image,
+            image: user!.profileImage,
           },
         };
       })

@@ -1,209 +1,239 @@
-import { getNotifications } from "./notifications";
+// convex/posts.ts
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { mutation, MutationCtx, query } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
-import { Id } from "./_generated/dataModel";
 
-export const generateUploadUrl = mutation(async (ctx) => {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
-  return await ctx.storage.generateUploadUrl();
+// Return posts filtered by selected filter options (AND logic)
+export const getFilteredPosts = query({
+  args: {
+    selectedFilterIds: v.array(v.id("FilterOption")),
+  },
+  handler: async (ctx, args) => {
+    // No filters: show active posts, newest first
+    if (args.selectedFilterIds.length === 0) {
+      const allPosts = await ctx.db
+        .query("posts")
+        .filter((q) => q.eq(q.field("isActive"), true))
+        .order("desc")
+        .collect();
+
+      const postsWithDetails = await Promise.all(
+        allPosts.map(async (post) => {
+          const createdByUser = await ctx.db.get(post.createdBy);
+          const filterOptionNames = await Promise.all(
+            post.filterOptionIds.map(
+              async (id) => (await ctx.db.get(id))?.name ?? null
+            )
+          );
+          return {
+            ...post,
+            createdBy: createdByUser
+              ? {
+                  _id: createdByUser._id,
+                  name: createdByUser.fullname || createdByUser.username,
+                  profileImage: createdByUser.profileImage,
+                }
+              : null,
+            filterOptionNames: filterOptionNames.filter(Boolean),
+          };
+        })
+      );
+      return postsWithDetails;
+    }
+
+    // Fetch active posts and filter by all selected IDs in-memory
+    const allActive = await ctx.db
+      .query("posts")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .order("desc")
+      .collect();
+
+    const filtered = allActive.filter((post) =>
+      args.selectedFilterIds.every((id) => post.filterOptionIds.includes(id))
+    );
+
+    const postsWithDetails = await Promise.all(
+      filtered.map(async (post) => {
+        const createdByUser = await ctx.db.get(post.createdBy);
+        const filterOptionNames = await Promise.all(
+          post.filterOptionIds.map(
+            async (id) => (await ctx.db.get(id))?.name ?? null
+          )
+        );
+        return {
+          ...post,
+          createdBy: createdByUser
+            ? {
+                _id: createdByUser._id,
+                name: createdByUser.fullname || createdByUser.username,
+                profileImage: createdByUser.profileImage,
+              }
+            : null,
+          filterOptionNames: filterOptionNames.filter(Boolean),
+        };
+      })
+    );
+
+    return postsWithDetails;
+  },
 });
 
+// Admin-only create post
 export const createPost = mutation({
   args: {
-    caption: v.optional(v.string()),
-    storageId: v.id("_storage"),
+    title: v.string(),
+    description: v.string(),
+    filterOptionIds: v.array(v.id("FilterOption")),
+    postType: v.union(
+      v.literal("job"),
+      v.literal("skill"),
+      v.literal("course")
+    ),
+    sourceUrl: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
+    location: v.optional(v.array(v.string())),
+    experience: v.optional(v.string()),
+    salary: v.optional(v.string()),
   },
-
   handler: async (ctx, args) => {
     const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser || !currentUser.isAdmin) {
+      throw new Error("Unauthorized: Only admins can create posts.");
+    }
 
-    const imageUrl = await ctx.storage.getUrl(args.storageId);
-    if (!imageUrl) throw new Error("Image not found");
-
-    // create post
     const postId = await ctx.db.insert("posts", {
-      userId: currentUser._id,
-      imageUrl,
+      title: args.title,
+      description: args.description,
+      filterOptionIds: args.filterOptionIds,
+      postType: args.postType,
+      sourceUrl: args.sourceUrl,
+      imageUrl: args.imageUrl,
       storageId: args.storageId,
-      caption: args.caption,
+      location: args.location,
+      experience: args.experience,
+      salary: args.salary,
       likes: 0,
       comments: 0,
-    });
-
-    // increment user's post count by 1
-    await ctx.db.patch(currentUser._id, {
-      posts: currentUser.posts + 1,
+      createdBy: currentUser._id,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      isActive: true,
     });
 
     return postId;
   },
 });
 
-export const getFeedPosts = query({
-  handler: async (ctx) => {
-    const currentUser = await getAuthenticatedUser(ctx);
-
-    // get all posts
-    const posts = await ctx.db.query("posts").order("desc").collect();
-    if (posts.length === 0) return [];
-
-    // enhance posts with userdata and interaction status
-    const postsWithInfo = await Promise.all(
-      posts.map(async (post) => {
-        const postAuthor = (await ctx.db.get(post.userId))!;
-
-        const like = await ctx.db
-          .query("likes")
-          .withIndex("by_user_and_post", (q) =>
-            q.eq("userId", currentUser._id).eq("postId", post._id)
-          )
-          .first();
-
-        const bookmark = await ctx.db
-          .query("bookmarks")
-          .withIndex("by_user_and_post", (q) =>
-            q.eq("userId", currentUser._id).eq("postId", post._id)
-          )
-          .first();
-
-        return {
-          ...post,
-          author: {
-            _id: postAuthor?._id,
-            username: postAuthor?.username,
-            image: postAuthor?.image,
-          },
-          isLiked: !!like,
-          isBookmarked: !!bookmark,
-        };
-      })
-    );
-
-    return postsWithInfo;
-  },
-});
-
+// Toggle like for a post and notify the creator
 export const toggleLike = mutation({
   args: { postId: v.id("posts") },
   handler: async (ctx, args) => {
     const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
 
-    const existing = await ctx.db
+    const post = await ctx.db.get(args.postId);
+    if (!post) throw new Error("Post not found");
+
+    const existingLike = await ctx.db
       .query("likes")
       .withIndex("by_user_and_post", (q) =>
         q.eq("userId", currentUser._id).eq("postId", args.postId)
       )
       .first();
 
-    const post = await ctx.db.get(args.postId);
-    if (!post) throw new Error("Post not found");
-
-    if (existing) {
-      // remove like
-      await ctx.db.delete(existing._id);
+    if (existingLike) {
+      await ctx.db.delete(existingLike._id);
       await ctx.db.patch(args.postId, { likes: post.likes - 1 });
-      return false; // unliked
+      return { liked: false, count: post.likes - 1 };
     } else {
-      // add like
       await ctx.db.insert("likes", {
         userId: currentUser._id,
         postId: args.postId,
       });
       await ctx.db.patch(args.postId, { likes: post.likes + 1 });
 
-      // if it's not my post create a notification
-      if (currentUser._id !== post.userId) {
+      if (post.createdBy !== currentUser._id) {
         await ctx.db.insert("notifications", {
-          receiverId: post.userId,
+          receiverId: post.createdBy,
           senderId: currentUser._id,
           type: "like",
           postId: args.postId,
+          isRead: false,
+          createdAt: Date.now(),
         });
       }
-      return true; // liked
+      return { liked: true, count: post.likes + 1 };
     }
   },
 });
 
-export const deletePost = mutation({
-  args: { postId: v.id("posts") },
+// Add a comment and notify the creator
+export const addComment = mutation({
+  args: {
+    content: v.string(),
+    postId: v.id("posts"),
+    parentCommentId: v.optional(v.id("comments")),
+  },
   handler: async (ctx, args) => {
     const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
 
     const post = await ctx.db.get(args.postId);
     if (!post) throw new Error("Post not found");
 
-    // verify ownership
-    if (post.userId !== currentUser._id) throw new Error("Not authorized to delete this post");
+    const commentId = await ctx.db.insert("comments", {
+      userId: currentUser._id,
+      postId: args.postId,
+      content: args.content,
+      parentCommentId: args.parentCommentId,
+      createdAt: Date.now(),
+    });
 
-    // delete associated likes
-    const likes = await ctx.db
-      .query("likes")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
-      .collect();
+    await ctx.db.patch(args.postId, { comments: post.comments + 1 });
 
-    for (const like of likes) {
-      await ctx.db.delete(like._id);
+    if (post.createdBy !== currentUser._id) {
+      await ctx.db.insert("notifications", {
+        receiverId: post.createdBy,
+        senderId: currentUser._id,
+        type: "comment",
+        postId: args.postId,
+        commentId,
+        isRead: false,
+        createdAt: Date.now(),
+      });
     }
 
-    // delete associated comments
+    return commentId;
+  },
+});
+
+// Get comments for a post (with basic user info)
+export const getComments = query({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args) => {
     const comments = await ctx.db
       .query("comments")
       .withIndex("by_post", (q) => q.eq("postId", args.postId))
       .collect();
 
-    for (const comment of comments) {
-      await ctx.db.delete(comment._id);
-    }
+    const commentsWithUsers = await Promise.all(
+      comments.map(async (comment) => {
+        const user = await ctx.db.get(comment.userId);
+        return {
+          ...comment,
+          user: user
+            ? {
+                _id: user._id,
+                username: user.username,
+                fullname: user.fullname,
+                profileImage: user.profileImage,
+              }
+            : null,
+        };
+      })
+    );
 
-    // delete associated bookmarks
-    const bookmarks = await ctx.db
-      .query("bookmarks")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
-      .collect();
-
-    for (const bookmark of bookmarks) {
-      await ctx.db.delete(bookmark._id);
-    }
-
-    const notifications = await ctx.db
-      .query("notifications")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
-      .collect();
-
-    for (const notification of notifications) {
-      await ctx.db.delete(notification._id);
-    }
-
-    // delete the storage file
-    await ctx.storage.delete(post.storageId);
-
-    // delete the post
-    await ctx.db.delete(args.postId);
-
-    // decrement user's post count by 1
-    await ctx.db.patch(currentUser._id, {
-      posts: Math.max(0, (currentUser.posts || 1) - 1),
-    });
-  },
-});
-
-export const getPostsByUser = query({
-  args: {
-    userId: v.optional(v.id("users")),
-  },
-  handler: async (ctx, args) => {
-    const user = args.userId ? await ctx.db.get(args.userId) : await getAuthenticatedUser(ctx);
-
-    if (!user) throw new Error("User not found");
-
-    const posts = await ctx.db
-      .query("posts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId || user._id))
-      .collect();
-
-    return posts;
+    return commentsWithUsers.sort((a, b) => a.createdAt - b.createdAt);
   },
 });

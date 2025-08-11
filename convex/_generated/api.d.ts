@@ -15,9 +15,12 @@ import type {
 } from "convex/server";
 import type * as bookmarks from "../bookmarks.js";
 import type * as comments from "../comments.js";
+import type * as filter from "../filter.js";
 import type * as http from "../http.js";
+import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
+import type * as seedData from "../seedData.js";
 import type * as users from "../users.js";
 
 /**
@@ -31,9 +34,12 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   bookmarks: typeof bookmarks;
   comments: typeof comments;
+  filter: typeof filter;
   http: typeof http;
+  migrations: typeof migrations;
   notifications: typeof notifications;
   posts: typeof posts;
+  seedData: typeof seedData;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

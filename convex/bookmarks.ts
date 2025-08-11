@@ -8,7 +8,7 @@ export const toggleBookmark = mutation({
     const currentUser = await getAuthenticatedUser(ctx);
 
     const existing = await ctx.db
-      .query("bookmarks")
+      .query("savedPosts")
       .withIndex("by_user_and_post", (q) =>
         q.eq("userId", currentUser._id).eq("postId", args.postId)
       )
@@ -18,7 +18,11 @@ export const toggleBookmark = mutation({
       await ctx.db.delete(existing._id);
       return false;
     } else {
-      await ctx.db.insert("bookmarks", { userId: currentUser._id, postId: args.postId });
+      await ctx.db.insert("savedPosts", {
+        userId: currentUser._id,
+        postId: args.postId,
+        createdAt: Date.now(),
+      });
       return true;
     }
   },
@@ -28,19 +32,18 @@ export const getBookmarkedPosts = query({
   handler: async (ctx) => {
     const currentUser = await getAuthenticatedUser(ctx);
 
-    // get all bookmarks of the current user
-    const bookmarks = await ctx.db
-      .query("bookmarks")
+    const saved = await ctx.db
+      .query("savedPosts")
       .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
       .order("desc")
       .collect();
 
-    const bookmarksWithInfo = await Promise.all(
-      bookmarks.map(async (bookmark) => {
-        const post = await ctx.db.get(bookmark.postId);
+    const posts = await Promise.all(
+      saved.map(async (entry) => {
+        const post = await ctx.db.get(entry.postId);
         return post;
       })
     );
-    return bookmarksWithInfo;
+    return posts;
   },
 });
