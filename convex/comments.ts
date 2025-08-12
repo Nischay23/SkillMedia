@@ -20,9 +20,14 @@ export const addComment = mutation({
       createdAt: Date.now(),
     });
 
-    await ctx.db.patch(args.postId, { comments: post.comments + 1 });
+    await ctx.db.patch(args.postId, {
+      comments: (post.comments || 0) + 1,
+    });
 
-    if (post.createdBy !== currentUser._id) {
+    if (
+      post.createdBy &&
+      post.createdBy !== currentUser._id
+    ) {
       await ctx.db.insert("notifications", {
         receiverId: post.createdBy,
         senderId: currentUser._id,
@@ -43,7 +48,9 @@ export const getComments = query({
   handler: async (ctx, args) => {
     const comments = await ctx.db
       .query("comments")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .withIndex("by_post", (q) =>
+        q.eq("postId", args.postId)
+      )
       .collect();
 
     const commentsWithInfo = await Promise.all(

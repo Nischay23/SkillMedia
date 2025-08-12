@@ -28,21 +28,27 @@ export default function CreateScreen() {
   const { user } = useUser();
 
   const [caption, setCaption] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<
+    string | null
+  >(null);
   const [isSharing, setIsSharing] = useState(false);
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled) setSelectedImage(result.assets[0].uri);
+    if (!result.canceled)
+      setSelectedImage(result.assets[0].uri);
   };
 
-  const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
+  const generateUploadUrl = useMutation(
+    api.posts.generateUploadUrl
+  );
   const createPost = useMutation(api.posts.createPost);
 
   const handleShare = async () => {
@@ -52,16 +58,29 @@ export default function CreateScreen() {
       setIsSharing(true);
       const uploadUrl = await generateUploadUrl();
 
-      const uploadResult = await FileSystem.uploadAsync(uploadUrl, selectedImage, {
-        httpMethod: "POST",
-        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-        mimeType: "image/jpeg",
-      });
+      const uploadResult = await FileSystem.uploadAsync(
+        uploadUrl,
+        selectedImage,
+        {
+          httpMethod: "POST",
+          uploadType:
+            FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          mimeType: "image/jpeg",
+        }
+      );
 
-      if (uploadResult.status !== 200) throw new Error("Upload failed");
+      if (uploadResult.status !== 200)
+        throw new Error("Upload failed");
 
       const { storageId } = JSON.parse(uploadResult.body);
-      await createPost({ storageId, caption });
+      await createPost({
+        storageId,
+        title: "New Post",
+        description: caption || "No description provided",
+        filterOptionIds: [],
+        postType: "skill",
+        imageUrl: undefined,
+      });
 
       setSelectedImage(null);
       setCaption("");
@@ -79,15 +98,28 @@ export default function CreateScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color={COLORS.primary}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Post</Text>
           <View style={{ width: 28 }} />
         </View>
 
-        <TouchableOpacity style={styles.emptyImageContainer} onPress={pickImage}>
-          <Ionicons name="image-outline" size={48} color={COLORS.grey} />
-          <Text style={styles.emptyImageText}>Tap to select an image</Text>
+        <TouchableOpacity
+          style={styles.emptyImageContainer}
+          onPress={pickImage}
+        >
+          <Ionicons
+            name="image-outline"
+            size={48}
+            color={COLORS.grey}
+          />
+          <Text style={styles.emptyImageText}>
+            Tap to select an image
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -95,9 +127,13 @@ export default function CreateScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={
+        Platform.OS === "ios" ? "padding" : "height"
+      }
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      keyboardVerticalOffset={
+        Platform.OS === "ios" ? 100 : 0
+      }
     >
       <View style={styles.contentContainer}>
         {/* HEADER */}
@@ -117,12 +153,18 @@ export default function CreateScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Post</Text>
           <TouchableOpacity
-            style={[styles.shareButton, isSharing && styles.shareButtonDisabled]}
+            style={[
+              styles.shareButton,
+              isSharing && styles.shareButtonDisabled,
+            ]}
             disabled={isSharing || !selectedImage}
             onPress={handleShare}
           >
             {isSharing ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
+              <ActivityIndicator
+                size="small"
+                color={COLORS.primary}
+              />
             ) : (
               <Text style={styles.shareText}>Share</Text>
             )}
@@ -135,7 +177,12 @@ export default function CreateScreen() {
           keyboardShouldPersistTaps="handled"
           contentOffset={{ x: 0, y: 100 }}
         >
-          <View style={[styles.content, isSharing && styles.contentDisabled]}>
+          <View
+            style={[
+              styles.content,
+              isSharing && styles.contentDisabled,
+            ]}
+          >
             {/* IMAGE SECTION */}
             <View style={styles.imageSection}>
               <Image
@@ -149,8 +196,14 @@ export default function CreateScreen() {
                 onPress={pickImage}
                 disabled={isSharing}
               >
-                <Ionicons name="image-outline" size={20} color={COLORS.white} />
-                <Text style={styles.changeImageText}>Change</Text>
+                <Ionicons
+                  name="image-outline"
+                  size={20}
+                  color={COLORS.white}
+                />
+                <Text style={styles.changeImageText}>
+                  Change
+                </Text>
               </TouchableOpacity>
             </View>
 

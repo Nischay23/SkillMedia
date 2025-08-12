@@ -17,9 +17,11 @@ import type * as bookmarks from "../bookmarks.js";
 import type * as comments from "../comments.js";
 import type * as filter from "../filter.js";
 import type * as http from "../http.js";
+import type * as likes from "../likes.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
+import type * as savedPosts from "../savedPosts.js";
 import type * as seedData from "../seedData.js";
 import type * as users from "../users.js";
 
@@ -36,9 +38,11 @@ declare const fullApi: ApiFromModules<{
   comments: typeof comments;
   filter: typeof filter;
   http: typeof http;
+  likes: typeof likes;
   migrations: typeof migrations;
   notifications: typeof notifications;
   posts: typeof posts;
+  savedPosts: typeof savedPosts;
   seedData: typeof seedData;
   users: typeof users;
 }>;

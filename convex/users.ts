@@ -1,4 +1,9 @@
-import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server";
+import {
+  mutation,
+  MutationCtx,
+  query,
+  QueryCtx,
+} from "./_generated/server";
 import { v } from "convex/values";
 
 export const createUser = mutation({
@@ -14,7 +19,9 @@ export const createUser = mutation({
   handler: async (ctx, args) => {
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_clerk_id", (q) =>
+        q.eq("clerkId", args.clerkId)
+      )
       .first();
 
     if (existingUser) return;
@@ -36,7 +43,9 @@ export const getUserByClerkId = query({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_clerk_id", (q) =>
+        q.eq("clerkId", args.clerkId)
+      )
       .unique();
 
     return user;
@@ -58,13 +67,17 @@ export const updateProfile = mutation({
   },
 });
 
-export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
+export async function getAuthenticatedUser(
+  ctx: QueryCtx | MutationCtx
+) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthorized");
 
   const currentUser = await ctx.db
     .query("users")
-    .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+    .withIndex("by_clerk_id", (q) =>
+      q.eq("clerkId", identity.subject)
+    )
     .first();
 
   if (!currentUser) throw new Error("User not found");
@@ -79,5 +92,33 @@ export const getUserProfile = query({
     if (!user) throw new Error("User not found");
 
     return user;
+  },
+});
+
+// Check if current user is following another user
+export const isFollowing = query({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    try {
+      const currentUser = await getAuthenticatedUser(ctx);
+      // For now, return false since we don't have a follows table implemented
+      return false;
+    } catch {
+      return false;
+    }
+  },
+});
+
+// Toggle follow/unfollow a user
+export const toggleFollow = mutation({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    try {
+      const currentUser = await getAuthenticatedUser(ctx);
+      // For now, just return success since we don't have a follows table implemented
+      return { success: true };
+    } catch (error) {
+      throw new Error("Failed to toggle follow");
+    }
   },
 });

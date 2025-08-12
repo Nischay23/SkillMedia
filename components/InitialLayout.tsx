@@ -30,14 +30,20 @@ export default function InitialLayout() {
         return;
       }
 
-      if (!hasCreatedRef.current && user && existingUser === undefined) {
+      if (
+        !hasCreatedRef.current &&
+        user &&
+        existingUser === undefined
+      ) {
         try {
           hasCreatedRef.current = true;
           const email =
             user.primaryEmailAddress?.emailAddress ||
             user.emailAddresses[0]?.emailAddress ||
             "";
-          const username = email.split("@")[0] || `user_${user.id.slice(-6)}`;
+          const username =
+            email.split("@")[0] ||
+            `user_${user.id.slice(-6)}`;
           const fullname =
             user.fullName ||
             `${user.firstName || ""} ${user.lastName || ""}`.trim();
@@ -46,7 +52,7 @@ export default function InitialLayout() {
             username,
             fullname: fullname || username,
             email,
-            image: user.imageUrl,
+            profileImage: user.imageUrl,
             clerkId: user.id,
           });
         } catch (err) {
@@ -59,7 +65,14 @@ export default function InitialLayout() {
     }
 
     void ensureUserAndRoute();
-  }, [isAuthLoaded, isUserLoaded, isSignedIn, user, existingUser, segments]);
+  }, [
+    isAuthLoaded,
+    isUserLoaded,
+    isSignedIn,
+    user,
+    existingUser,
+    segments,
+  ]);
 
   if (!isAuthLoaded) return null;
 

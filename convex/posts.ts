@@ -1,7 +1,58 @@
-// convex/posts.ts
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthenticatedUser } from "./users";
+
+// Generate upload URL for file uploads
+export const generateUploadUrl = mutation(async (ctx) => {
+  return await ctx.storage.generateUploadUrl();
+});
+
+// Get feed posts with pagination and filtering
+export const getFeedPosts = query({
+  args: {},
+  handler: async (ctx) => {
+    const posts = await ctx.db
+      .query("posts")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .order("desc")
+      .collect();
+
+    const postsWithDetails = await Promise.all(
+      posts.map(async (post) => {
+        const createdByUser = post.createdBy
+          ? await ctx.db.get(post.createdBy)
+          : null;
+        const filterOptionNames = post.filterOptionIds
+          ? await Promise.all(
+              post.filterOptionIds.map(
+                async (id) =>
+                  (await ctx.db.get(id))?.name ?? null
+              )
+            )
+          : [];
+
+        return {
+          ...post,
+          createdBy: createdByUser
+            ? {
+                _id: createdByUser._id,
+                name:
+                  createdByUser.fullname ||
+                  createdByUser.username,
+                profileImage:
+                  createdByUser.profileImage ||
+                  createdByUser.image,
+              }
+            : null,
+          filterOptionNames:
+            filterOptionNames.filter(Boolean),
+        };
+      })
+    );
+
+    return postsWithDetails;
+  },
+});
 
 // Return posts filtered by selected filter options (AND logic)
 export const getFilteredPosts = query({
@@ -19,22 +70,32 @@ export const getFilteredPosts = query({
 
       const postsWithDetails = await Promise.all(
         allPosts.map(async (post) => {
-          const createdByUser = await ctx.db.get(post.createdBy);
-          const filterOptionNames = await Promise.all(
-            post.filterOptionIds.map(
-              async (id) => (await ctx.db.get(id))?.name ?? null
-            )
-          );
+          const createdByUser = post.createdBy
+            ? await ctx.db.get(post.createdBy)
+            : null;
+          const filterOptionNames = post.filterOptionIds
+            ? await Promise.all(
+                post.filterOptionIds.map(
+                  async (id) =>
+                    (await ctx.db.get(id))?.name ?? null
+                )
+              )
+            : [];
           return {
             ...post,
             createdBy: createdByUser
               ? {
                   _id: createdByUser._id,
-                  name: createdByUser.fullname || createdByUser.username,
-                  profileImage: createdByUser.profileImage,
+                  name:
+                    createdByUser.fullname ||
+                    createdByUser.username,
+                  profileImage:
+                    createdByUser.profileImage ||
+                    createdByUser.image,
                 }
               : null,
-            filterOptionNames: filterOptionNames.filter(Boolean),
+            filterOptionNames:
+              filterOptionNames.filter(Boolean),
           };
         })
       );
@@ -48,33 +109,105 @@ export const getFilteredPosts = query({
       .order("desc")
       .collect();
 
-    const filtered = allActive.filter((post) =>
-      args.selectedFilterIds.every((id) => post.filterOptionIds.includes(id))
+    const filtered = allActive.filter(
+      (post) =>
+        post.filterOptionIds &&
+        args.selectedFilterIds.every((id) =>
+          post.filterOptionIds!.includes(id)
+        )
     );
 
     const postsWithDetails = await Promise.all(
       filtered.map(async (post) => {
-        const createdByUser = await ctx.db.get(post.createdBy);
-        const filterOptionNames = await Promise.all(
-          post.filterOptionIds.map(
-            async (id) => (await ctx.db.get(id))?.name ?? null
-          )
-        );
+        const createdByUser = post.createdBy
+          ? await ctx.db.get(post.createdBy)
+          : null;
+        const filterOptionNames = post.filterOptionIds
+          ? await Promise.all(
+              post.filterOptionIds.map(
+                async (id) =>
+                  (await ctx.db.get(id))?.name ?? null
+              )
+            )
+          : [];
         return {
           ...post,
           createdBy: createdByUser
             ? {
                 _id: createdByUser._id,
-                name: createdByUser.fullname || createdByUser.username,
-                profileImage: createdByUser.profileImage,
+                name:
+                  createdByUser.fullname ||
+                  createdByUser.username,
+                profileImage:
+                  createdByUser.profileImage ||
+                  createdByUser.image,
               }
             : null,
-          filterOptionNames: filterOptionNames.filter(Boolean),
+          filterOptionNames:
+            filterOptionNames.filter(Boolean),
         };
       })
     );
 
     return postsWithDetails;
+  },
+});
+
+// Get posts by specific user
+export const getPostsByUser = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("posts")
+      .filter((q) =>
+        args.userId
+          ? q.eq(q.field("createdBy"), args.userId)
+          : q.eq(q.field("isActive"), true)
+      )
+      .order("desc")
+      .collect();
+
+    return await Promise.all(
+      posts.map(async (post) => {
+        let createdBy = null;
+        if (post.createdBy) {
+          const userProfile = await ctx.db.get(
+            post.createdBy
+          );
+          if (userProfile) {
+            createdBy = {
+              _id: userProfile._id,
+              name:
+                userProfile.fullname ||
+                userProfile.username ||
+                "Unknown",
+              profileImage: userProfile.profileImage,
+            };
+          }
+        }
+
+        // Get filter option names
+        const filterOptionNames: (string | null)[] = [];
+        if (post.filterOptionIds) {
+          for (const id of post.filterOptionIds) {
+            const filterOption = await ctx.db.get(id);
+            filterOptionNames.push(
+              filterOption?.name || null
+            );
+          }
+        }
+
+        return {
+          ...post,
+          createdBy,
+          filterOptionNames,
+          likes: post.likes || 0,
+          comments: post.comments || 0,
+        };
+      })
+    );
   },
 });
 
@@ -99,7 +232,9 @@ export const createPost = mutation({
   handler: async (ctx, args) => {
     const currentUser = await getAuthenticatedUser(ctx);
     if (!currentUser || !currentUser.isAdmin) {
-      throw new Error("Unauthorized: Only admins can create posts.");
+      throw new Error(
+        "Unauthorized: Only admins can create posts."
+      );
     }
 
     const postId = await ctx.db.insert("posts", {
@@ -138,22 +273,31 @@ export const toggleLike = mutation({
     const existingLike = await ctx.db
       .query("likes")
       .withIndex("by_user_and_post", (q) =>
-        q.eq("userId", currentUser._id).eq("postId", args.postId)
+        q
+          .eq("userId", currentUser._id)
+          .eq("postId", args.postId)
       )
       .first();
 
     if (existingLike) {
       await ctx.db.delete(existingLike._id);
-      await ctx.db.patch(args.postId, { likes: post.likes - 1 });
-      return { liked: false, count: post.likes - 1 };
+      await ctx.db.patch(args.postId, {
+        likes: (post.likes || 0) - 1,
+      });
+      return { liked: false, count: (post.likes || 0) - 1 };
     } else {
       await ctx.db.insert("likes", {
         userId: currentUser._id,
         postId: args.postId,
       });
-      await ctx.db.patch(args.postId, { likes: post.likes + 1 });
+      await ctx.db.patch(args.postId, {
+        likes: (post.likes || 0) + 1,
+      });
 
-      if (post.createdBy !== currentUser._id) {
+      if (
+        post.createdBy &&
+        post.createdBy !== currentUser._id
+      ) {
         await ctx.db.insert("notifications", {
           receiverId: post.createdBy,
           senderId: currentUser._id,
@@ -163,7 +307,7 @@ export const toggleLike = mutation({
           createdAt: Date.now(),
         });
       }
-      return { liked: true, count: post.likes + 1 };
+      return { liked: true, count: (post.likes || 0) + 1 };
     }
   },
 });
@@ -190,9 +334,14 @@ export const addComment = mutation({
       createdAt: Date.now(),
     });
 
-    await ctx.db.patch(args.postId, { comments: post.comments + 1 });
+    await ctx.db.patch(args.postId, {
+      comments: (post.comments || 0) + 1,
+    });
 
-    if (post.createdBy !== currentUser._id) {
+    if (
+      post.createdBy &&
+      post.createdBy !== currentUser._id
+    ) {
       await ctx.db.insert("notifications", {
         receiverId: post.createdBy,
         senderId: currentUser._id,
@@ -214,7 +363,9 @@ export const getComments = query({
   handler: async (ctx, args) => {
     const comments = await ctx.db
       .query("comments")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .withIndex("by_post", (q) =>
+        q.eq("postId", args.postId)
+      )
       .collect();
 
     const commentsWithUsers = await Promise.all(
@@ -234,6 +385,66 @@ export const getComments = query({
       })
     );
 
-    return commentsWithUsers.sort((a, b) => a.createdAt - b.createdAt);
+    return commentsWithUsers.sort(
+      (a, b) => a.createdAt - b.createdAt
+    );
+  },
+});
+
+export const deletePost = mutation({
+  args: { postId: v.id("posts") },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) throw new Error("Unauthorized");
+
+    const postToDelete = await ctx.db.get(args.postId);
+    if (!postToDelete) throw new Error("Post not found");
+
+    // Only the post creator who is also an admin can delete
+    if (postToDelete.createdBy !== currentUser._id) {
+      throw new Error(
+        "Unauthorized: You can only delete your own posts."
+      );
+    }
+    if (!currentUser.isAdmin) {
+      throw new Error(
+        "Unauthorized: Only admins can delete posts."
+      );
+    }
+
+    // Delete related likes, comments, and saved posts
+    const likesToDelete = await ctx.db
+      .query("likes")
+      .withIndex("by_post", (q) =>
+        q.eq("postId", args.postId)
+      )
+      .collect();
+    for (const like of likesToDelete) {
+      await ctx.db.delete(like._id);
+    }
+    const commentsToDelete = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) =>
+        q.eq("postId", args.postId)
+      )
+      .collect();
+    for (const comment of commentsToDelete) {
+      await ctx.db.delete(comment._id);
+    }
+    const savedPostsToDelete = await ctx.db
+      .query("savedPosts")
+      .withIndex("by_post", (q) =>
+        q.eq("postId", args.postId)
+      )
+      .collect();
+    for (const saved of savedPostsToDelete) {
+      await ctx.db.delete(saved._id);
+    }
+
+    // Delete the post
+    await ctx.db.delete(args.postId);
+    console.log(
+      `Post ${args.postId} deleted by user ${currentUser._id}`
+    );
   },
 });
