@@ -11,46 +11,51 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// --- Components ---
 import { Loader } from "@/components/Loader";
 import Post from "@/components/Post";
 import FilterModal from "@/components/FilterModal";
 import { NoPostsFound } from "@/components/NoPostsFound";
 
-// --- Convex & Auth ---
 import { COLORS } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
 
-// --- Types ---
 import { Post as PostType } from "@/types";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id } from "@/convex/_generated/dataModel"; // Import Id for strong typing
 
 export default function FeedScreen() {
   const { signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
-  // State to manage the currently selected filter path (array of FilterOption _ids)
-  const [selectedFilters, setSelectedFilters] = useState<Id<"FilterOption">[]>(
-    []
-  );
-  // State to control the visibility of the FilterModal
-  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<
+    Id<"FilterOption">[]
+  >([]);
+  const [showFilterModal, setShowFilterModal] =
+    useState(false);
 
-  // Fetch posts from Convex based on the selected filters
+  // Fetch posts based on selected filters
   const posts = useQuery(api.posts.getFilteredPosts, {
     selectedFilterIds: selectedFilters,
   });
 
-  // Handle pull-to-refresh
+  const activeFilterNames = useQuery(
+    api.filter.getFilterNamesByIds,
+    {
+      filterIds: selectedFilters,
+    }
+  );
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
   // --- Loading and Empty State Handling ---
-  if (posts === undefined) {
+  if (
+    posts === undefined ||
+    activeFilterNames === undefined
+  ) {
     return <Loader />;
   }
 
@@ -75,11 +80,16 @@ export default function FeedScreen() {
   // --- Main Feed UI ---
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Jobs & Skills</Text>
+        <Text style={styles.headerTitle}>
+          Jobs & Skills
+        </Text>
         <TouchableOpacity onPress={() => signOut()}>
-          <Ionicons name="log-out-outline" size={24} color={COLORS.white} />
+          <Ionicons
+            name="log-out-outline"
+            size={24}
+            color={COLORS.white}
+          />
         </TouchableOpacity>
       </View>
 
@@ -88,20 +98,29 @@ export default function FeedScreen() {
         style={styles.filterButton}
         onPress={() => setShowFilterModal(true)}
       >
-        <Ionicons name="options-outline" size={20} color={COLORS.background} />
+        <Ionicons
+          name="options-outline"
+          size={20}
+          color={COLORS.background}
+        />
         <Text style={styles.filterButtonText}>Filter</Text>
         {selectedFilters.length > 0 && (
           <View style={styles.filterCountBadge}>
-            <Text style={styles.filterCountText}>{selectedFilters.length}</Text>
+            <Text style={styles.filterCountText}>
+              {selectedFilters.length}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Optional: Display currently active filters as breadcrumbs/tags */}
       {selectedFilters.length > 0 && (
         <View style={styles.activeFiltersContainer}>
           <Text style={styles.activeFiltersText}>
-            Applied ({selectedFilters.length})
+            Applied:{" "}
+            {activeFilterNames
+              .filter((opt) => opt)
+              .map((opt) => opt!.name)
+              .join(" > ")}
           </Text>
           <TouchableOpacity
             onPress={() => setSelectedFilters([])}
@@ -112,12 +131,13 @@ export default function FeedScreen() {
               size={20}
               color={COLORS.gray}
             />
-            <Text style={styles.clearFiltersText}>Clear</Text>
+            <Text style={styles.clearFiltersText}>
+              Clear
+            </Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* POSTS LIST (FlatList) */}
       <FlatList
         data={posts as PostType[]}
         renderItem={({ item }) => <Post post={item} />}
@@ -133,7 +153,6 @@ export default function FeedScreen() {
         }
       />
 
-      {/* FILTER MODAL COMPONENT */}
       <FilterModal
         isVisible={showFilterModal}
         initialSelected={selectedFilters}
@@ -157,7 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 50, // Adjust for status bar/notch
+    paddingTop: 50,
     paddingBottom: 15,
     backgroundColor: COLORS.headerBackground,
   },
@@ -190,7 +209,7 @@ const styles = StyleSheet.create({
   filterCountBadge: {
     backgroundColor: COLORS.accent,
     borderRadius: 10,
-    minWidth: 20, // ensure badge doesn't collapse for single digit
+    minWidth: 20,
     height: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -212,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   activeFiltersText: {
-    color: COLORS.gray, // Should be readable on cardBackground
+    color: COLORS.gray,
     fontSize: 13,
     flexShrink: 1,
     marginRight: 10,

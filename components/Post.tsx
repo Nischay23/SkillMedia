@@ -1,5 +1,5 @@
 // app/components/Post.tsx
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -49,7 +49,7 @@ export default function Post({ post }: PostProps) {
   const deletePostMutation = useMutation(api.posts.deletePost); // For admin/owner to delete
 
   // State for comments modal (if you have one)
-  const [showComments, setShowComments] = useState(false);
+  // const [showComments, setShowComments] = useState(false); // Add this state if using CommentsModal
 
   const handleLike = async () => {
     if (!clerkUser) {
@@ -58,7 +58,9 @@ export default function Post({ post }: PostProps) {
       return;
     }
     try {
-      await toggleLikeMutation({ postId: post._id as Id<"posts"> });
+      await toggleLikeMutation({
+        postId: post._id as Id<"posts">,
+      });
       // Convex's useQuery will automatically re-fetch 'isLiked' and 'likes' count
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -71,7 +73,9 @@ export default function Post({ post }: PostProps) {
       return;
     }
     try {
-      await toggleSavePostMutation({ postId: post._id as Id<"posts"> });
+      await toggleSavePostMutation({
+        postId: post._id as Id<"posts">,
+      });
       // 'isSaved' state will automatically re-fetch.
     } catch (error) {
       console.error("Error toggling save:", error);
@@ -92,7 +96,9 @@ export default function Post({ post }: PostProps) {
       return;
     }
     try {
-      await deletePostMutation({ postId: post._id as Id<"posts"> });
+      await deletePostMutation({
+        postId: post._id as Id<"posts">,
+      });
       // Post will automatically disappear from the feed due to Convex reactivity.
     } catch (error) {
       console.error("Error deleting post:", error);
@@ -164,6 +170,8 @@ export default function Post({ post }: PostProps) {
       {/* POST MAIN CONTENT */}
       <View style={styles.postContent}>
         <Text style={styles.postTitle}>{post.title}</Text>
+
+        {/* Emphasize Description (now the primary 'what is this job about' content) */}
         <Text style={styles.postDescription}>{post.description}</Text>
 
         {/* New Job/Skill Specific Details */}
@@ -191,21 +199,22 @@ export default function Post({ post }: PostProps) {
           </Text>
         )}
 
-        {/* Source Link Button */}
+        {/* Source Link Button (Secondary importance, optional) */}
         {post.sourceUrl && (
           <TouchableOpacity
             onPress={handleSourceLink}
             style={styles.sourceLinkButton}
           >
             <Ionicons name="link-outline" size={16} color={COLORS.link} />
-            <Text style={styles.sourceLinkText}>Apply/View Source</Text>
+            <Text style={styles.sourceLinkText}>View Details / Apply</Text>
           </TouchableOpacity>
         )}
 
-        {/* Filter Tags (e.g., Graduation • Private • IT & Software) */}
+        {/* Filter Tags (Always show these as they define the path) */}
         {post.filterOptionNames && post.filterOptionNames.length > 0 && (
           <Text style={styles.filterTags}>
-            Tags: {post.filterOptionNames.join(" • ")}
+            Path: {post.filterOptionNames.join(" • ")}{" "}
+            {/* Changed "Tags" to "Path" */}
           </Text>
         )}
       </View>
@@ -302,41 +311,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   postDescription: {
-    fontSize: 14,
-    color: COLORS.gray, // Readable on card background
-    marginBottom: 10,
-    lineHeight: 20,
+    fontSize: 15, // Slightly larger for emphasis
+    color: COLORS.white, // Made white for primary description
+    marginBottom: 15, // More space
+    lineHeight: 22, // Better readability
   },
   detailText: {
-    fontSize: 13,
-    color: COLORS.gray, // Readable on card background
-    marginBottom: 3,
+    fontSize: 14,
+    color: COLORS.gray, // Secondary details in gray
+    marginBottom: 5,
   },
   detailLabel: {
     fontWeight: "bold",
-    color: COLORS.white, // Ensure label is white
+    color: COLORS.white, // Labels remain white
   },
   sourceLinkButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    backgroundColor: COLORS.headerBackground, // A subtle background for the link button
-    borderRadius: 5,
-    alignSelf: "flex-start", // Only take as much width as needed
+    marginTop: 15, // More separation from description
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: COLORS.surfaceLight, // Subtle button background
+    borderRadius: 8,
+    alignSelf: "flex-start",
   },
   sourceLinkText: {
-    color: COLORS.link, // Link color
-    marginLeft: 5,
-    fontSize: 14,
+    color: COLORS.link,
+    marginLeft: 8,
+    fontSize: 15,
     fontWeight: "bold",
   },
   filterTags: {
     fontSize: 12,
-    color: COLORS.gray, // Readable on card background
-    marginTop: 10,
+    color: COLORS.lightGray, // Very subtle tags
+    marginTop: 15, // More separation
     fontStyle: "italic",
   },
   postActions: {

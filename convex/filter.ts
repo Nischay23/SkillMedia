@@ -5,6 +5,7 @@ import { v } from "convex/values";
 export const getFilterChildren = query({
   args: {
     parentId: v.optional(v.id("FilterOption")),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const options = await ctx.db
@@ -13,7 +14,12 @@ export const getFilterChildren = query({
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
 
-    return options.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = options.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (args.limit && args.limit > 0) {
+      return sorted.slice(0, args.limit);
+    }
+    return sorted;
   },
 });
 
@@ -26,5 +32,25 @@ export const getAllFilterOptions = query({
       .collect();
 
     return options;
+  },
+});
+
+/**
+ * Fetches FilterOption documents for a given array of IDs.
+ * Useful for displaying breadcrumbs (names) based on a selected path of IDs.
+ */
+export const getFilterNamesByIds = query({
+  args: {
+    filterIds: v.array(v.id("FilterOption")), // An array of FilterOption IDs
+  },
+  handler: async (ctx, args) => {
+    if (args.filterIds.length === 0) {
+      return [];
+    }
+    const options = await Promise.all(
+      args.filterIds.map((id) => ctx.db.get(id))
+    );
+    // Filter out any nulls if an ID doesn't exist
+    return options.filter(Boolean); // Filters out null/undefined results
   },
 });
