@@ -13,15 +13,17 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as bookmarks from "../bookmarks.js";
+import type * as clearDatabase from "../clearDatabase.js";
 import type * as comments from "../comments.js";
+import type * as communityPosts from "../communityPosts.js";
 import type * as filter from "../filter.js";
 import type * as http from "../http.js";
-import type * as likes from "../likes.js";
+import type * as likesTemp from "../likesTemp.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
-import type * as savedPosts from "../savedPosts.js";
+import type * as savedContent from "../savedContent.js";
+import type * as schema_new from "../schema_new.js";
 import type * as seedData from "../seedData.js";
 import type * as users from "../users.js";
 
@@ -34,15 +36,17 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  bookmarks: typeof bookmarks;
+  clearDatabase: typeof clearDatabase;
   comments: typeof comments;
+  communityPosts: typeof communityPosts;
   filter: typeof filter;
   http: typeof http;
-  likes: typeof likes;
+  likesTemp: typeof likesTemp;
   migrations: typeof migrations;
   notifications: typeof notifications;
   posts: typeof posts;
-  savedPosts: typeof savedPosts;
+  savedContent: typeof savedContent;
+  schema_new: typeof schema_new;
   seedData: typeof seedData;
   users: typeof users;
 }>;

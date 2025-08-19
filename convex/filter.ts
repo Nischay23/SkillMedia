@@ -54,3 +54,24 @@ export const getFilterNamesByIds = query({
     return options.filter(Boolean); // Filters out null/undefined results
   },
 });
+
+/**
+ * Fetches a single FilterOption document by its ID, including all its content fields.
+ * This is used by FeedScreen to display the details of the selected path.
+ */
+export const getFilterOptionById = query({
+  args: {
+    filterOptionId: v.id("FilterOption"),
+  },
+  handler: async (ctx, args) => {
+    const option = await ctx.db.get(args.filterOptionId);
+    if (option) {
+      return {
+        ...option,
+        likes: option.likes || 0,
+        comments: option.comments || 0,
+      };
+    }
+    return null;
+  },
+});

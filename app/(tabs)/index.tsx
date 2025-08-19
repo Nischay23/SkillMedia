@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx (Main Feed Screen)
+// app/(tabs)/index.tsx (Main Feed Screen - Hybrid Display)
 import React, { useState, useCallback } from "react";
 import {
   FlatList,
@@ -8,42 +8,46 @@ import {
   View,
   StyleSheet,
   SafeAreaView,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Loader } from "@/components/Loader";
-import Post from "@/components/Post";
+import CareerPathDetails from "@/components/CareerPathDetails";
+import CommunityPost from "@/components/CommunityPost";
 import FilterModal from "@/components/FilterModal";
 import { NoPostsFound } from "@/components/NoPostsFound";
 
 import { COLORS } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import type { FilterOption, CommunityPost as CommunityPostType } from "@/types";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
-
-import { Post as PostType } from "@/types";
-import { Id } from "@/convex/_generated/dataModel"; // Import Id for strong typing
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function FeedScreen() {
   const { signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<Id<"FilterOption">[]>([]);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
-  const [selectedFilters, setSelectedFilters] = useState<
-    Id<"FilterOption">[]
-  >([]);
-  const [showFilterModal, setShowFilterModal] =
-    useState(false);
+  const isViewingSpecificPath = selectedFilters.length > 0;
+  const lastSelectedFilterId = isViewingSpecificPath ? selectedFilters[selectedFilters.length - 1] : null;
 
-  // Fetch posts based on selected filters
-  const posts = useQuery(api.posts.getFilteredPosts, {
-    selectedFilterIds: selectedFilters,
-  });
+  // NEW QUERY - Fetch full details of selected FilterOption
+  const selectedFilterDetails = useQuery(
+    api.filter.getFilterOptionById,
+    lastSelectedFilterId ? { filterOptionId: lastSelectedFilterId } : "skip"
+  );
+
+  const communityPostsResult = useQuery(
+    api.communityPosts.getCommunityPosts,
+    {}
+  );
 
   const activeFilterNames = useQuery(
     api.filter.getFilterNamesByIds,
-    {
-      filterIds: selectedFilters,
-    }
+    selectedFilters.length > 0 ? { filterIds: selectedFilters } : "skip"
   );
 
   const onRefresh = useCallback(() => {
@@ -51,31 +55,100 @@ export default function FeedScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  // --- Loading and Empty State Handling ---
-  if (
-    posts === undefined ||
-    activeFilterNames === undefined
-  ) {
+  // Loading state handling - only check what's actually needed
+  if (communityPostsResult === undefined) {
     return <Loader />;
   }
 
-  if (posts.length === 0) {
-    if (selectedFilters.length === 0) {
-      return (
-        <NoPostsFound
-          message="No job or skill opportunities available yet. Tap 'Filter' to explore options!"
-          onOpenFilter={() => setShowFilterModal(true)}
-        />
-      );
-    } else {
-      return (
-        <NoPostsFound
-          message="No opportunities match your current filters. Try adjusting them!"
-          onOpenFilter={() => setShowFilterModal(true)}
-        />
-      );
-    }
+  // If viewing specific path, also check selectedFilterDetails
+  if (isViewingSpecificPath && selectedFilterDetails === undefined) {
+    return <Loader />;
   }
+
+  // Updated displayContent function
+  const displayContent = () => {
+    if (!isViewingSpecificPath) {
+        // No filters selected - show general community posts
+        if (!communityPostsResult || communityPostsResult.length === 0) {
+             return (
+                <NoPostsFound
+                    message="No community posts yet. Explore career paths or be the first to share!"
+                    onOpenFilter={() => setShowFilterModal(true)}
+                />
+             );
+        }
+        return (
+            <FlatList
+                data={communityPostsResult}
+                renderItem={({ item }) => <CommunityPost post={item as CommunityPostType} />}
+                keyExtractor={(item) => item._id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.flatListContent}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    tintColor={COLORS.primary}
+                  />
+                }
+            />
+        );
+    } else {
+        // Filters selected - display detailed path info
+        const finalFilterOption = selectedFilterDetails as FilterOption | null;
+
+        if (!finalFilterOption) {
+            return (
+                <NoPostsFound
+                    message="Details for this selected path are not available. Try another selection."
+                    onOpenFilter={() => setShowFilterModal(true)}
+                />
+            );
+        }
+
+        // Check if FilterOption has content to display
+        const hasPathContent = finalFilterOption.description || finalFilterOption.requirements || 
+                              finalFilterOption.avgSalary || finalFilterOption.relevantExams || 
+                              finalFilterOption.image;
+
+        return (
+            <ScrollView 
+              contentContainerStyle={styles.flatListContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={COLORS.primary}
+                />
+              }
+            >
+                {hasPathContent ? (
+                    <CareerPathDetails filterOption={finalFilterOption} />
+                ) : (
+                    <View style={styles.emptyStateContainer}>
+                        <Ionicons name="information-circle-outline" size={40} color={COLORS.gray} />
+                        <Text style={styles.emptyStateText}>
+                            No detailed content available for &quot;{finalFilterOption.name}&quot;. Explore sub-categories or check community discussions.
+                        </Text>
+                        {(!communityPostsResult || communityPostsResult.length === 0) && (
+                            <Text style={styles.emptyStateText}>No community discussions found for this path yet.</Text>
+                        )}
+                    </View>
+                )}
+
+                {/* Community posts related to this path */}
+                {communityPostsResult && communityPostsResult.length > 0 && (
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionHeader}>Community Discussions on {finalFilterOption.name}</Text>
+                        {communityPostsResult.map((item) => (
+                          <CommunityPost key={item._id} post={item as CommunityPostType} />
+                        ))}
+                    </View>
+                )}
+            </ScrollView>
+        );
+    }
+  };
 
   // --- Main Feed UI ---
   return (
@@ -118,9 +191,11 @@ export default function FeedScreen() {
           <Text style={styles.activeFiltersText}>
             Applied:{" "}
             {activeFilterNames
-              .filter((opt) => opt)
-              .map((opt) => opt!.name)
-              .join(" > ")}
+              ? activeFilterNames
+                  .filter((opt) => opt)
+                  .map((opt) => opt!.name)
+                  .join(" > ")
+              : "Loading..."}
           </Text>
           <TouchableOpacity
             onPress={() => setSelectedFilters([])}
@@ -138,20 +213,7 @@ export default function FeedScreen() {
         </View>
       )}
 
-      <FlatList
-        data={posts as PostType[]}
-        renderItem={({ item }) => <Post post={item} />}
-        keyExtractor={(item) => String(item._id)}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-          />
-        }
-      />
+      {displayContent()}
 
       <FilterModal
         isVisible={showFilterModal}
@@ -247,5 +309,30 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingBottom: 60,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    marginTop: 50,
+  },
+  emptyStateText: {
+    color: COLORS.gray,
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 24,
+  },
+  sectionContainer: {
+    marginTop: 20,
+    paddingHorizontal: 15,
+  },
+  sectionHeader: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
   },
 });

@@ -9,15 +9,10 @@ export default defineSchema({
     fullname: v.string(),
     email: v.string(),
     bio: v.optional(v.string()),
-    profileImage: v.optional(v.string()),
+    profileImage: v.string(),
     clerkId: v.string(),
     isAdmin: v.optional(v.boolean()),
-    createdAt: v.optional(v.number()),
-    // Temporary fields for migration
-    image: v.optional(v.string()),
-    followers: v.optional(v.number()),
-    following: v.optional(v.number()),
-    posts: v.optional(v.number()),
+    createdAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
 
   // 2. FilterOption table: Stores career path definitions and their own engagement
@@ -61,11 +56,12 @@ export default defineSchema({
     updatedAt: v.number(),
     isActive: v.optional(v.boolean()),
   })
-    .index("by_created_at", ["createdAt"])
+    .index("by_creation_time", ["createdAt"])
     .index("by_user", ["userId"])
     .index("by_linked_filter_option", [
       "linkedFilterOptionIds",
-    ]),
+    ])
+    .index("by_createdAt", ["createdAt"]),
 
   // 4. likes table: Tracks likes on BOTH career paths and community posts
   likes: defineTable({

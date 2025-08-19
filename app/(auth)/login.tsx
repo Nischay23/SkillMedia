@@ -42,7 +42,9 @@ export default function Login() {
           />
         </View>
         <Text style={styles.appName}>SkillMedia</Text>
-        <Text style={styles.tagline}>Jobs and Skills</Text>
+        <Text style={styles.tagline}>
+          Career Path & Field Guide
+        </Text>
       </View>
 
       {/* ILLUSTRATION */}

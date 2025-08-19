@@ -20,12 +20,12 @@ if (!require("fs").existsSync("./convex")) {
 
 try {
   console.log("📊 Seeding filter options...");
-  execSync("npx convex run seedData:seedFilters", {
+  execSync("npx convex run seedData:seedFilterOptions", {
     stdio: "inherit",
   });
 
   console.log("\n📝 Seeding sample posts...");
-  execSync("npx convex run seedData:seedPosts", {
+  execSync("npx convex run seedData:seedCommunityPosts", {
     stdio: "inherit",
   });
 
@@ -41,10 +41,10 @@ try {
     "1. Ensure Convex is running: npx convex dev"
   );
   console.log(
-    "2. Seed filters: npx convex run seedData:seedFilters"
+    "2. Seed filters: npx convex run seedData:seedFilterOptions"
   );
   console.log(
-    "3. Seed posts: npx convex run seedData:seedPosts"
+    "3. Seed posts: npx convex run seedData:seedCommunityPosts"
   );
   process.exit(1);
 }

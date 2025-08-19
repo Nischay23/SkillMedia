@@ -7,22 +7,33 @@ export const getNotifications = query({
 
     const notifications = await ctx.db
       .query("notifications")
-      .withIndex("by_receiver", (q) => q.eq("receiverId", currentUser._id))
+      .withIndex("by_receiver", (q) =>
+        q.eq("receiverId", currentUser._id)
+      )
       .order("desc")
       .collect();
 
     const notificationsWithInfo = await Promise.all(
       notifications.map(async (notification) => {
-        const sender = (await ctx.db.get(notification.senderId))!;
+        const sender = (await ctx.db.get(
+          notification.senderId
+        ))!;
         let post = null;
         let comment = null;
 
-        if (notification.postId) {
-          post = await ctx.db.get(notification.postId);
+        if (notification.communityPostId) {
+          post = await ctx.db.get(
+            notification.communityPostId
+          );
         }
 
-        if (notification.type === "comment" && notification.commentId) {
-          comment = await ctx.db.get(notification.commentId);
+        if (
+          notification.type === "comment" &&
+          notification.commentId
+        ) {
+          comment = await ctx.db.get(
+            notification.commentId
+          );
         }
 
         return {
