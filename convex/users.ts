@@ -1,10 +1,10 @@
+import { v } from "convex/values";
 import {
   mutation,
   MutationCtx,
   query,
   QueryCtx,
 } from "./_generated/server";
-import { v } from "convex/values";
 
 export const createUser = mutation({
   args: {
@@ -45,6 +45,23 @@ export const getUserByClerkId = query({
       .query("users")
       .withIndex("by_clerk_id", (q) =>
         q.eq("clerkId", args.clerkId)
+      )
+      .unique();
+
+    return user;
+  },
+});
+
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) =>
+        q.eq("clerkId", identity.subject)
       )
       .unique();
 

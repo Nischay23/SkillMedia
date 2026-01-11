@@ -13,6 +13,8 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as adminAuth from "../adminAuth.js";
+import type * as adminFilters from "../adminFilters.js";
 import type * as clearDatabase from "../clearDatabase.js";
 import type * as comments from "../comments.js";
 import type * as communityPosts from "../communityPosts.js";
@@ -36,6 +38,8 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  adminAuth: typeof adminAuth;
+  adminFilters: typeof adminFilters;
   clearDatabase: typeof clearDatabase;
   comments: typeof comments;
   communityPosts: typeof communityPosts;

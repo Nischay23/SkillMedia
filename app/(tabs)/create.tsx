@@ -1,7 +1,8 @@
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Typography } from "@/components/ui/Typography";
+import FilterPicker from "@/components/admin/FilterPicker";
 import { useUser } from "@clerk/clerk-expo";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import Animated, {
@@ -20,11 +21,13 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Modal,
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 
 export default function CreateScreen() {
@@ -35,6 +38,13 @@ export default function CreateScreen() {
   const [caption, setCaption] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [selectedFilterIds, setSelectedFilterIds] = useState<string[]>([]);
+  const [showFilterPicker, setShowFilterPicker] = useState(false);
+
+  // Queries
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const allFilters = useQuery(api.adminFilters.getAllFilters);
+  const isAdmin = currentUser?.isAdmin === true;
 
   // Animation values
   const headerOpacity = useSharedValue(1);
@@ -133,6 +143,58 @@ export default function CreateScreen() {
       minHeight: 100,
       textAlignVertical: 'top' as const,
     },
+    filterSection: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius.lg,
+      padding: theme.spacing.lg,
+      marginTop: theme.spacing.md,
+    },
+    filterHeader: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      marginBottom: theme.spacing.md,
+    },
+    filterHeaderLeft: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: theme.spacing.sm,
+    },
+    filterButton: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.md,
+      backgroundColor: theme.colors.background,
+    },
+    filterButtonContent: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: theme.spacing.sm,
+    },
+    filterCount: {
+      backgroundColor: theme.colors.primary,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    clearFiltersButton: {
+      marginTop: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      alignItems: 'center' as const,
+    },
+    modalHeader: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    },
   }));
 
   const pickImage = async () => {
@@ -160,15 +222,18 @@ export default function CreateScreen() {
       setIsSharing(true);
       headerOpacity.value = withTiming(0.8, { duration: 200 });
       
-      // For now, we'll just create a post with the caption
-      // The image upload functionality can be added later when the backend supports it
+      // Create post with optional filter linking (admin only)
       await createPost({
         content: caption,
-        imageUrl: selectedImage, // This will be updated when upload is implemented
+        imageUrl: selectedImage,
+        linkedFilterOptionIds: isAdmin && selectedFilterIds.length > 0 
+          ? selectedFilterIds as Id<"FilterOption">[] 
+          : undefined,
       });
 
       setSelectedImage(null);
       setCaption("");
+      setSelectedFilterIds([]);
       router.push("/(tabs)");
     } catch (error) {
       console.log("Error sharing post:", error);
@@ -303,9 +368,99 @@ export default function CreateScreen() {
                 />
               </View>
             </AnimatedCard>
+
+            {/* FILTER LINKING SECTION (Admin Only) */}
+            {isAdmin && (
+              <AnimatedCard delay={200} style={styles.filterSection}>
+                <View style={styles.filterHeader}>
+                  <View style={styles.filterHeaderLeft}>
+                    <MaterialIcons name="filter-list" size={20} color={theme.colors.primary} />
+                    <Typography variant="body" weight="semibold" color="text">
+                      Link to Filters
+                    </Typography>
+                  </View>
+                  <Typography variant="caption" color="textSecondary">
+                    Optional
+                  </Typography>
+                </View>
+                
+                <TouchableOpacity
+                  style={styles.filterButton}
+                  onPress={() => setShowFilterPicker(true)}
+                  disabled={isSharing}
+                >
+                  <View style={styles.filterButtonContent}>
+                    {selectedFilterIds.length === 0 ? (
+                      <>
+                        <MaterialIcons name="add-circle-outline" size={20} color={theme.colors.primary} />
+                        <Typography variant="body" color="primary">
+                          Select Filters
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <View style={styles.filterCount}>
+                          <Typography variant="caption" style={{ color: 'white' }} weight="bold">
+                            {selectedFilterIds.length}
+                          </Typography>
+                        </View>
+                        <Typography variant="body" color="text">
+                          {selectedFilterIds.length} filter{selectedFilterIds.length > 1 ? 's' : ''} selected
+                        </Typography>
+                        <MaterialIcons name="edit" size={16} color={theme.colors.textMuted} />
+                      </>
+                    )}
+                  </View>
+                </TouchableOpacity>
+
+                {selectedFilterIds.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearFiltersButton}
+                    onPress={() => setSelectedFilterIds([])}
+                  >
+                    <Typography variant="caption" color="error">
+                      Clear Selection
+                    </Typography>
+                  </TouchableOpacity>
+                )}
+              </AnimatedCard>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Filter Picker Modal (Admin Only) */}
+      {isAdmin && (
+        <Modal
+          visible={showFilterPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowFilterPicker(false)}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowFilterPicker(false)}>
+                <Ionicons name="close" size={28} color={theme.colors.text} />
+              </TouchableOpacity>
+              <Typography variant="h3" weight="bold" color="text">
+                Select Filters
+              </Typography>
+              <TouchableOpacity onPress={() => setShowFilterPicker(false)}>
+                <Typography variant="body" color="primary" weight="semibold">
+                  Done
+                </Typography>
+              </TouchableOpacity>
+            </View>
+            {allFilters && (
+              <FilterPicker
+                filters={allFilters}
+                selectedIds={selectedFilterIds}
+                onSelectionChange={setSelectedFilterIds}
+              />
+            )}
+          </SafeAreaView>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }

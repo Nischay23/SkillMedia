@@ -77,6 +77,7 @@ export const createCommunityPost = mutation({
   args: {
     content: v.string(),
     imageUrl: v.optional(v.string()),
+    linkedFilterOptionIds: v.optional(v.array(v.id("FilterOption"))),
   },
   handler: async (ctx, args) => {
     const currentUser = await getAuthenticatedUser(ctx);
@@ -88,7 +89,7 @@ export const createCommunityPost = mutation({
       imageUrl: args.imageUrl,
       likes: 0,
       comments: 0,
-      linkedFilterOptionIds: [],
+      linkedFilterOptionIds: args.linkedFilterOptionIds || [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
