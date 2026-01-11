@@ -1,23 +1,30 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/constants/theme";
+import { useTheme } from "@/providers/ThemeProvider";
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         tabBarShowLabel: false,
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.grey,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          backgroundColor: "black",
-          borderTopWidth: 0,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
           position: "absolute",
           elevation: 0,
-          paddingTop: 8,
-          height: 50,
-          paddingBottom: 8,
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          paddingTop: theme.spacing.sm,
+          height: 60,
+          paddingBottom: theme.spacing.sm,
         },
       }}
     >
@@ -25,11 +32,7 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarIcon: ({ size, color }) => (
-            <Ionicons
-              name="home"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
@@ -37,11 +40,7 @@ export default function TabLayout() {
         name="bookmarks"
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="bookmark"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="bookmark" size={size} color={color} />
           ),
         }}
       />
@@ -51,8 +50,8 @@ export default function TabLayout() {
           tabBarIcon: ({ size }) => (
             <Ionicons
               name="add-circle"
-              size={size}
-              color={COLORS.primary}
+              size={size + 4}
+              color={theme.colors.primary}
             />
           ),
         }}
@@ -61,11 +60,7 @@ export default function TabLayout() {
         name="notifications"
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="heart"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="heart" size={size} color={color} />
           ),
         }}
       />
@@ -73,11 +68,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="person-circle"
-              size={size}
-              color={color}
-            />
+            <Ionicons name="person-circle" size={size} color={color} />
           ),
         }}
       />

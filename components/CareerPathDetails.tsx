@@ -62,16 +62,13 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 
   const renderRequirements = () => {
     if (!filterOption.requirements) return null;
-    
-    // Split requirements by commas or line breaks
-    const requirements = filterOption.requirements.split(/[,\n]/).map(req => req.trim()).filter(req => req);
-    
+    const requirements = filterOption.requirements.split(/,|\n/).map(req => req.trim()).filter(req => req);
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Requirements</Text>
         {requirements.map((requirement, index) => (
-          <View key={index} style={styles.bulletPoint}>
-            <Text style={styles.bullet}>•</Text>
+          <View key={index} style={styles.requirementRow}>
+            <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
             <Text style={styles.requirementText}>{requirement}</Text>
           </View>
         ))}
@@ -188,25 +185,40 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 }
 
 const styles = StyleSheet.create({
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginLeft: 8,
+  },
+  requirementText: {
+    fontSize: 14,
+    color: '#B0B0B0',
+    flex: 1,
+    lineHeight: 22,
+  },
   container: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    shadowColor: COLORS.black,
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    marginVertical: 16,
+    marginHorizontal: 8,
+    shadowColor: COLORS.primary,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
     overflow: 'hidden',
   },
   header: {
-    padding: 16,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    borderBottomColor: COLORS.darkGray,
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -214,10 +226,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: COLORS.black,
+    color: COLORS.white,
     flex: 1,
+    letterSpacing: 0.5,
   },
   typeTag: {
     backgroundColor: COLORS.primary,
@@ -274,11 +287,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginRight: 8,
     marginTop: 2,
-  },
-  requirementText: {
-    fontSize: 14,
-    color: COLORS.gray,
-    flex: 1,
   },
   examContainer: {
     flexDirection: 'row',
