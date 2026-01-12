@@ -1,9 +1,10 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useQuery } from "convex/react";
+import PageHeader from "@/components/admin/desktop/PageHeader";
+import StatsCard from "@/components/admin/desktop/StatsCard";
 import { api } from "@/convex/_generated/api";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
+import { router } from "expo-router";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,276 +14,278 @@ import {
 
 export default function AdminDashboard() {
   const currentUser = useQuery(api.users.getCurrentUser);
-  const allFilters = useQuery(api.adminFilters.getAllFilters);
-  
+  const allFilters = useQuery(
+    api.adminFilters.getAllFilters
+  );
+  const postStats = useQuery(
+    api.communityPosts.getPostStats
+  );
+
   const filterStats = {
     total: allFilters?.length || 0,
-    active: allFilters?.filter(f => f.isActive).length || 0,
-    inactive: allFilters?.filter(f => !f.isActive).length || 0,
+    active:
+      allFilters?.filter((f) => f.isActive).length || 0,
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Admin Dashboard</Text>
-          <Text style={styles.subtitle}>
-            Welcome back, {currentUser?.fullname || 'Admin'}
-          </Text>
-        </View>
-        <View style={styles.adminBadge}>
-          <MaterialIcons name="verified" size={20} color="#4CAF50" />
-          <Text style={styles.adminBadgeText}>Admin</Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <PageHeader
+        title="Dashboard"
+        description="Manage your content and career paths from here"
+      />
 
-      {/* Quick Stats */}
-      <View style={styles.statsContainer}>
-        <Text style={styles.sectionTitle}>Quick Stats</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
+        {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: '#E3F2FD' }]}>
-            <MaterialIcons name="widgets" size={32} color="#2196F3" />
-            <Text style={styles.statNumber}>{filterStats.total}</Text>
-            <Text style={styles.statLabel}>Total Filters</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
-            <MaterialIcons name="check-circle" size={32} color="#4CAF50" />
-            <Text style={styles.statNumber}>{filterStats.active}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#FFEBEE' }]}>
-            <MaterialIcons name="cancel" size={32} color="#F44336" />
-            <Text style={styles.statNumber}>{filterStats.inactive}</Text>
-            <Text style={styles.statLabel}>Inactive</Text>
-          </View>
+          <StatsCard
+            title="Total Posts"
+            value={postStats?.total || 0}
+            icon="article"
+            color="#3B82F6"
+            subtitle={`${postStats?.published || 0} published, ${postStats?.drafts || 0} drafts`}
+          />
+          <StatsCard
+            title="Published Posts"
+            value={postStats?.published || 0}
+            icon="check-circle"
+            color="#10B981"
+          />
+          <StatsCard
+            title="Draft Posts"
+            value={postStats?.drafts || 0}
+            icon="edit"
+            color="#F59E0B"
+          />
+          <StatsCard
+            title="Total Filters"
+            value={filterStats.total}
+            icon="account-tree"
+            color="#8B5CF6"
+            subtitle={`${filterStats.active} active`}
+          />
         </View>
-      </View>
 
-      {/* Feature Cards */}
-      <Text style={styles.sectionTitle}>Management Tools</Text>
-
-      <TouchableOpacity
-        style={styles.featureCard}
-        onPress={() => router.push("/admin/filters" as any)}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.featureIcon, { backgroundColor: '#E8F5E9' }]}>
-          <MaterialIcons name="account-tree" size={32} color="#4CAF50" />
-        </View>
-        <View style={styles.featureContent}>
-          <View style={styles.featureHeader}>
-            <Text style={styles.featureTitle}>Filter Hierarchy</Text>
-            <MaterialIcons name="chevron-right" size={24} color="#999" />
-          </View>
-          <Text style={styles.featureDesc}>
-            Manage career path filters • Create & edit nodes • Toggle visibility
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Quick Actions
           </Text>
-          {allFilters && (
-            <View style={styles.featureMeta}>
-              <MaterialIcons name="info-outline" size={14} color="#666" />
-              <Text style={styles.featureMetaText}>
-                {filterStats.total} filters across 6 hierarchy levels
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() =>
+                router.push("/admin/posts/new" as any)
+              }
+            >
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: "#1E40AF20" },
+                ]}
+              >
+                <MaterialIcons
+                  name="add-circle"
+                  size={32}
+                  color="#3B82F6"
+                />
+              </View>
+              <Text style={styles.actionTitle}>
+                Create New Post
               </Text>
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
+              <Text style={styles.actionDesc}>
+                Write and publish content for mobile app
+              </Text>
+            </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.featureCard, styles.featureCardDisabled]}
-        disabled
-      >
-        <View style={[styles.featureIcon, { backgroundColor: '#F5F5F5' }]}>
-          <MaterialIcons name="post-add" size={32} color="#999" />
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() =>
+                router.push("/admin/filters" as any)
+              }
+            >
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: "#7C3AED20" },
+                ]}
+              >
+                <MaterialIcons
+                  name="account-tree"
+                  size={32}
+                  color="#8B5CF6"
+                />
+              </View>
+              <Text style={styles.actionTitle}>
+                Manage Filters
+              </Text>
+              <Text style={styles.actionDesc}>
+                Edit career path hierarchy and settings
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() =>
+                router.push("/admin/posts" as any)
+              }
+            >
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: "#10b98120" },
+                ]}
+              >
+                <MaterialIcons
+                  name="list"
+                  size={32}
+                  color="#10B981"
+                />
+              </View>
+              <Text style={styles.actionTitle}>
+                View All Posts
+              </Text>
+              <Text style={styles.actionDesc}>
+                Browse, search, and bulk edit posts
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.featureContent}>
-          <View style={styles.featureHeader}>
-            <Text style={[styles.featureTitle, { color: '#999' }]}>Content Management</Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>Soon</Text>
+
+        {/* Recent Activity */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            System Overview
+          </Text>
+          <View style={styles.overviewCard}>
+            <View style={styles.overviewRow}>
+              <View style={styles.overviewItem}>
+                <MaterialIcons
+                  name="favorite"
+                  size={20}
+                  color="#EF4444"
+                />
+                <Text style={styles.overviewText}>
+                  {postStats?.totalLikes || 0} Total Likes
+                </Text>
+              </View>
+              <View style={styles.overviewItem}>
+                <MaterialIcons
+                  name="comment"
+                  size={20}
+                  color="#3B82F6"
+                />
+                <Text style={styles.overviewText}>
+                  {postStats?.totalComments || 0} Total
+                  Comments
+                </Text>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.overviewRow,
+                { marginTop: 16 },
+              ]}
+            >
+              <View style={styles.overviewItem}>
+                <MaterialIcons
+                  name="person"
+                  size={20}
+                  color="#10B981"
+                />
+                <Text style={styles.overviewText}>
+                  Logged in as{" "}
+                  {currentUser?.fullname || "Admin"}
+                </Text>
+              </View>
             </View>
           </View>
-          <Text style={[styles.featureDesc, { color: '#999' }]}>
-            Create and manage community posts • Bulk operations • Analytics
-          </Text>
         </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.featureCard, styles.featureCardDisabled]}
-        disabled
-      >
-        <View style={[styles.featureIcon, { backgroundColor: '#F5F5F5' }]}>
-          <MaterialIcons name="analytics" size={32} color="#999" />
-        </View>
-        <View style={styles.featureContent}>
-          <View style={styles.featureHeader}>
-            <Text style={[styles.featureTitle, { color: '#999' }]}>Analytics Dashboard</Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>Soon</Text>
-            </View>
-          </View>
-          <Text style={[styles.featureDesc, { color: '#999' }]}>
-            User engagement metrics • Content performance • Growth insights
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      {!allFilters && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#2196F3" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-        </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#0b0f19",
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 24,
-    paddingTop: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#666",
-  },
-  adminBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E8F5E9",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
-  },
-  adminBadgeText: {
-    color: "#4CAF50",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  statsContainer: {
-    marginBottom: 24,
+    padding: 32,
+    paddingBottom: 64,
   },
   statsGrid: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
+    marginBottom: 32,
+    flexWrap: "wrap",
   },
-  statCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
+  section: {
+    marginBottom: 32,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 8,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#e5e7eb",
+    marginBottom: 16,
   },
-  statLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
-    textAlign: "center",
-  },
-  featureCard: {
+  actionsGrid: {
     flexDirection: "row",
-    backgroundColor: "white",
+    gap: 16,
+    flexWrap: "wrap",
+  },
+  actionCard: {
+    flex: 1,
+    minWidth: 250,
+    backgroundColor: "#111827",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#2d3748",
+    padding: 24,
   },
-  featureCardDisabled: {
-    opacity: 0.6,
-  },
-  featureIcon: {
-    width: 56,
-    height: 56,
+  actionIcon: {
+    width: 64,
+    height: 64,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginBottom: 16,
   },
-  featureContent: {
-    flex: 1,
-  },
-  featureHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  featureTitle: {
+  actionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#e5e7eb",
+    marginBottom: 8,
   },
-  featureDesc: {
+  actionDesc: {
     fontSize: 13,
-    color: "#666",
+    color: "#9ca3af",
     lineHeight: 18,
   },
-  featureMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 8,
-  },
-  featureMetaText: {
-    fontSize: 12,
-    color: "#666",
-  },
-  comingSoonBadge: {
-    backgroundColor: "#FFF3E0",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  overviewCard: {
+    backgroundColor: "#111827",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2d3748",
+    padding: 24,
   },
-  comingSoonText: {
-    color: "#F57C00",
-    fontSize: 11,
-    fontWeight: "600",
+  overviewRow: {
+    flexDirection: "row",
+    gap: 32,
   },
-  loadingContainer: {
+  overviewItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 20,
+    gap: 12,
   },
-  loadingText: {
+  overviewText: {
     fontSize: 14,
-    color: "#666",
+    color: "#9ca3af",
   },
 });

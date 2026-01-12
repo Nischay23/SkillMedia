@@ -40,7 +40,6 @@ export default function FilterTreeNode({
     node.children && node.children.length > 0;
   const indentWidth = depth * 24;
 
-  // Check if this node type can have children
   const canHaveChildren = node.type !== "role";
 
   // Type color mapping
@@ -53,116 +52,119 @@ export default function FilterTreeNode({
       branch: "#98D8C8",
       role: "#6C5CE7",
     };
-    return colors[type] || "#999";
+    return colors[type] || "#9ca3af";
   };
 
   return (
     <View>
-      {/* Node Row */}
       <View
         style={[
           styles.nodeRow,
-          { paddingLeft: indentWidth + 12 },
+          {
+            paddingLeft:
+              indentWidth > 0 ? indentWidth + 12 : 12,
+          },
           !node.isActive && styles.inactiveNode,
         ]}
       >
-        {/* Expand/Collapse Icon */}
-        <TouchableOpacity
-          onPress={onToggleExpand}
-          style={styles.expandButton}
-          disabled={!hasChildren}
-        >
-          <MaterialIcons
-            name={
-              hasChildren
-                ? isExpanded
-                  ? "expand-more"
-                  : "chevron-right"
-                : "fiber-manual-record"
-            }
-            size={20}
-            color={hasChildren ? "#333" : "#ddd"}
-          />
-        </TouchableOpacity>
-
-        {/* Node Name */}
         <TouchableOpacity
           onPress={onSelect}
-          style={styles.nodeContent}
+          style={styles.contentWrapper}
+          activeOpacity={0.7}
         >
-          <View style={styles.nodeHeader}>
-            <Text
-              style={[
-                styles.nodeName,
-                !node.isActive && styles.inactiveText,
-              ]}
-              numberOfLines={1}
-            >
-              {node.name}
-            </Text>
-            {!node.isActive && (
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>
-                  Hidden
-                </Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.nodeFooter}>
-            <View
-              style={[
-                styles.typeBadge,
-                {
-                  backgroundColor: getTypeColor(node.type),
-                },
-              ]}
-            >
-              <Text style={styles.typeText}>
-                {node.type}
-              </Text>
-            </View>
-            {hasChildren && (
-              <Text style={styles.childCount}>
-                {node.children!.length}{" "}
-                {node.children!.length === 1
-                  ? "child"
-                  : "children"}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* Edit Icon */}
-        <TouchableOpacity
-          onPress={onSelect}
-          style={styles.editButton}
-        >
-          <MaterialIcons
-            name="edit"
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-
-        {/* Add Child Icon */}
-        {canHaveChildren && (
+          {/* Expand Toggle */}
           <TouchableOpacity
-            onPress={() => onAddChild(node)}
-            style={styles.addButton}
+            onPress={onToggleExpand}
+            style={[
+              styles.expandButton,
+              !hasChildren && styles.invisible,
+            ]}
+            disabled={!hasChildren}
+            hitSlop={{
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10,
+            }}
           >
             <MaterialIcons
-              name="add-circle-outline"
-              size={20}
-              color="#4CAF50"
+              name={
+                hasChildren
+                  ? isExpanded
+                    ? "expand-more"
+                    : "chevron-right"
+                  : "fiber-manual-record"
+              }
+              size={18}
+              color={
+                hasChildren ? "#6B7280" : "transparent"
+              }
             />
           </TouchableOpacity>
-        )}
+
+          {/* Node Name */}
+          <Text
+            style={[
+              styles.nodeName,
+              !node.isActive && styles.inactiveText,
+            ]}
+            numberOfLines={1}
+          >
+            {node.name}
+          </Text>
+
+          {/* Type Badge */}
+          <View
+            style={[
+              styles.typeBadge,
+              {
+                borderColor: getTypeColor(node.type) + "40",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.typeText,
+                { color: getTypeColor(node.type) },
+              ]}
+            >
+              {node.type}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          {canHaveChildren && (
+            <TouchableOpacity
+              onPress={() => onAddChild(node)}
+              style={styles.actionButton}
+            >
+              <MaterialIcons
+                name="add"
+                size={16}
+                color="#9ca3af"
+              />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            onPress={onSelect}
+            style={styles.actionButton}
+          >
+            <MaterialIcons
+              name="edit"
+              size={16}
+              color="#9ca3af"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Children (recursive) */}
-      {isExpanded && hasChildren && (
+      {/* Children */}
+      {isExpanded && hasChildren && node.children && (
         <View>
-          {node.children!.map((child) => (
+          {node.children.map((child) => (
             <FilterTreeNode
               key={child._id}
               node={child}
@@ -187,76 +189,62 @@ const styles = StyleSheet.create({
   nodeRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingRight: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "white",
+    borderBottomColor: "#1f2937",
+    backgroundColor: "#111827",
+    height: 44,
+  },
+  contentWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   inactiveNode: {
-    backgroundColor: "#f9f9f9",
+    opacity: 0.6,
   },
   expandButton: {
     padding: 4,
     marginRight: 4,
-  },
-  nodeContent: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  nodeHeader: {
-    flexDirection: "row",
+    width: 28,
     alignItems: "center",
-    marginBottom: 4,
+  },
+  invisible: {
+    opacity: 0,
   },
   nodeName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
-    color: "#333",
+    color: "#E5E7EB",
     flex: 1,
+    marginRight: 8,
   },
   inactiveText: {
-    color: "#999",
+    color: "#9CA3AF",
     textDecorationLine: "line-through",
-  },
-  nodeFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
   },
   typeBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 4,
+    borderWidth: 1,
+    marginRight: 12,
+    backgroundColor: "#1f2937",
   },
   typeText: {
-    color: "white",
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-  childCount: {
-    fontSize: 12,
-    color: "#999",
-  },
-  statusBadge: {
-    backgroundColor: "#ff9800",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  statusText: {
-    color: "white",
     fontSize: 10,
     fontWeight: "600",
+    textTransform: "uppercase",
   },
-  editButton: {
-    padding: 8,
-    marginLeft: 8,
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
-  addButton: {
-    padding: 8,
-    marginLeft: 4,
+  actionButton: {
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: "transparent",
   },
 });

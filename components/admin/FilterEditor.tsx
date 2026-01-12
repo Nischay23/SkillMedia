@@ -1,9 +1,11 @@
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -36,6 +38,7 @@ export default function FilterEditor({
   onClose,
   onSaveSuccess,
 }: Props) {
+  const { toast } = useToast();
   const updateNode = useMutation(
     api.adminFilters.updateFilterNode
   );
@@ -94,7 +97,11 @@ export default function FilterEditor({
         relevantExams: formData.relevantExams || undefined,
         image: formData.image || undefined,
       });
-      Alert.alert("Success", "Filter updated successfully");
+      toast({
+        title: "Saved",
+        description: "Filter updated successfully",
+        variant: "success",
+      });
       onSaveSuccess();
       onClose();
     } catch (error: any) {
@@ -127,10 +134,11 @@ export default function FilterEditor({
                 filterId: node._id,
                 isActive: !node.isActive,
               });
-              Alert.alert(
-                "Success",
-                `Filter ${action === "hide" ? "hidden" : "activated"} successfully`
-              );
+              toast({
+                title: "Updated",
+                description: `Filter ${action === "hide" ? "hidden" : "activated"} successfully`,
+                variant: "success",
+              });
               onSaveSuccess();
               onClose();
             } catch (error: any) {
@@ -159,170 +167,199 @@ export default function FilterEditor({
         >
           <MaterialIcons
             name="close"
-            size={24}
-            color="#666"
+            size={20}
+            color="#9CA3AF"
           />
         </TouchableOpacity>
       </View>
 
       {/* Form */}
-      <ScrollView style={styles.form}>
-        {/* Name Field (always editable) */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Name *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.name}
-            onChangeText={(text) =>
-              setFormData({ ...formData, name: text })
-            }
-            placeholder="Enter name"
-            placeholderTextColor="#999"
-          />
+      <ScrollView
+        style={styles.form}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        <View style={styles.card}>
+          {/* Name Field (always editable) */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Name *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.name}
+              onChangeText={(text) =>
+                setFormData({ ...formData, name: text })
+              }
+              placeholder="Enter name"
+              placeholderTextColor="#4B5563"
+            />
+          </View>
+
+          {/* Description */}
+          {editableFields.description && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(text) =>
+                  setFormData({
+                    ...formData,
+                    description: text,
+                  })
+                }
+                placeholder="Enter description"
+                placeholderTextColor="#4B5563"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          )}
+
+          {/* Requirements */}
+          {editableFields.requirements && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Requirements</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.requirements}
+                onChangeText={(text) =>
+                  setFormData({
+                    ...formData,
+                    requirements: text,
+                  })
+                }
+                placeholder="List requirements"
+                placeholderTextColor="#4B5563"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          )}
+
+          {/* Average Salary */}
+          {editableFields.avgSalary && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Avg Salary</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.avgSalary}
+                onChangeText={(text) =>
+                  setFormData({
+                    ...formData,
+                    avgSalary: text,
+                  })
+                }
+                placeholder="e.g. $80,000 - $120,000"
+                placeholderTextColor="#4B5563"
+              />
+            </View>
+          )}
+
+          {/* Relevant Exams */}
+          {editableFields.relevantExams && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>
+                Relevant Exams
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.relevantExams}
+                onChangeText={(text) =>
+                  setFormData({
+                    ...formData,
+                    relevantExams: text,
+                  })
+                }
+                placeholder="e.g. AWS Certified Solutions Architect"
+                placeholderTextColor="#4B5563"
+              />
+            </View>
+          )}
+
+          {/* Image URL */}
+          {editableFields.image && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Image URL</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.image}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, image: text })
+                }
+                placeholder="https://..."
+                placeholderTextColor="#4B5563"
+                autoCapitalize="none"
+              />
+            </View>
+          )}
         </View>
 
-        {/* Description */}
-        {editableFields.description && (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.description}
-              onChangeText={(text) =>
-                setFormData({
-                  ...formData,
-                  description: text,
-                })
+        {/* Actions Card */}
+        <View style={[styles.card, styles.actionCard]}>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={handleToggleActive}
+          >
+            <MaterialIcons
+              name={
+                node.isActive
+                  ? "visibility-off"
+                  : "visibility"
               }
-              placeholder="Enter description"
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
+              size={20}
+              color={node.isActive ? "#EF4444" : "#10B981"}
             />
-          </View>
-        )}
-
-        {/* Requirements */}
-        {editableFields.requirements === true && (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Requirements</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.requirements}
-              onChangeText={(text) =>
-                setFormData({
-                  ...formData,
-                  requirements: text,
-                })
-              }
-              placeholder="Enter requirements"
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-          </View>
-        )}
-
-        {/* Average Salary */}
-        {editableFields.avgSalary === true && (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Average Salary</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.avgSalary}
-              onChangeText={(text) =>
-                setFormData({
-                  ...formData,
-                  avgSalary: text,
-                })
-              }
-              placeholder="e.g., ₹3-6 LPA"
-              placeholderTextColor="#999"
-            />
-          </View>
-        )}
-
-        {/* Relevant Exams */}
-        {editableFields.relevantExams === true && (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Relevant Exams</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.relevantExams}
-              onChangeText={(text) =>
-                setFormData({
-                  ...formData,
-                  relevantExams: text,
-                })
-              }
-              placeholder="e.g., UPSC, SSC CGL"
-              placeholderTextColor="#999"
-            />
-          </View>
-        )}
-
-        {/* Image URL */}
-        {editableFields.image && (
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Image URL</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.image}
-              onChangeText={(text) =>
-                setFormData({ ...formData, image: text })
-              }
-              placeholder="https://..."
-              placeholderTextColor="#999"
-              autoCapitalize="none"
-            />
-          </View>
-        )}
+            <Text
+              style={[
+                styles.toggleButtonText,
+                {
+                  color: node.isActive
+                    ? "#EF4444"
+                    : "#10B981",
+                },
+              ]}
+            >
+              {node.isActive
+                ? "Deactivate Filter"
+                : "Activate Filter"}
+            </Text>
+            <Text style={styles.toggleHelperText}>
+              {node.isActive
+                ? "Hide this filter from the app"
+                : "Make this filter visible in the app"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* Action Buttons */}
+      {/* Footer Actions */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.button, styles.toggleButton]}
-          onPress={handleToggleActive}
+          style={styles.cancelButton}
+          onPress={onClose}
+          disabled={isSaving}
         >
-          <MaterialIcons
-            name={
-              node.isActive
-                ? "visibility-off"
-                : "visibility"
-            }
-            size={20}
-            color="white"
-          />
-          <Text style={styles.buttonText}>
-            {node.isActive ? "Hide" : "Show"}
+          <Text style={styles.cancelButtonText}>
+            Cancel
           </Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[
-            styles.button,
             styles.saveButton,
-            (!hasChanges || isSaving) &&
-              styles.buttonDisabled,
+            !hasChanges && styles.saveButtonDisabled,
           ]}
           onPress={handleSave}
           disabled={!hasChanges || isSaving}
         >
-          <MaterialIcons
-            name="save"
-            size={20}
-            color="white"
-          />
-          <Text style={styles.buttonText}>
-            {isSaving
-              ? "Saving..."
-              : hasChanges
-                ? "Save"
-                : "No Changes"}
-          </Text>
+          {isSaving ? (
+            <ActivityIndicator
+              size="small"
+              color="#FFFFFF"
+            />
+          ) : (
+            <Text style={styles.saveButtonText}>
+              Save Changes
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -370,86 +407,130 @@ function getEditableFields(type: string): {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#0b0f19",
+    width: "100%",
+    maxWidth: 600,
+    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
+    borderBottomColor: "#1f2937",
+    backgroundColor: "#111827",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#E5E7EB",
     textTransform: "capitalize",
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+    color: "#6B7280",
+    marginTop: 2,
   },
   closeButton: {
-    padding: 4,
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: "#1F2937",
   },
   form: {
     flex: 1,
-    padding: 16,
+    padding: 24,
+  },
+  card: {
+    backgroundColor: "#111827",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#1F2937",
+    padding: 20,
+    marginBottom: 24,
   },
   fieldGroup: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#9CA3AF",
     marginBottom: 8,
   },
   input: {
+    backgroundColor: "#0b0f19",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "white",
-    color: "#333",
+    borderColor: "#374151",
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#E5E7EB",
   },
   textArea: {
     height: 100,
-    paddingTop: 12,
+    textAlignVertical: "top",
   },
-  footer: {
-    flexDirection: "row",
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    gap: 12,
-    backgroundColor: "#f9f9f9",
+  actionCard: {
+    padding: 0,
+    overflow: "hidden",
   },
-  button: {
-    flex: 1,
-    flexDirection: "row",
-    padding: 14,
-    borderRadius: 8,
+  toggleButton: {
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    padding: 24,
+    backgroundColor: "#111827",
   },
-  toggleButton: {
-    backgroundColor: "#ff9800",
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  toggleHelperText: {
+    fontSize: 12,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+  footer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#1F2937",
+    backgroundColor: "#111827",
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#9CA3AF",
   },
   saveButton: {
-    backgroundColor: "#4CAF50",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 6,
+    backgroundColor: "#3B82F6",
+    minWidth: 100,
+    alignItems: "center",
   },
-  buttonDisabled: {
-    backgroundColor: "#ccc",
+  saveButtonDisabled: {
+    backgroundColor: "#1F2937",
+    opacity: 0.7,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
+  saveButtonText: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

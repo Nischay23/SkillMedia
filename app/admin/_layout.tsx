@@ -1,8 +1,15 @@
+import Sidebar from "@/components/admin/desktop/Sidebar";
+import { ToastProvider } from "@/components/ui/Toast";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
-import { Redirect, Stack } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { Redirect, Slot } from "expo-router";
+import {
+  ActivityIndicator,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
 
 export default function AdminLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -17,15 +24,8 @@ export default function AdminLayout() {
     (isSignedIn && currentUser === undefined)
   ) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#f5f5f5",
-        }}
-      >
-        <ActivityIndicator size="large" color="#FF6B6B" />
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
@@ -36,21 +36,35 @@ export default function AdminLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "#FF6B6B" },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "bold" },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{ title: "Admin Dashboard" }}
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#0b0f19"
       />
-      <Stack.Screen
-        name="filters"
-        options={{ title: "Manage Filters" }}
-      />
-    </Stack>
+      <Sidebar />
+      <View style={styles.main}>
+        <ToastProvider>
+          <Slot />
+        </ToastProvider>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "#0b0f19",
+  },
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0b0f19",
+  },
+  main: {
+    flex: 1,
+    backgroundColor: "#0b0f19",
+  },
+});

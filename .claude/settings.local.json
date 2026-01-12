@@ -1,16 +1,7 @@
 {
   "permissions": {
-    "allow": [
-<<<<<<< HEAD
-      "Bash(npm install:*)"
-    ],
+    "allow": ["Bash(npm install:*)", "Bash(cat:*)"],
     "deny": [],
     "ask": []
   }
 }
-=======
-      "Bash(cat:*)"
-    ]
-  }
-}
->>>>>>> a4fdb67 (create md files for adding next features)

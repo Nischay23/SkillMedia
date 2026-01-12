@@ -1,7 +1,14 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
 import { Id } from "@/convex/_generated/dataModel";
-import { useState, useMemo } from "react";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface FilterNode {
   _id: Id<"FilterOption">;
@@ -18,8 +25,15 @@ interface Props {
   maxSelections?: number;
 }
 
-export default function FilterPicker({ filters, selectedIds, onSelectionChange, maxSelections }: Props) {
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+export default function FilterPicker({
+  filters,
+  selectedIds,
+  onSelectionChange,
+  maxSelections,
+}: Props) {
+  const [expandedNodes, setExpandedNodes] = useState<
+    Set<string>
+  >(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
   // Build tree structure
@@ -32,7 +46,10 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
     const roots: FilterNode[] = [];
     filters.forEach((filter) => {
       const node = map.get(filter._id)!;
-      if (!("parentId" in filter) || !(filter as any).parentId) {
+      if (
+        !("parentId" in filter) ||
+        !(filter as any).parentId
+      ) {
         roots.push(node);
       } else {
         const parent = map.get((filter as any).parentId);
@@ -58,13 +75,17 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
 
     const query = searchQuery.toLowerCase();
 
-    const filterNode = (node: FilterNode): FilterNode | null => {
-      const matches = node.name.toLowerCase().includes(query) ||
+    const filterNode = (
+      node: FilterNode
+    ): FilterNode | null => {
+      const matches =
+        node.name.toLowerCase().includes(query) ||
         node.type.toLowerCase().includes(query);
-      
-      const filteredChildren = node.children
-        ?.map(filterNode)
-        .filter((n): n is FilterNode => n !== null) || [];
+
+      const filteredChildren =
+        node.children
+          ?.map(filterNode)
+          .filter((n): n is FilterNode => n !== null) || [];
 
       if (matches || filteredChildren.length > 0) {
         return { ...node, children: filteredChildren };
@@ -72,7 +93,9 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
       return null;
     };
 
-    return tree.map(filterNode).filter((n): n is FilterNode => n !== null);
+    return tree
+      .map(filterNode)
+      .filter((n): n is FilterNode => n !== null);
   }, [tree, searchQuery]);
 
   const toggleExpand = (nodeId: string) => {
@@ -91,8 +114,8 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
     const newSelection = selectedIds.includes(nodeId)
       ? selectedIds.filter((id) => id !== nodeId)
       : maxSelections && selectedIds.length >= maxSelections
-      ? selectedIds
-      : [...selectedIds, nodeId];
+        ? selectedIds
+        : [...selectedIds, nodeId];
 
     onSelectionChange(newSelection);
   };
@@ -121,17 +144,27 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
     <View style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#999" />
+        <MaterialIcons
+          name="search"
+          size={20}
+          color="#9ca3af"
+        />
         <TextInput
           style={styles.searchInput}
           placeholder="Search filters..."
-          placeholderTextColor="#999"
+          placeholderTextColor="#6b7280"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <MaterialIcons name="close" size={20} color="#999" />
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+          >
+            <MaterialIcons
+              name="close"
+              size={20}
+              color="#9ca3af"
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -139,26 +172,58 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
       {/* Controls */}
       <View style={styles.controls}>
         <View style={styles.leftControls}>
-          <TouchableOpacity style={styles.controlButton} onPress={expandAll}>
-            <MaterialIcons name="unfold-more" size={18} color="#2196F3" />
-            <Text style={styles.controlText}>Expand All</Text>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={expandAll}
+          >
+            <MaterialIcons
+              name="unfold-more"
+              size={18}
+              color="#9ca3af"
+            />
+            <Text style={styles.controlText}>
+              Expand All
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlButton} onPress={collapseAll}>
-            <MaterialIcons name="unfold-less" size={18} color="#2196F3" />
-            <Text style={styles.controlText}>Collapse All</Text>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={collapseAll}
+          >
+            <MaterialIcons
+              name="unfold-less"
+              size={18}
+              color="#9ca3af"
+            />
+            <Text style={styles.controlText}>
+              Collapse All
+            </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.clearButton} onPress={clearSelection}>
-          <Text style={styles.clearText}>Clear ({selectedIds.length})</Text>
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={clearSelection}
+        >
+          <Text style={styles.clearText}>
+            Clear ({selectedIds.length})
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Tree */}
-      <ScrollView style={styles.treeContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.treeContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {filteredTree.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialIcons name="filter-list-off" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>No filters found</Text>
+            <MaterialIcons
+              name="filter-list-off"
+              size={48}
+              color="#374151"
+            />
+            <Text style={styles.emptyText}>
+              No filters found
+            </Text>
           </View>
         ) : (
           filteredTree.map((node) => (
@@ -171,7 +236,9 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
               isSelected={selectedIds.includes(node._id)}
               onToggleSelect={toggleSelection}
               expandedNodes={expandedNodes}
-              onToggleExpandChild={(nodeId) => toggleExpand(nodeId)}
+              onToggleExpandChild={(nodeId) =>
+                toggleExpand(nodeId)
+              }
               selectedIds={selectedIds}
             />
           ))
@@ -179,14 +246,20 @@ export default function FilterPicker({ filters, selectedIds, onSelectionChange, 
       </ScrollView>
 
       {/* Selection Limit Warning */}
-      {maxSelections && selectedIds.length >= maxSelections && (
-        <View style={styles.warningBanner}>
-          <MaterialIcons name="info" size={18} color="#FF9800" />
-          <Text style={styles.warningText}>
-            Maximum {maxSelections} filter{maxSelections > 1 ? "s" : ""} reached
-          </Text>
-        </View>
-      )}
+      {maxSelections &&
+        selectedIds.length >= maxSelections && (
+          <View style={styles.warningBanner}>
+            <MaterialIcons
+              name="info"
+              size={18}
+              color="#9ca3af"
+            />
+            <Text style={styles.warningText}>
+              Maximum {maxSelections} filter
+              {maxSelections > 1 ? "s" : ""} reached
+            </Text>
+          </View>
+        )}
     </View>
   );
 }
@@ -214,7 +287,8 @@ function FilterPickerNode({
   onToggleExpandChild,
   selectedIds,
 }: NodeProps) {
-  const hasChildren = node.children && node.children.length > 0;
+  const hasChildren =
+    node.children && node.children.length > 0;
   const indentWidth = depth * 20;
 
   const getTypeColor = (type: string) => {
@@ -233,8 +307,14 @@ function FilterPickerNode({
     if (!node.children) return 0;
     const countSelected = (nodes: FilterNode[]): number => {
       return nodes.reduce((count, child) => {
-        const isChildSelected = selectedIds.includes(child._id) ? 1 : 0;
-        const descendantCount = child.children ? countSelected(child.children) : 0;
+        const isChildSelected = selectedIds.includes(
+          child._id
+        )
+          ? 1
+          : 0;
+        const descendantCount = child.children
+          ? countSelected(child.children)
+          : 0;
         return count + isChildSelected + descendantCount;
       }, 0);
     };
@@ -260,28 +340,63 @@ function FilterPickerNode({
           disabled={!hasChildren}
         >
           <MaterialIcons
-            name={hasChildren ? (isExpanded ? "expand-more" : "chevron-right") : "fiber-manual-record"}
+            name={
+              hasChildren
+                ? isExpanded
+                  ? "expand-more"
+                  : "chevron-right"
+                : "fiber-manual-record"
+            }
             size={20}
-            color={hasChildren ? "#666" : "#e0e0e0"}
+            color={hasChildren ? "#6b7280" : "transparent"}
           />
         </TouchableOpacity>
 
         {/* Checkbox */}
-        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-          {isSelected && <MaterialIcons name="check" size={16} color="white" />}
+        <View
+          style={[
+            styles.checkbox,
+            isSelected && styles.checkboxSelected,
+          ]}
+        >
+          {isSelected && (
+            <MaterialIcons
+              name="check"
+              size={16}
+              color="white"
+            />
+          )}
         </View>
 
         {/* Node Info */}
         <View style={styles.nodeContent}>
           <View style={styles.nodeHeader}>
             <Text
-              style={[styles.nodeName, !node.isActive && styles.inactiveText]}
+              style={[
+                styles.nodeName,
+                !node.isActive && styles.inactiveText,
+              ]}
               numberOfLines={1}
             >
               {node.name}
             </Text>
-            <View style={[styles.typeBadge, { backgroundColor: getTypeColor(node.type) }]}>
-              <Text style={styles.typeText}>{node.type}</Text>
+            <View
+              style={[
+                styles.typeBadge,
+                {
+                  borderColor:
+                    getTypeColor(node.type) + "40",
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.typeText,
+                  { color: getTypeColor(node.type) },
+                ]}
+              >
+                {node.type}
+              </Text>
             </View>
           </View>
           {selectedChildCount > 0 && (
@@ -301,7 +416,9 @@ function FilterPickerNode({
               node={child}
               depth={depth + 1}
               isExpanded={expandedNodes.has(child._id)}
-              onToggleExpand={() => onToggleExpandChild(child._id)}
+              onToggleExpand={() =>
+                onToggleExpandChild(child._id)
+              }
               isSelected={selectedIds.includes(child._id)}
               onToggleSelect={onToggleSelect}
               expandedNodes={expandedNodes}
@@ -318,29 +435,24 @@ function FilterPickerNode({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#0b0f19",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#111827",
     margin: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: "#2d3748",
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
     fontSize: 15,
-    color: "#333",
+    color: "#e5e7eb",
   },
   controls: {
     flexDirection: "row",
@@ -348,9 +460,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "white",
+    backgroundColor: "#111827",
+    borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderTopColor: "#1f2937",
+    borderBottomColor: "#1f2937",
   },
   leftControls: {
     flexDirection: "row",
@@ -362,28 +476,32 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#1f2937",
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2d3748",
   },
   controlText: {
-    color: "#2196F3",
+    color: "#e5e7eb",
     fontSize: 13,
     fontWeight: "600",
   },
   clearButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "#FFEBEE",
+    backgroundColor: "#1f2937",
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2d3748",
   },
   clearText: {
-    color: "#F44336",
+    color: "#e5e7eb",
     fontSize: 13,
     fontWeight: "600",
   },
   treeContainer: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "transparent",
   },
   emptyState: {
     alignItems: "center",
@@ -393,7 +511,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#999",
+    color: "#9ca3af",
   },
   nodeRow: {
     flexDirection: "row",
@@ -401,14 +519,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingRight: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
-    backgroundColor: "white",
+    borderBottomColor: "#1f2937",
+    backgroundColor: "#111827",
   },
   selectedNode: {
-    backgroundColor: "#E8F5E9",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
   },
   inactiveNode: {
-    backgroundColor: "#fafafa",
+    opacity: 0.6,
   },
   expandButton: {
     padding: 4,
@@ -419,15 +537,15 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#ddd",
+    borderColor: "#374151",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
-    backgroundColor: "white",
+    backgroundColor: "#0b0f19",
   },
   checkboxSelected: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
   },
   nodeContent: {
     flex: 1,
@@ -440,27 +558,29 @@ const styles = StyleSheet.create({
   nodeName: {
     fontSize: 15,
     fontWeight: "500",
-    color: "#333",
+    color: "#e5e7eb",
     flex: 1,
   },
   inactiveText: {
-    color: "#999",
+    color: "#9ca3af",
     textDecorationLine: "line-through",
   },
   typeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#2d3748",
+    backgroundColor: "#1f2937",
   },
   typeText: {
-    color: "white",
     fontSize: 10,
     fontWeight: "600",
-    textTransform: "capitalize",
+    textTransform: "uppercase",
   },
   selectedCount: {
     fontSize: 11,
-    color: "#4CAF50",
+    color: "#10b981",
     marginTop: 2,
     fontWeight: "600",
   },
@@ -468,14 +588,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FFF3E0",
+    backgroundColor: "#111827",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#FFE0B2",
+    borderTopColor: "#1f2937",
   },
   warningText: {
-    color: "#F57C00",
+    color: "#9ca3af",
     fontSize: 13,
     fontWeight: "600",
   },

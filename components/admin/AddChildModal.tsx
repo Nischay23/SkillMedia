@@ -1,3 +1,4 @@
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -46,6 +47,7 @@ export default function AddChildModal({
   onClose,
   onSuccess,
 }: Props) {
+  const { toast } = useToast();
   const createNode = useMutation(
     api.adminFilters.createFilterNode
   );
@@ -83,10 +85,11 @@ export default function AddChildModal({
           formData.description.trim() || undefined,
       });
 
-      Alert.alert(
-        "Success",
-        `${TYPE_LABELS[childType]} created successfully`
-      );
+      toast({
+        title: "Created",
+        description: `${TYPE_LABELS[childType]} created successfully`,
+        variant: "success",
+      });
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -264,17 +267,17 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
+    borderBottomColor: "#2A2A2A",
+    backgroundColor: "#151515",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#FFFFFF",
   },
   subtitle: {
     fontSize: 14,
-    color: "#666",
+    color: "#A0A0A0",
     marginTop: 4,
   },
   closeButton: {
@@ -332,9 +335,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: "#2A2A2A",
     gap: 12,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#151515",
   },
   button: {
     flex: 1,

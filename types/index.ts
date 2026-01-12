@@ -12,14 +12,14 @@ export type FilterOption = {
     | "role";
   parentId: Id<"FilterOption"> | null;
   isActive?: boolean;
-  
+
   // NEW: Career content fields
   description?: string;
   requirements?: string;
   avgSalary?: string;
   relevantExams?: string;
   image?: string;
-  
+
   // Engagement counters
   likes?: number;
   comments?: number;
@@ -28,18 +28,25 @@ export type FilterOption = {
 export type CommunityPost = {
   _id: Id<"communityPosts">;
   userId: Id<"users">;
+
+  // Content fields
+  title: string;
   content: string;
   imageUrl?: string;
   storageId?: Id<"_storage">;
   linkedFilterOptionIds: Id<"FilterOption">[];
-  
+
+  // Status workflow
+  status: "draft" | "published";
+  publishedAt?: number;
+
   // Engagement counters
   likes: number;
   comments: number;
   createdAt: number;
   updatedAt: number;
   isActive?: boolean;
-  
+
   // Populated fields
   user?: {
     _id: Id<"users">;
@@ -84,7 +91,7 @@ export type Comment = {
   communityPostId?: Id<"communityPosts">;
   filterOptionId?: Id<"FilterOption">;
   createdAt: number;
-  
+
   // Populated fields
   user?: {
     _id: Id<"users">;

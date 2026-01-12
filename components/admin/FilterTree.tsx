@@ -88,14 +88,18 @@ export default function FilterTree({
     if (!searchQuery.trim()) return tree;
 
     const query = searchQuery.toLowerCase();
-    
-    const filterNode = (node: FilterNode): FilterNode | null => {
-      const matches = node.name.toLowerCase().includes(query) ||
+
+    const filterNode = (
+      node: FilterNode
+    ): FilterNode | null => {
+      const matches =
+        node.name.toLowerCase().includes(query) ||
         node.type.toLowerCase().includes(query);
-      
-      const filteredChildren = node.children
-        ?.map(filterNode)
-        .filter((n): n is FilterNode => n !== null) || [];
+
+      const filteredChildren =
+        node.children
+          ?.map(filterNode)
+          .filter((n): n is FilterNode => n !== null) || [];
 
       if (matches || filteredChildren.length > 0) {
         return { ...node, children: filteredChildren };
@@ -103,14 +107,22 @@ export default function FilterTree({
       return null;
     };
 
-    return tree.map(filterNode).filter((n): n is FilterNode => n !== null);
+    return tree
+      .map(filterNode)
+      .filter((n): n is FilterNode => n !== null);
   }, [tree, searchQuery]);
 
   // Get stats
   const stats = useMemo(() => {
-    const activeCount = allFilters?.filter(f => f.isActive).length || 0;
-    const inactiveCount = (allFilters?.length || 0) - activeCount;
-    return { total: allFilters?.length || 0, active: activeCount, inactive: inactiveCount };
+    const activeCount =
+      allFilters?.filter((f) => f.isActive).length || 0;
+    const inactiveCount =
+      (allFilters?.length || 0) - activeCount;
+    return {
+      total: allFilters?.length || 0,
+      active: activeCount,
+      inactive: inactiveCount,
+    };
   }, [allFilters]);
 
   const toggleExpand = (nodeId: string) => {
@@ -171,66 +183,109 @@ export default function FilterTree({
   return (
     <View style={styles.container}>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#999" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search filters by name or type..."
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <MaterialIcons name="close" size={20} color="#999" />
-          </TouchableOpacity>
-        )}
+      <View style={styles.searchSection}>
+        <View style={styles.searchContainer}>
+          <MaterialIcons
+            name="search"
+            size={18}
+            color="#6B7280"
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search filters..."
+            placeholderTextColor="#6B7280"
+            value={searchQuery}
+            onChangeText={handleSearch}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+            >
+              <MaterialIcons
+                name="close"
+                size={18}
+                color="#6B7280"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Stats Bar */}
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
-          <MaterialIcons name="widgets" size={18} color="#666" />
-          <Text style={styles.statText}>
-            {stats.total} Total
+          <Text style={styles.statNumber}>
+            {stats.total}
           </Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <MaterialIcons name="check-circle" size={18} color="#4CAF50" />
-          <Text style={styles.statText}>
-            {stats.active} Active
+          <Text
+            style={[
+              styles.statNumber,
+              { color: "#10B981" },
+            ]}
+          >
+            {stats.active}
           </Text>
+          <Text style={styles.statLabel}>Active</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <MaterialIcons name="cancel" size={18} color="#F44336" />
-          <Text style={styles.statText}>
-            {stats.inactive} Inactive
+          <Text
+            style={[
+              styles.statNumber,
+              { color: "#EF4444" },
+            ]}
+          >
+            {stats.inactive}
           </Text>
+          <Text style={styles.statLabel}>Hidden</Text>
         </View>
       </View>
 
       {/* Tree Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity style={styles.controlButton} onPress={expandAll}>
-          <MaterialIcons name="unfold-more" size={18} color="#2196F3" />
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={expandAll}
+        >
           <Text style={styles.controlText}>Expand All</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.controlButton} onPress={collapseAll}>
-          <MaterialIcons name="unfold-less" size={18} color="#2196F3" />
-          <Text style={styles.controlText}>Collapse All</Text>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={collapseAll}
+        >
+          <Text style={styles.controlText}>
+            Collapse All
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Tree View */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {filteredTree.length === 0 ? (
           <View style={styles.noResults}>
-            <MaterialIcons name="search-off" size={48} color="#ddd" />
-            <Text style={styles.noResultsText}>No filters match &quot;{searchQuery}&quot;</Text>
-            <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearSearchButton}>
-              <Text style={styles.clearSearchText}>Clear Search</Text>
+            <MaterialIcons
+              name="search-off"
+              size={32}
+              color="#374151"
+            />
+            <Text style={styles.noResultsText}>
+              No matches found
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={styles.clearSearchButton}
+            >
+              <Text style={styles.clearSearchText}>
+                Clear Search
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -256,130 +311,138 @@ export default function FilterTree({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#1f2937", // Matches card bg
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fafafa",
+    backgroundColor: "#1f2937",
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#9CA3AF",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fafafa",
+    backgroundColor: "#1f2937",
     padding: 20,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#E5E7EB",
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#666",
+    color: "#6B7280",
     textAlign: "center",
+  },
+  searchSection: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2d3748",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
-    margin: 12,
+    backgroundColor: "#111827",
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: "#374151",
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 15,
-    color: "#333",
+    fontSize: 14,
+    color: "#E5E7EB",
+    padding: 0, // Reset default padding
+    height: 20,
   },
   statsBar: {
     flexDirection: "row",
-    backgroundColor: "white",
+    backgroundColor: "#1f2937",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    justifyContent: "space-around",
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#2d3748",
+    justifyContent: "space-between",
   },
   statItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "baseline",
     gap: 6,
   },
-  statText: {
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "600",
+  statNumber: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#E5E7EB",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
   },
   statDivider: {
     width: 1,
-    backgroundColor: "#e0e0e0",
+    height: "100%",
+    backgroundColor: "#374151",
   },
   controls: {
-    backgroundColor: "white",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: "#1f2937",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#2d3748",
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   controlButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#E3F2FD",
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "#111827",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#374151",
   },
   controlText: {
-    color: "#2196F3",
-    fontSize: 13,
-    fontWeight: "600",
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#1f2937",
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   noResults: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 60,
+    paddingVertical: 40,
+    gap: 12,
   },
   noResultsText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#999",
+    fontSize: 14,
+    color: "#6B7280",
     textAlign: "center",
   },
   clearSearchButton: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "#2196F3",
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#374151",
+    borderRadius: 4,
   },
   clearSearchText: {
-    color: "white",
-    fontSize: 14,
+    color: "#E5E7EB",
+    fontSize: 12,
     fontWeight: "600",
   },
 });

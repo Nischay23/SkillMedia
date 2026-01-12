@@ -49,10 +49,20 @@ export default defineSchema({
   // 3. communityPosts table: For user-generated content linked to career paths
   communityPosts: defineTable({
     userId: v.id("users"),
-    content: v.string(),
+
+    // Content fields
+    title: v.string(), // Post title (required)
+    content: v.string(), // Post body content
     imageUrl: v.optional(v.string()),
     storageId: v.optional(v.id("_storage")),
     linkedFilterOptionIds: v.array(v.id("FilterOption")),
+
+    // Status workflow
+    status: v.union(
+      v.literal("draft"),
+      v.literal("published")
+    ),
+    publishedAt: v.optional(v.number()), // When first published
 
     // Engagement counters
     likes: v.number(),
@@ -63,6 +73,8 @@ export default defineSchema({
   })
     .index("by_created_at", ["createdAt"])
     .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_published_at", ["publishedAt"])
     .index("by_linked_filter_option", [
       "linkedFilterOptionIds",
     ]),

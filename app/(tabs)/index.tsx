@@ -1,65 +1,94 @@
 // app/(tabs)/index.tsx (Main Feed Screen - Themed & Animated)
-import React, { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useState } from "react";
 import {
   FlatList,
   RefreshControl,
-  TouchableOpacity,
-  View,
   SafeAreaView,
   ScrollView,
   StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
-import { Loader } from "@/components/Loader";
 import CareerPathDetails from "@/components/CareerPathDetails";
 import CommunityPost from "@/components/CommunityPost";
 import FilterModal from "@/components/FilterModal";
+import { Loader } from "@/components/Loader";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Typography } from "@/components/ui/Typography";
 
 import { api } from "@/convex/_generated/api";
-import type { FilterOption, CommunityPost as CommunityPostType } from "@/types";
+import { Id } from "@/convex/_generated/dataModel";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
+import type {
+  CommunityPost as CommunityPostType,
+  FilterOption,
+} from "@/types";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
-import { Id } from "@/convex/_generated/dataModel";
-import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 
 export default function FeedScreen() {
   const { signOut } = useAuth();
   const { theme, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState<Id<"FilterOption">[]>([]);
-  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<
+    Id<"FilterOption">[]
+  >([]);
+  const [showFilterModal, setShowFilterModal] =
+    useState(false);
 
   // Animation values
   const headerOpacity = useSharedValue(1);
   const filterScale = useSharedValue(1);
 
   const isViewingSpecificPath = selectedFilters.length > 0;
-  const lastSelectedFilterId = isViewingSpecificPath ? selectedFilters[selectedFilters.length - 1] : null;
+  const lastSelectedFilterId = isViewingSpecificPath
+    ? selectedFilters[selectedFilters.length - 1]
+    : null;
 
   // Queries
   const selectedFilterDetails = useQuery(
     api.filter.getFilterOptionById,
-    lastSelectedFilterId ? { filterOptionId: lastSelectedFilterId } : "skip"
+    lastSelectedFilterId
+      ? { filterOptionId: lastSelectedFilterId }
+      : "skip"
   );
 
+  // Use hierarchical query when filters are selected, otherwise get all published posts
   const communityPostsResult = useQuery(
+    api.communityPosts.getCommunityPostsByFilterHierarchy,
+    lastSelectedFilterId
+      ? {
+          filterOptionId: lastSelectedFilterId,
+          statusFilter: "published",
+        }
+      : "skip"
+  );
+
+  // Get all published posts when no filters are selected
+  const allCommunityPosts = useQuery(
     api.communityPosts.getCommunityPosts,
-    {}
+    !lastSelectedFilterId
+      ? { statusFilter: "published" }
+      : "skip"
   );
 
   const activeFilterNames = useQuery(
     api.filter.getFilterNamesByIds,
-    selectedFilters.length > 0 ? { filterIds: selectedFilters } : "skip"
+    selectedFilters.length > 0
+      ? { filterIds: selectedFilters }
+      : "skip"
   );
 
   const styles = useThemedStyles((theme) => ({
@@ -68,9 +97,9 @@ export default function FeedScreen() {
       backgroundColor: theme.colors.background,
     },
     header: {
-      flexDirection: 'row' as const,
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
+      flexDirection: "row" as const,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
       paddingHorizontal: theme.spacing.xl,
       paddingVertical: theme.spacing.lg,
       backgroundColor: theme.colors.background,
@@ -78,7 +107,7 @@ export default function FeedScreen() {
       borderBottomColor: theme.colors.border,
     },
     logoutButton: {
-      position: 'absolute' as const,
+      position: "absolute" as const,
       right: theme.spacing.xl,
       padding: theme.spacing.sm,
       borderRadius: theme.borderRadius.md,
@@ -87,23 +116,23 @@ export default function FeedScreen() {
     filterSection: {
       paddingHorizontal: theme.spacing.xl,
       paddingVertical: theme.spacing.lg,
-      alignItems: 'center' as const,
+      alignItems: "center" as const,
     },
     filterChipContainer: {
       paddingHorizontal: theme.spacing.xl,
       paddingBottom: theme.spacing.lg,
-      alignItems: 'center' as const,
+      alignItems: "center" as const,
     },
     filterChip: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
       backgroundColor: theme.colors.surface,
       paddingHorizontal: theme.spacing.lg,
       paddingVertical: theme.spacing.sm,
       borderRadius: theme.borderRadius.full,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      maxWidth: '90%' as const,
+      maxWidth: "90%" as const,
     },
     clearFilterButton: {
       backgroundColor: theme.colors.borderLight,
@@ -112,16 +141,16 @@ export default function FeedScreen() {
     },
     contentContainer: {
       paddingHorizontal: theme.spacing.lg,
-      paddingBottom: theme.spacing['6xl'],
+      paddingBottom: theme.spacing["6xl"],
     },
     emptyStateContainer: {
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-      paddingVertical: theme.spacing['6xl'],
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: theme.spacing["6xl"],
       paddingHorizontal: theme.spacing.xl,
     },
     sectionContainer: {
-      marginTop: theme.spacing['4xl'],
+      marginTop: theme.spacing["4xl"],
       paddingVertical: theme.spacing.xl,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
@@ -139,26 +168,43 @@ export default function FeedScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    headerOpacity.value = withTiming(0.8, { duration: 200 });
+    headerOpacity.value = withTiming(0.8, {
+      duration: 200,
+    });
     setTimeout(() => {
       setRefreshing(false);
-      headerOpacity.value = withTiming(1, { duration: 200 });
+      headerOpacity.value = withTiming(1, {
+        duration: 200,
+      });
     }, 1000);
   }, [headerOpacity, setRefreshing]);
 
   // Loading state handling
-  if (communityPostsResult === undefined) {
+  const postsToDisplay = isViewingSpecificPath
+    ? communityPostsResult
+    : allCommunityPosts;
+
+  if (postsToDisplay === undefined) {
     return <Loader />;
   }
 
-  if (isViewingSpecificPath && selectedFilterDetails === undefined) {
+  if (
+    isViewingSpecificPath &&
+    selectedFilterDetails === undefined
+  ) {
     return <Loader />;
   }
 
   const handleFilterPress = () => {
-    filterScale.value = withSpring(0.95, { damping: 10, stiffness: 400 });
+    filterScale.value = withSpring(0.95, {
+      damping: 10,
+      stiffness: 400,
+    });
     setTimeout(() => {
-      filterScale.value = withSpring(1, { damping: 10, stiffness: 400 });
+      filterScale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 400,
+      });
       setShowFilterModal(true);
     }, 100);
   };
@@ -175,12 +221,22 @@ export default function FeedScreen() {
   const displayContent = () => {
     if (!isViewingSpecificPath) {
       // No filters selected - show general community posts
-      if (!communityPostsResult || communityPostsResult.length === 0) {
+      if (!postsToDisplay || postsToDisplay.length === 0) {
         return (
           <View style={styles.emptyStateContainer}>
-            <Ionicons name="information-circle-outline" size={40} color={theme.colors.textMuted} />
-            <Typography variant="body" color="textSecondary" align="center" style={{ marginTop: theme.spacing.lg }}>
-              No community posts yet. Explore career paths or be the first to share!
+            <Ionicons
+              name="information-circle-outline"
+              size={40}
+              color={theme.colors.textMuted}
+            />
+            <Typography
+              variant="body"
+              color="textSecondary"
+              align="center"
+              style={{ marginTop: theme.spacing.lg }}
+            >
+              No community posts yet. Explore career paths
+              or be the first to share!
             </Typography>
             <AnimatedButton
               title="Open Filter"
@@ -191,13 +247,18 @@ export default function FeedScreen() {
           </View>
         );
       }
-      
+
       return (
         <FlatList
-          data={communityPostsResult}
+          data={postsToDisplay}
           renderItem={({ item, index }) => (
-            <AnimatedCard delay={index * 100} style={{ marginBottom: theme.spacing.lg }}>
-              <CommunityPost post={item as CommunityPostType} />
+            <AnimatedCard
+              delay={index * 100}
+              style={{ marginBottom: theme.spacing.lg }}
+            >
+              <CommunityPost
+                post={item as CommunityPostType}
+              />
             </AnimatedCard>
           )}
           keyExtractor={(item) => item._id}
@@ -214,14 +275,25 @@ export default function FeedScreen() {
       );
     } else {
       // Filters selected - display detailed path info
-      const finalFilterOption = selectedFilterDetails as FilterOption | null;
+      const finalFilterOption =
+        selectedFilterDetails as FilterOption | null;
 
       if (!finalFilterOption) {
         return (
           <View style={styles.emptyStateContainer}>
-            <Ionicons name="warning-outline" size={40} color={theme.colors.warning} />
-            <Typography variant="body" color="textSecondary" align="center" style={{ marginTop: theme.spacing.lg }}>
-              Details for this selected path are not available. Try another selection.
+            <Ionicons
+              name="warning-outline"
+              size={40}
+              color={theme.colors.warning}
+            />
+            <Typography
+              variant="body"
+              color="textSecondary"
+              align="center"
+              style={{ marginTop: theme.spacing.lg }}
+            >
+              Details for this selected path are not
+              available. Try another selection.
             </Typography>
             <AnimatedButton
               title="Open Filter"
@@ -234,12 +306,15 @@ export default function FeedScreen() {
       }
 
       // Check if FilterOption has content to display
-      const hasPathContent = finalFilterOption.description || finalFilterOption.requirements || 
-                            finalFilterOption.avgSalary || finalFilterOption.relevantExams || 
-                            finalFilterOption.image;
+      const hasPathContent =
+        finalFilterOption.description ||
+        finalFilterOption.requirements ||
+        finalFilterOption.avgSalary ||
+        finalFilterOption.relevantExams ||
+        finalFilterOption.image;
 
       return (
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.contentContainer}
           refreshControl={
             <RefreshControl
@@ -251,31 +326,66 @@ export default function FeedScreen() {
         >
           {hasPathContent ? (
             <AnimatedCard delay={0}>
-              <CareerPathDetails filterOption={finalFilterOption} />
+              <CareerPathDetails
+                filterOption={finalFilterOption}
+              />
             </AnimatedCard>
           ) : (
             <View style={styles.emptyStateContainer}>
-              <Ionicons name="information-circle-outline" size={40} color={theme.colors.textMuted} />
-              <Typography variant="body" color="textSecondary" align="center" style={{ marginTop: theme.spacing.lg }}>
-                No detailed content available for &ldquo;{finalFilterOption.name}&rdquo;. Explore sub-categories or check community discussions.
+              <Ionicons
+                name="information-circle-outline"
+                size={40}
+                color={theme.colors.textMuted}
+              />
+              <Typography
+                variant="body"
+                color="textSecondary"
+                align="center"
+                style={{ marginTop: theme.spacing.lg }}
+              >
+                No detailed content available for &ldquo;
+                {finalFilterOption.name}&rdquo;. Explore
+                sub-categories or check community
+                discussions.
               </Typography>
-              {(!communityPostsResult || communityPostsResult.length === 0) && (
-                <Typography variant="caption" color="textMuted" align="center" style={{ marginTop: theme.spacing.md }}>
-                  No community discussions found for this path yet.
+              {(!postsToDisplay ||
+                postsToDisplay.length === 0) && (
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                  align="center"
+                  style={{ marginTop: theme.spacing.md }}
+                >
+                  No community discussions found for this
+                  path yet.
                 </Typography>
               )}
             </View>
           )}
 
           {/* Community posts related to this path */}
-          {communityPostsResult && communityPostsResult.length > 0 && (
+          {postsToDisplay && postsToDisplay.length > 0 && (
             <View style={styles.sectionContainer}>
-              <Typography variant="h3" color="text" style={{ marginBottom: theme.spacing.lg, textAlign: 'center' }}>
-                Community Discussions on {finalFilterOption.name}
+              <Typography
+                variant="h3"
+                color="text"
+                style={{
+                  marginBottom: theme.spacing.lg,
+                  textAlign: "center",
+                }}
+              >
+                Community Discussions on{" "}
+                {finalFilterOption.name}
               </Typography>
-              {communityPostsResult.map((item, index) => (
-                <AnimatedCard key={item._id} delay={(index + 1) * 100} style={{ marginBottom: theme.spacing.lg }}>
-                  <CommunityPost post={item as CommunityPostType} />
+              {postsToDisplay.map((item, index) => (
+                <AnimatedCard
+                  key={item._id}
+                  delay={(index + 1) * 100}
+                  style={{ marginBottom: theme.spacing.lg }}
+                >
+                  <CommunityPost
+                    post={item as CommunityPostType}
+                  />
                 </AnimatedCard>
               ))}
             </View>
@@ -287,14 +397,28 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={isDark ? "light-content" : "dark-content"} />
-      
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={isDark ? "light-content" : "dark-content"}
+      />
+
       {/* Modern Dark Header */}
-      <Animated.View style={[styles.header, headerAnimatedStyle]}>
-        <Typography variant="h2" color="text" weight="bold" style={{ flex: 1, textAlign: 'center' }}>
+      <Animated.View
+        style={[styles.header, headerAnimatedStyle]}
+      >
+        <Typography
+          variant="h2"
+          color="text"
+          weight="bold"
+          style={{ flex: 1, textAlign: "center" }}
+        >
           Jobs & Skills
         </Typography>
-        <TouchableOpacity onPress={handleSignOut} style={styles.logoutButton}>
+        <TouchableOpacity
+          onPress={handleSignOut}
+          style={styles.logoutButton}
+        >
           <Ionicons
             name="log-out-outline"
             size={24}
@@ -310,7 +434,13 @@ export default function FeedScreen() {
             title="Filter"
             onPress={handleFilterPress}
             variant="primary"
-            icon={<Ionicons name="options-outline" size={20} color={theme.colors.background} />}
+            icon={
+              <Ionicons
+                name="options-outline"
+                size={20}
+                color={theme.colors.background}
+              />
+            }
           />
         </Animated.View>
       </View>
@@ -319,8 +449,16 @@ export default function FeedScreen() {
       {selectedFilters.length > 0 && (
         <View style={styles.filterChipContainer}>
           <View style={styles.filterChip}>
-            <Typography variant="caption" color="textSecondary" style={{ flex: 1, marginRight: theme.spacing.sm }}>
-              Applied: {activeFilterNames
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              style={{
+                flex: 1,
+                marginRight: theme.spacing.sm,
+              }}
+            >
+              Applied:{" "}
+              {activeFilterNames
                 ? activeFilterNames
                     .filter((opt) => opt)
                     .map((opt) => opt!.name)

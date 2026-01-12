@@ -1,6 +1,6 @@
 // convex/seedData.ts
-import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { mutation } from "./_generated/server";
 
 /**
  * Helper to retrieve a FilterOption ID by its name and parent,
@@ -778,6 +778,7 @@ export const seedCommunityPosts = mutation({
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
+      title: "Just landed my first React dev internship!",
       content:
         "Just landed my first React dev internship! Super excited. Any tips for a beginner on state management in large apps?",
       imageUrl:
@@ -786,6 +787,8 @@ export const seedCommunityPosts = mutation({
         reactDevId,
         frontendDevBranchId,
       ],
+      status: "published" as const,
+      publishedAt: Date.now(),
       likes: 5,
       comments: 2,
       createdAt: Date.now(),
@@ -798,11 +801,14 @@ export const seedCommunityPosts = mutation({
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
+      title: "Best Python frameworks for scalable APIs?",
       content:
         "What are the best frameworks for building scalable APIs with Python, besides Django and Flask?",
       imageUrl:
         "https://via.placeholder.com/400x250/4B0082/FFFFFF?text=Python+API",
       linkedFilterOptionIds: [pythonDevId],
+      status: "published" as const,
+      publishedAt: Date.now() - 3600 * 1000,
       likes: 8,
       comments: 4,
       createdAt: Date.now() - 3600 * 1000,
@@ -813,11 +819,14 @@ export const seedCommunityPosts = mutation({
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
+      title: "Why I chose Defence Services - Indian Navy",
       content:
         "The discipline and leadership skills learned in the armed forces are unparalleled. Highly recommend exploring this path if you seek purpose and growth! #IndianNavy #DefenceServices",
       imageUrl:
         "https://via.placeholder.com/400x250/00008B/FFFFFF?text=Motivation",
       linkedFilterOptionIds: [navyPilotId],
+      status: "published" as const,
+      publishedAt: Date.now() - 2 * 24 * 3600 * 1000,
       likes: 12,
       comments: 3,
       createdAt: Date.now() - 2 * 24 * 3600 * 1000,

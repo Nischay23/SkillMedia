@@ -1,19 +1,19 @@
 // app/components/CommunityPost.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
+  View,
 } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 
 import { COLORS } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-expo";
+import { useMutation, useQuery } from "convex/react";
 
 import { CommunityPost as CommunityPostType } from "@/types";
 
@@ -21,13 +21,16 @@ interface CommunityPostProps {
   post: CommunityPostType;
 }
 
-export default function CommunityPost({ post }: CommunityPostProps) {
+export default function CommunityPost({
+  post,
+}: CommunityPostProps) {
   const { user: clerkUser } = useUser();
-  const [showFullContent, setShowFullContent] = useState(false);
+  const [showFullContent, setShowFullContent] =
+    useState(false);
 
   // Query if the current user has liked this post (temporarily disabled)
   const isLiked = false; // useQuery(api.likes.getIsLiked, clerkUser ? { communityPostId: post._id } : "skip");
-  
+
   // Query if the current user has saved this post
   const isSaved = useQuery(
     api.savedContent.getIsSaved,
@@ -42,8 +45,12 @@ export default function CommunityPost({ post }: CommunityPostProps) {
 
   // Mutations for interaction (likes temporarily disabled)
   // const toggleLikeMutation = useMutation(api.likes.toggleLike);
-  const toggleSaveMutation = useMutation(api.savedContent.toggleSave);
-  const deleteCommunityPostMutation = useMutation(api.communityPosts.deleteCommunityPost);
+  const toggleSaveMutation = useMutation(
+    api.savedContent.toggleSave
+  );
+  const deleteCommunityPostMutation = useMutation(
+    api.communityPosts.deleteCommunityPost
+  );
 
   const handleLike = async () => {
     if (!clerkUser) {
@@ -79,7 +86,9 @@ export default function CommunityPost({ post }: CommunityPostProps) {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteCommunityPostMutation({ postId: post._id });
+              await deleteCommunityPostMutation({
+                postId: post._id,
+              });
             } catch (error) {
               console.error("Error deleting post:", error);
             }
@@ -91,13 +100,17 @@ export default function CommunityPost({ post }: CommunityPostProps) {
 
   const canDeletePost = () => {
     if (!currentUserConvex || !post.user) return false;
-    return currentUserConvex._id === post.userId || currentUserConvex.isAdmin;
+    return (
+      currentUserConvex._id === post.userId ||
+      currentUserConvex.isAdmin
+    );
   };
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    const diffInHours =
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor(diffInHours * 60);
@@ -110,25 +123,37 @@ export default function CommunityPost({ post }: CommunityPostProps) {
     }
   };
 
-  const truncateContent = (content: string, maxLength: number = 200) => {
+  const truncateContent = (
+    content: string,
+    maxLength: number = 200
+  ) => {
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength) + "...";
   };
 
   const renderLinkedPaths = () => {
-    if (!post.linkedFilterOptionNames || post.linkedFilterOptionNames.length === 0) {
+    if (
+      !post.linkedFilterOptionNames ||
+      post.linkedFilterOptionNames.length === 0
+    ) {
       return null;
     }
 
     return (
       <View style={styles.linkedPathsContainer}>
-        <Text style={styles.linkedPathsLabel}>Related to:</Text>
+        <Text style={styles.linkedPathsLabel}>
+          Related to:
+        </Text>
         <View style={styles.pathTagsContainer}>
-          {post.linkedFilterOptionNames.map((pathName, index) => (
-            <View key={index} style={styles.pathTag}>
-              <Text style={styles.pathTagText}>{pathName}</Text>
-            </View>
-          ))}
+          {post.linkedFilterOptionNames.map(
+            (pathName, index) => (
+              <View key={index} style={styles.pathTag}>
+                <Text style={styles.pathTagText}>
+                  {pathName}
+                </Text>
+              </View>
+            )
+          )}
         </View>
       </View>
     );
@@ -148,27 +173,51 @@ export default function CommunityPost({ post }: CommunityPostProps) {
           )}
           <View style={styles.userDetails}>
             <Text style={styles.username}>
-              {post.user?.fullname || post.user?.username || "Anonymous"}
+              {post.user?.fullname ||
+                post.user?.username ||
+                "Anonymous"}
             </Text>
-            <Text style={styles.timestamp}>{formatDate(post.createdAt)}</Text>
+            <Text style={styles.timestamp}>
+              {formatDate(post.createdAt)}
+            </Text>
           </View>
         </View>
-        
+
         {canDeletePost() && (
-          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={styles.deleteButton}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={20}
+              color={COLORS.danger}
+            />
           </TouchableOpacity>
         )}
       </View>
 
+      {/* Post title (if exists) */}
+      {post.title && (
+        <View style={styles.titleContainer}>
+          <Text style={styles.postTitle}>{post.title}</Text>
+        </View>
+      )}
+
       {/* Post content */}
       <View style={styles.content}>
         <Text style={styles.postText}>
-          {showFullContent ? post.content : truncateContent(post.content)}
+          {showFullContent
+            ? post.content
+            : truncateContent(post.content)}
         </Text>
-        
+
         {post.content.length > 200 && (
-          <TouchableOpacity onPress={() => setShowFullContent(!showFullContent)}>
+          <TouchableOpacity
+            onPress={() =>
+              setShowFullContent(!showFullContent)
+            }
+          >
             <Text style={styles.readMoreText}>
               {showFullContent ? "Show less" : "Read more"}
             </Text>
@@ -191,7 +240,10 @@ export default function CommunityPost({ post }: CommunityPostProps) {
       {/* Action buttons */}
       <View style={styles.actionContainer}>
         <TouchableOpacity
-          style={[styles.actionButton, isLiked && styles.likedButton]}
+          style={[
+            styles.actionButton,
+            isLiked && styles.likedButton,
+          ]}
           onPress={handleLike}
         >
           <Ionicons
@@ -199,18 +251,32 @@ export default function CommunityPost({ post }: CommunityPostProps) {
             size={20}
             color={isLiked ? COLORS.white : COLORS.gray}
           />
-          <Text style={[styles.actionText, isLiked && styles.likedText]}>
+          <Text
+            style={[
+              styles.actionText,
+              isLiked && styles.likedText,
+            ]}
+          >
             {post.likes}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={20} color={COLORS.gray} />
-          <Text style={styles.actionText}>{post.comments}</Text>
+          <Ionicons
+            name="chatbubble-outline"
+            size={20}
+            color={COLORS.gray}
+          />
+          <Text style={styles.actionText}>
+            {post.comments}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, isSaved && styles.savedButton]}
+          style={[
+            styles.actionButton,
+            isSaved && styles.savedButton,
+          ]}
           onPress={handleSave}
         >
           <Ionicons
@@ -218,7 +284,12 @@ export default function CommunityPost({ post }: CommunityPostProps) {
             size={20}
             color={isSaved ? COLORS.white : COLORS.gray}
           />
-          <Text style={[styles.actionText, isSaved && styles.savedText]}>
+          <Text
+            style={[
+              styles.actionText,
+              isSaved && styles.savedText,
+            ]}
+          >
             {isSaved ? "Saved" : "Save"}
           </Text>
         </TouchableOpacity>
@@ -241,17 +312,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   avatar: {
@@ -265,7 +336,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.black,
   },
   timestamp: {
@@ -275,6 +346,16 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 8,
+  },
+  titleContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.black,
+    lineHeight: 24,
   },
   content: {
     paddingHorizontal: 16,
@@ -289,10 +370,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     marginTop: 4,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   postImage: {
-    width: '100%',
+    width: "100%",
     height: 250,
     marginBottom: 12,
   },
@@ -306,8 +387,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   pathTagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
   },
   pathTag: {
@@ -319,24 +400,24 @@ const styles = StyleSheet.create({
   pathTagText: {
     fontSize: 11,
     color: COLORS.primary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   actionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   likedButton: {
     backgroundColor: COLORS.primary,
@@ -348,7 +429,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 14,
     color: COLORS.gray,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   likedText: {
     color: COLORS.white,
