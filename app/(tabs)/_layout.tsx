@@ -7,8 +7,8 @@ import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
-  withSpring,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,7 +35,9 @@ const TabIcon = ({
     damping: 15,
     stiffness: 300,
   });
-  dotOpacity.value = withTiming(focused ? 1 : 0, { duration: 200 });
+  dotOpacity.value = withTiming(focused ? 1 : 0, {
+    duration: 200,
+  });
 
   const dotAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: dotScale.value }],
@@ -61,7 +63,11 @@ const TabIcon = ({
 };
 
 // Custom Tab Bar Background with Blur
-const TabBarBackground = ({ isDark }: { isDark: boolean }) => {
+const TabBarBackground = ({
+  isDark,
+}: {
+  isDark: boolean;
+}) => {
   if (Platform.OS === "ios") {
     return (
       <BlurView
@@ -89,16 +95,21 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
-        tabBarBackground: () => <TabBarBackground isDark={isDark} />,
+        tabBarBackground: () => (
+          <TabBarBackground isDark={isDark} />
+        ),
         tabBarStyle: {
-          backgroundColor: Platform.OS === "ios"
-            ? isDark
-              ? "rgba(24, 26, 32, 0.85)"
-              : "rgba(255, 255, 255, 0.85)"
-            : theme.colors.surface,
+          backgroundColor:
+            Platform.OS === "ios"
+              ? isDark
+                ? "rgba(24, 26, 32, 0.85)"
+                : "rgba(255, 255, 255, 0.85)"
+              : theme.colors.surface,
           borderTopWidth: 0,
           borderWidth: isDark ? 1 : 0,
-          borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "transparent",
+          borderColor: isDark
+            ? "rgba(255, 255, 255, 0.1)"
+            : "transparent",
           position: "absolute",
           bottom: Math.max(insets.bottom, 16),
           left: 20,
@@ -109,7 +120,9 @@ export default function TabLayout() {
           paddingTop: 10,
           paddingBottom: 10,
           ...(Platform.OS === "ios" && {
-            shadowColor: isDark ? theme.colors.primary : "#000",
+            shadowColor: isDark
+              ? theme.colors.primary
+              : "#000",
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: isDark ? 0.3 : 0.15,
             shadowRadius: 20,

@@ -6,17 +6,17 @@
  * Dark Mode: Dark gray background with white text and subtle glow on focus
  */
 
-import React, { useRef, useState } from 'react';
+import { useTheme } from "@/providers/ThemeProvider";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import React, { useRef, useState } from "react";
 import {
-  TextInput,
-  StyleSheet,
-  ViewStyle,
   Animated,
   Platform,
   Pressable,
-} from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+  StyleSheet,
+  TextInput,
+  ViewStyle,
+} from "react-native";
 
 interface NeumorphicInputProps {
   /**
@@ -63,13 +63,17 @@ interface NeumorphicInputProps {
    * Keyboard type
    * @default 'default'
    */
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  keyboardType?:
+    | "default"
+    | "email-address"
+    | "numeric"
+    | "phone-pad";
 
   /**
    * Input height
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 
   /**
    * Style overrides
@@ -116,17 +120,19 @@ const sizeConfig = {
   },
 };
 
-export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
-  placeholder = 'Search...',
+export const NeumorphicInput: React.FC<
+  NeumorphicInputProps
+> = ({
+  placeholder = "Search...",
   value,
   onChangeText,
   onFocus,
   onBlur,
-  leftIcon = 'search',
+  leftIcon = "search",
   rightIcon,
   onRightIconPress,
-  keyboardType = 'default',
-  size = 'md',
+  keyboardType = "default",
+  size = "md",
   style,
   editable = true,
   maxLength,
@@ -161,8 +167,14 @@ export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
   const borderColorAnimation = focusAnim.interpolate({
     inputRange: [0, 1],
     outputRange: isDark
-      ? ['rgba(255, 255, 255, 0.1)', 'rgba(160, 166, 255, 0.3)']
-      : ['rgba(108, 93, 211, 0.1)', 'rgba(108, 93, 211, 0.3)'],
+      ? [
+          "rgba(255, 255, 255, 0.1)",
+          "rgba(160, 166, 255, 0.3)",
+        ]
+      : [
+          "rgba(108, 93, 211, 0.1)",
+          "rgba(108, 93, 211, 0.3)",
+        ],
   });
 
   const shadowOpacityAnimation = focusAnim.interpolate({
@@ -176,17 +188,17 @@ export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
         {
           height: config.height,
           borderRadius: config.borderRadius,
-          overflow: 'hidden',
+          overflow: "hidden",
           borderWidth: 1,
           borderColor: borderColorAnimation as any,
           backgroundColor: isDark
             ? theme.colors.surfaceHighlight
             : theme.colors.surfaceLight,
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: config.paddingHorizontal,
           // Neumorphic shadow effect
-          ...(Platform.OS === 'ios' && {
+          ...(Platform.OS === "ios" && {
             shadowColor: isDark
               ? theme.colors.primary
               : theme.colors.primary,
@@ -194,7 +206,7 @@ export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
             shadowOpacity: shadowOpacityAnimation as any,
             shadowRadius: 8,
           }),
-          ...(Platform.OS === 'android' && {
+          ...(Platform.OS === "android" && {
             elevation: isFocused ? 8 : 2,
           }),
         },
@@ -243,7 +255,7 @@ export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
         <Pressable
           onPress={() => {
             if (isSearch && value) {
-              onChangeText?.('');
+              onChangeText?.("");
               inputRef.current?.clear();
             } else {
               onRightIconPress?.();
@@ -260,8 +272,8 @@ export const NeumorphicInput: React.FC<NeumorphicInputProps> = ({
           <MaterialIcons
             name={
               isSearch && value
-                ? 'close'
-                : (rightIcon as any) || 'arrow-forward'
+                ? "close"
+                : (rightIcon as any) || "arrow-forward"
             }
             size={24}
             color={
@@ -280,6 +292,6 @@ const styles = StyleSheet.create({
   input: {
     padding: 0,
     margin: 0,
-    outline: 'none',
+    outline: "none",
   },
 });

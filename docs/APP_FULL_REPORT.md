@@ -15,6 +15,11 @@
 11. [API Reference](#api-reference)
 12. [User Flows](#user-flows)
 13. [Future Enhancements](#future-enhancements)
+14. [Development Workflow](#development-workflow)
+15. [Testing Strategy](#testing-strategy)
+16. [Troubleshooting](#troubleshooting)
+17. [Support & Resources](#support--resources)
+18. [Changelog](#changelog)
 
 ---
 
@@ -253,13 +258,29 @@ To democratize career awareness in India by exposing students to the full spectr
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Tab Navigation
+### Tab Navigation (Floating Design) ⭐
 
 1. **Home (Feed)**: Main feed with filters and posts
 2. **Bookmarks**: Saved career paths and posts
-3. **Create**: Admin-only post creation (disabled for regular users)
+3. **Create**: Admin-only post creation (hidden for regular users)
 4. **Notifications**: Likes, comments on your interactions
 5. **Profile**: User profile, edit bio, view your comments
+
+**Floating Tab Bar Visual:**
+
+```
+┌────────────────────────────────────────────────────┐
+│                                                    │
+│                  App Content Area                  │
+│                                                    │
+│    ┌────────────────────────────────────────┐     │
+│    │  🏠      📑      ➕      ❤️      👤    │     │ ← Floating
+│    │  ●                                     │     │   borderRadius: 30
+│    └────────────────────────────────────────┘     │   margin: 20px
+│                                                    │
+└────────────────────────────────────────────────────┘
+     ↑ Glowing active indicator dot
+```
 
 ---
 
@@ -271,8 +292,12 @@ To democratize career awareness in India by exposing students to the full spectr
 - **Navigation**: Expo Router 5.1 (file-based routing)
 - **Platform**: Expo SDK 53
 - **Language**: TypeScript
-- **Styling**: StyleSheet API + Custom Theme System
-- **Animations**: react-native-reanimated
+- **Styling**: StyleSheet API + Modern Theme System (Dribbble-inspired)
+- **Animations**: react-native-reanimated 3.17 (FadeIn, SlideIn, Springs)
+- **Blur Effects**: expo-blur 14.1 (iOS Glassmorphism)
+- **Gradients**: expo-linear-gradient 14.1
+- **Bottom Sheet**: @gorhom/bottom-sheet
+- **Fonts**: expo-font (Poppins typography)
 - **Icons**: @expo/vector-icons (MaterialIcons, Ionicons, Feather)
 - **Images**: expo-image (optimized image loading)
 
@@ -301,7 +326,11 @@ To democratize career awareness in India by exposing students to the full spectr
   "@clerk/clerk-expo": "^2.7.3",
   "react-native-reanimated": "^3.17.7",
   "expo-router": "^5.1.1",
-  "@react-native-async-storage/async-storage": "^2.1.0"
+  "@react-native-async-storage/async-storage": "^2.1.0",
+  "expo-blur": "~14.1.5",
+  "expo-linear-gradient": "~14.1.5",
+  "expo-font": "~13.3.2",
+  "@gorhom/bottom-sheet": "^5.1.1"
 }
 ```
 
@@ -332,15 +361,21 @@ D:\SKILLMEDIA\SkillsAppNew\
 │   └── +not-found.tsx                     # 404 screen
 │
 ├── components/                             # Reusable UI components
-│   ├── ui/                                # Atomic design components
+│   ├── ui/                                # Modern UI Kit (Theme-Aware)
 │   │   ├── Typography.tsx                 # Text component with variants
 │   │   ├── AnimatedButton.tsx             # Button with spring animations
-│   │   └── AnimatedCard.tsx               # Card with entrance animations
+│   │   ├── AnimatedCard.tsx               # Card with FadeInDown entrance ⭐
+│   │   ├── GlassCard.tsx                  # Glassmorphism card component ⭐ NEW
+│   │   ├── GradientButton.tsx             # Gradient button with press animation ⭐ NEW
+│   │   ├── NeumorphicInput.tsx            # Soft UI input field ⭐ NEW
+│   │   ├── ThemeToggle.tsx                # Theme toggle components ⭐ NEW
+│   │   ├── Toast.tsx                      # Toast notifications
+│   │   └── index.ts                       # Barrel export
 │   │
 │   ├── CommunityPost.tsx                  # Post card component ⭐
 │   ├── Post.tsx                           # Alternative post component
 │   ├── CareerPathDetails.tsx              # Career path info card ⭐
-│   ├── FilterModal.tsx                    # Hierarchical filter UI ⭐
+│   ├── FilterModal.tsx                    # Modern Wizard Filter UI ⭐ REDESIGNED
 │   ├── Comment.tsx                        # Comment component
 │   ├── InitialLayout.tsx                  # Auth wrapper component
 │   └── [other components]
@@ -368,7 +403,8 @@ D:\SKILLMEDIA\SkillsAppNew\
 │   └── ThemeProvider.tsx                  # Dark/Light theme provider
 │
 ├── constants/                              # App constants
-│   └── theme.ts                           # Complete theme system ⭐
+│   ├── Colors.ts                          # Dribbble-inspired color palettes ⭐ NEW
+│   └── theme.ts                           # Complete theme system (typography, spacing) ⭐
 │
 ├── types/                                  # TypeScript type definitions
 │   └── index.ts                           # All app types ⭐
@@ -398,13 +434,17 @@ D:\SKILLMEDIA\SkillsAppNew\
 | Purpose              | File Path                              | Description                                   |
 | -------------------- | -------------------------------------- | --------------------------------------------- |
 | **Main Feed Screen** | `app/(tabs)/index.tsx`                 | Home screen with filters, posts, career paths |
-| **Filter UI**        | `components/FilterModal.tsx`           | Hierarchical filter modal component           |
+| **Tab Navigation**   | `app/(tabs)/_layout.tsx`               | Floating tab bar with blur & glow effects ⭐  |
+| **Filter UI**        | `components/FilterModal.tsx`           | Modern wizard-style filter component ⭐       |
+| **Color Palettes**   | `constants/Colors.ts`                  | Light/Dark Dribbble-inspired colors ⭐ NEW    |
+| **Theme System**     | `constants/theme.ts`                   | Typography, spacing, shadows, borders         |
+| **Theme Provider**   | `providers/ThemeProvider.tsx`          | Theme context with toggleTheme & fonts ⭐     |
+| **UI Kit**           | `components/ui/`                       | GlassCard, GradientButton, ThemeToggle ⭐ NEW |
 | **Database Schema**  | `convex/schema.ts`                     | All table definitions                         |
 | **Data Seeding**     | `convex/seedData.ts`                   | Populate filters and posts                    |
 | **Filter Queries**   | `convex/filter.ts`                     | Backend queries for filter data               |
 | **Post Operations**  | `convex/communityPosts.ts`             | Create, read, update, delete posts            |
 | **Type Definitions** | `types/index.ts`                       | TypeScript interfaces                         |
-| **Theme System**     | `constants/theme.ts`                   | Colors, typography, spacing                   |
 | **Career Path Card** | `components/CareerPathDetails.tsx`     | Display career details                        |
 | **Auth Setup**       | `providers/ClerkAndConvexProvider.tsx` | Authentication wrapper                        |
 
@@ -428,7 +468,7 @@ defineSchema({
       v.literal("sector"), // Level 3
       v.literal("subSector"), // Level 4
       v.literal("branch"), // Level 5
-      v.literal("role") // Level 6
+      v.literal("role"), // Level 6
     ),
     parentId: v.optional(v.id("FilterOption")), // Parent in hierarchy
 
@@ -453,7 +493,7 @@ defineSchema({
     storageId: v.optional(v.id("_storage")),
     linkedFilterOptionIds: v.array(
       // Link to career paths
-      v.id("FilterOption")
+      v.id("FilterOption"),
     ),
 
     // Engagement counters
@@ -541,7 +581,7 @@ defineSchema({
     type: v.union(
       v.literal("like"),
       v.literal("comment"),
-      v.literal("follow")
+      v.literal("follow"),
     ),
     communityPostId: v.optional(v.id("communityPosts")),
     filterOptionId: v.optional(v.id("FilterOption")),
@@ -681,6 +721,41 @@ Level 6: Role (e.g., under Executive)
 - In-memory caching to prevent UI flicker
 - Apply button to activate filters
 
+**Modern Wizard Filter Experience:** ⭐ NEW
+
+The FilterModal has been completely redesigned as a step-by-step wizard:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Step 1 of 6: Select Qualification                 │
+│  ═══════════════════━━━━━━━━━━━━━━━━━━  Progress   │
+│                                                     │
+│  ┌───────────────┐  ┌───────────────┐             │
+│  │      🎓       │  │      📚       │             │
+│  │  10th Std     │  │  12th Std     │  2-column   │
+│  │               │  │    ✓         │  selectable │
+│  └───────────────┘  └───────────────┘  cards      │
+│                                                     │
+│  ┌───────────────┐  ┌───────────────┐             │
+│  │      🎯       │  │      🏆       │             │
+│  │   Diploma     │  │  Graduation   │             │
+│  │               │  │               │             │
+│  └───────────────┘  └───────────────┘             │
+│                                                     │
+│  [← Back]                          [Apply Filters] │
+└─────────────────────────────────────────────────────┘
+```
+
+**Wizard Features:**
+
+- **Progress Bar**: Animated bar showing current level (e.g., "Step 2/6")
+- **Dynamic Titles**: Changes based on current hierarchy level
+- **Selectable Cards**: 2-column grid with tap animations
+- **Selected State**: Primary color fill + checkmark icon
+- **Slide Transitions**: SlideInRight/SlideOutLeft animations
+- **Backdrop Blur**: BlurView on iOS, solid overlay on Android
+- **Bottom Sheet Style**: Rounded corners (28px), max height 80%
+
 ### 2. Dual Content Model
 
 **A. Career Path Cards (Structured Data)**
@@ -734,23 +809,76 @@ Level 6: Role (e.g., under Executive)
 - Mark as read/unread
 - Notification badge counter
 
-### 6. Theme System
+### 6. Modern Theme System ⭐ REDESIGNED
 
-**Dark & Light Modes:**
+**Design Philosophy:**
+
+- **Light Mode**: EdTech-inspired with clean, approachable colors
+- **Dark Mode**: AI/Futuristic-inspired with glowing accents
+
+**Dribbble-Inspired Color Palettes:**
+
+```typescript
+// constants/Colors.ts
+
+// Light Theme
+light: {
+  background: '#F8F9FE',      // Very light purple-white
+  surface: '#FFFFFF',          // Card background
+  primary: '#6C5DD3',          // Soft Purple (main accent)
+  secondary: '#FFCFA2',        // Peach/Orange (highlights)
+  textPrimary: '#1F2937',      // Dark gray-black
+  textSecondary: '#9CA3AF',    // Medium gray
+}
+
+// Dark Theme
+dark: {
+  background: '#0F1115',       // Deep Gunmetal
+  surface: '#181A20',          // Card surfaces
+  primary: '#A0A6FF',          // Glowing Lavender
+  accentGradientStart: '#6C5DD3',
+  accentGradientEnd: '#8676FF', // Gradient for buttons
+  textPrimary: '#FFFFFF',
+  textSecondary: '#9E9E9E',
+}
+```
+
+**Typography (Poppins Font Family):**
+
+```typescript
+fontFamily: {
+  regular: 'Poppins-Regular',
+  semibold: 'Poppins-SemiBold',
+  bold: 'Poppins-Bold',
+}
+
+fontSize: xs(12) → sm(14) → base(16) → lg(18) → xl(20) → 2xl(24) → 3xl(30) → 4xl(36)
+```
+
+**Theme Toggle System:**
+
+```typescript
+// providers/ThemeProvider.tsx
+
+interface ThemeContextType {
+  theme: Theme;
+  themeMode: "light" | "dark" | "system";
+  setThemeMode: (mode) => void;
+  isDark: boolean;
+  toggleTheme: () => void; // Quick toggle between light/dark
+  fontsLoaded: boolean;
+}
+```
+
+**Features:**
 
 - Auto-detection of system preference
-- Manual toggle in profile
+- Manual toggle with three modes: Light, Dark, System
 - Persistent across sessions (AsyncStorage)
-- Complete design token system
-
-**Theme includes:**
-
-- Primary, secondary, accent colors
-- Typography scale (xs to 4xl)
-- Spacing system (xs to 6xl)
-- Border radius presets
-- Shadow definitions
-- Animation durations
+- Custom font loading with expo-font
+- Complete design token system (spacing, shadows, borders)
+- `useTheme()` hook for accessing theme anywhere
+- `useThemedStyles()` utility hook for styled components
 
 ### 7. User Profile
 
@@ -766,6 +894,117 @@ Level 6: Role (e.g., under Executive)
 - Organized in separate tab
 - Quick access to saved content
 - Toggle save/unsave
+
+### 9. Modern UI Component Library ⭐ NEW
+
+A collection of theme-aware, reusable components located in `components/ui/`:
+
+**GlassCard** - Glassmorphism Card Component
+
+```typescript
+// Usage
+<GlassCard padding="lg" bordered>
+  <Text>Your content here</Text>
+</GlassCard>
+
+// Dark Mode: Semi-transparent surface with subtle border
+// Light Mode: Pure white with soft purple shadow (elevation: 10)
+```
+
+**GradientButton** - Animated Gradient Button
+
+```typescript
+// Usage
+<GradientButton title="Get Started" onPress={handlePress} />
+
+// Dark Mode: LinearGradient from #6C5DD3 → #8676FF
+// Light Mode: Solid primary color with shadow
+// Animation: Scale to 0.98 on press with spring physics
+```
+
+**NeumorphicInput** - Soft UI Input Field
+
+```typescript
+// Usage
+<NeumorphicInput
+  placeholder="Search careers..."
+  leftIcon="search"
+  onChangeText={setQuery}
+/>
+
+// Features: Focus glow animation, clear button, icon support
+// Light Mode: Light gray background, soft inset feel
+// Dark Mode: Dark gray with purple glow on focus
+```
+
+**ThemeToggle** - Theme Switching Components
+
+```typescript
+// Quick toggle (light/dark)
+<ThemeToggle mode="quick" size="medium" />
+
+// Full toggle (light/dark/system with cycling)
+<ThemeToggle mode="full" showLabel showModeText />
+
+// Also available: QuickThemeToggle, ThemeModeSelector
+```
+
+**AnimatedCard** - Cards with Entrance Animations
+
+```typescript
+// Usage in lists
+<AnimatedCard index={index} useEnteringAnimation>
+  <PostContent />
+</AnimatedCard>
+
+// Animation: FadeInDown.delay(index * 100).springify()
+// Creates cascading entrance effect for lists
+```
+
+### 10. Floating Tab Bar ⭐ NEW
+
+Modern floating navigation with delight factors:
+
+```
+┌──────────────────────────────────────────────────┐
+│                     App Content                  │
+│                                                  │
+│                                                  │
+│                                                  │
+│    ┌────────────────────────────────────────┐   │
+│    │  🏠   📑   ➕   ❤️   👤               │   │ ← Floating
+│    │  ●                                     │   │   Tab Bar
+│    └────────────────────────────────────────┘   │
+│        ↑ Glowing dot indicator                  │
+└──────────────────────────────────────────────────┘
+```
+
+**Features:**
+
+- **Floating Design**: `margin: 20px`, `borderRadius: 30px`, `height: 70px`
+- **Blur Backdrop**: BlurView intensity 80 on iOS for glassmorphism
+- **Glowing Active Indicator**: Animated dot below active icon
+- **Shadow/Glow**: Purple shadow in dark mode, soft black in light
+- **Safe Area Aware**: Respects device notches and home indicators
+
+**Tab Icon with Glow Dot:**
+
+```typescript
+const TabIcon = ({ name, focused, glowColor }) => {
+  // Animated scale (0 → 1) and opacity for the dot
+  const dotScale = withSpring(focused ? 1 : 0);
+
+  return (
+    <View>
+      <Ionicons name={name} />
+      <Animated.View style={[styles.glowDot, {
+        backgroundColor: glowColor,
+        shadowColor: glowColor  // Creates glow effect
+      }]} />
+    </View>
+  );
+};
+```
 
 ---
 
@@ -797,7 +1036,7 @@ export const seedCommunityPosts = mutation({
 
     if (!adminUser) {
       throw new Error(
-        "Admin user not found. Create admin user first."
+        "Admin user not found. Create admin user first.",
       );
     }
 
@@ -814,7 +1053,7 @@ export const seedCommunityPosts = mutation({
     const reactDeveloperFilter = await ctx.db
       .query("FilterOption")
       .filter((q) =>
-        q.eq(q.field("name"), "React Developer")
+        q.eq(q.field("name"), "React Developer"),
       )
       .first();
 
@@ -952,7 +1191,7 @@ export const createCommunityPost = mutation({
     const user = await ctx.db
       .query("users")
       .filter((q) =>
-        q.eq(q.field("clerkId"), identity.subject)
+        q.eq(q.field("clerkId"), identity.subject),
       )
       .first();
 
@@ -989,7 +1228,7 @@ export const createCommunityPost = mutation({
 // app/(tabs)/create.tsx
 
 const createPost = useMutation(
-  api.communityPosts.createCommunityPost
+  api.communityPosts.createCommunityPost,
 );
 
 const handleShare = async () => {
@@ -1179,7 +1418,7 @@ export const seedFilterOptions = mutation({
         description:
           "Corporate sector opportunities in various industries",
         isActive: true,
-      }
+      },
     );
 
     // ==========================================
@@ -1248,7 +1487,7 @@ export const seedFilterOptions = mutation({
           "Physics & Math at 10+2 for Flying, B.E./B.Tech for Technical",
         relevantExams: "AFCAT, CDS, NDA",
         isActive: true,
-      }
+      },
     );
 
     const capf = await ctx.db.insert("FilterOption", {
@@ -1278,7 +1517,7 @@ export const seedFilterOptions = mutation({
         requirements:
           "Graduation in any stream, Age 19-25 years",
         isActive: true,
-      }
+      },
     );
 
     const technicalBranch = await ctx.db.insert(
@@ -1292,7 +1531,7 @@ export const seedFilterOptions = mutation({
         requirements:
           "B.E./B.Tech in Mechanical/Electrical/Electronics",
         isActive: true,
-      }
+      },
     );
 
     const logisticsBranch = await ctx.db.insert(
@@ -1305,7 +1544,7 @@ export const seedFilterOptions = mutation({
           "Supply chain, inventory, provisioning for naval operations",
         requirements: "Graduation in any stream",
         isActive: true,
-      }
+      },
     );
 
     // ==========================================
@@ -1387,13 +1626,13 @@ export const addReactDeveloperRole = mutation({
     const frontendBranch = await ctx.db
       .query("FilterOption")
       .filter((q) =>
-        q.eq(q.field("name"), "Frontend Development")
+        q.eq(q.field("name"), "Frontend Development"),
       )
       .first();
 
     if (!frontendBranch) {
       throw new Error(
-        "Frontend Development branch not found"
+        "Frontend Development branch not found",
       );
     }
 
@@ -1434,7 +1673,6 @@ npx convex run seedData:addReactDeveloperRole
 2. **Go to Data → FilterOption table**
 3. **Click "Add Document"**
 4. **IMPORTANT: Get Parent ID first**
-
    - Query the parent filter option
    - Copy its `_id` value
 
@@ -1473,14 +1711,14 @@ export const seedDefenceHierarchy = mutation({
       .filter((q) =>
         q.and(
           q.eq(q.field("name"), "Graduation"),
-          q.eq(q.field("type"), "qualification")
-        )
+          q.eq(q.field("type"), "qualification"),
+        ),
       )
       .first();
 
     if (!graduation) {
       throw new Error(
-        "Graduation qualification not found. Seed qualifications first."
+        "Graduation qualification not found. Seed qualifications first.",
       );
     }
 
@@ -1490,8 +1728,8 @@ export const seedDefenceHierarchy = mutation({
       .filter((q) =>
         q.and(
           q.eq(q.field("name"), "Government Jobs"),
-          q.eq(q.field("parentId"), graduation._id)
-        )
+          q.eq(q.field("parentId"), graduation._id),
+        ),
       )
       .first();
 
@@ -1591,7 +1829,7 @@ export const seedDefenceHierarchy = mutation({
         parentId: navy._id,
         description: "Command and operational roles",
         isActive: true,
-      }
+      },
     );
 
     const navyTechnical = await ctx.db.insert(
@@ -1603,7 +1841,7 @@ export const seedDefenceHierarchy = mutation({
         description: "Engineering maintenance",
         requirements: "B.E./B.Tech",
         isActive: true,
-      }
+      },
     );
 
     const navyLogistics = await ctx.db.insert(
@@ -1614,7 +1852,7 @@ export const seedDefenceHierarchy = mutation({
         parentId: navy._id,
         description: "Supply chain and inventory",
         isActive: true,
-      }
+      },
     );
 
     // AIR FORCE BRANCHES
@@ -1637,7 +1875,7 @@ export const seedDefenceHierarchy = mutation({
         description: "Engineering roles",
         requirements: "B.E./B.Tech, Age 20-26",
         isActive: true,
-      }
+      },
     );
 
     const afGroundNonTech = await ctx.db.insert(
@@ -1649,7 +1887,7 @@ export const seedDefenceHierarchy = mutation({
         description: "Administration, logistics, accounts",
         requirements: "Any graduation, Age 20-26",
         isActive: true,
-      }
+      },
     );
 
     // CAPF BRANCHES
@@ -1803,7 +2041,7 @@ const filterOptions = useQuery(
   api.filter.getFilterChildren,
   currentParentId
     ? { parentId: currentParentId }
-    : { parentId: null }
+    : { parentId: null },
 );
 ```
 
@@ -1812,7 +2050,7 @@ const filterOptions = useQuery(
 ```typescript
 const filterNames = useQuery(
   api.filter.getFilterNamesByIds,
-  selectedPath.length > 0 ? { ids: selectedPath } : "skip"
+  selectedPath.length > 0 ? { ids: selectedPath } : "skip",
 );
 
 // Returns: ["Graduation", "Government Jobs", "Defence Services"]
@@ -1843,7 +2081,7 @@ export const getFilterChildren = query({
       return await ctx.db
         .query("FilterOption")
         .withIndex("by_parentId", (q) =>
-          q.eq("parentId", args.parentId)
+          q.eq("parentId", args.parentId),
         )
         .filter((q) => q.eq(q.field("isActive"), true))
         .collect();
@@ -1864,7 +2102,7 @@ export const getFilterNamesByIds = query({
   args: { ids: v.array(v.id("FilterOption")) },
   handler: async (ctx, args) => {
     const filters = await Promise.all(
-      args.ids.map((id) => ctx.db.get(id))
+      args.ids.map((id) => ctx.db.get(id)),
     );
     return filters
       .filter((f) => f !== null)
@@ -2090,25 +2328,21 @@ return (
 ### Phase 1: Core Improvements
 
 1. **Implement Likes Functionality**
-
    - Complete backend in `convex/likes.ts`
    - Enable like/unlike on posts and career paths
    - Show like count in real-time
 
 2. **Search Feature**
-
    - Search posts by keywords
    - Search career paths by name
    - Search by exam name (e.g., "UPSC", "AFCAT")
 
 3. **Post Creation with Filter Linking**
-
    - Allow admins to select filters while creating posts in the app
    - Multi-select filter options
    - Preview linked career paths before posting
 
 4. **Comment Reply UI**
-
    - Nested comment threads
    - Reply button on each comment
    - Indent nested replies
@@ -2121,25 +2355,21 @@ return (
 ### Phase 2: Advanced Features
 
 6. **User Career Journey Tracking**
-
    - User selects their current qualification
    - App suggests relevant career paths
    - Track progress: "Preparing for UPSC", "Appeared for AFCAT"
 
 7. **Exam Calendar**
-
    - Show upcoming exam dates
    - Reminders for application deadlines
    - Link to official exam websites
 
 8. **Success Stories**
-
    - Dedicated section for user success stories
    - "I cleared UPSC" posts
    - Filter by career path
 
 9. **Career Path Comparison**
-
    - Compare 2-3 career options side by side
    - Salary, requirements, difficulty, job availability
 
@@ -2151,26 +2381,22 @@ return (
 ### Phase 3: Community Features
 
 11. **Q&A Section**
-
     - Dedicated questions tab
     - Users ask career-related doubts
     - Community answers (upvote/downvote)
     - Mark accepted answer
 
 12. **Mentorship Matching**
-
     - Connect users with mentors in their desired field
     - Chat functionality
     - Video call integration
 
 13. **Study Groups**
-
     - Create groups for specific exams (UPSC, AFCAT, GATE)
     - Share resources, notes
     - Group challenges and leaderboards
 
 14. **Career Assessment Quiz**
-
     - Personality-based career suggestions
     - Interest inventory
     - Skill assessment tests
@@ -2183,24 +2409,20 @@ return (
 ### Phase 4: Monetization & Scale
 
 16. **Premium Courses**
-
     - Partner with coaching institutes
     - Sell exam prep courses within app
     - Revenue sharing model
 
 17. **Sponsored Career Paths**
-
     - Companies sponsor specific career paths
     - Featured placements for private jobs
 
 18. **Analytics Dashboard for Admins**
-
     - Most viewed career paths
     - Engagement metrics per post
     - User demographics (age, location, qualification)
 
 19. **AI-Powered Recommendations**
-
     - ML model to suggest career paths based on user behavior
     - "Users similar to you also viewed..."
 
@@ -2285,18 +2507,52 @@ eas submit --platform ios
 - [ ] Logout clears session
 - [ ] Profile image synced from Google
 
-**Filter System:**
+**Theme System:** ⭐ NEW
 
+- [ ] Light mode colors display correctly
+- [ ] Dark mode colors display correctly
+- [ ] System mode follows device preference
+- [ ] Theme toggle switches modes
+- [ ] Theme persists after app restart
+- [ ] Poppins fonts load correctly
+- [ ] ThemeToggle component cycles through modes
+
+**UI Components:** ⭐ NEW
+
+- [ ] GlassCard shows blur effect on iOS
+- [ ] GlassCard shows solid surface on Android
+- [ ] GradientButton gradient visible in dark mode
+- [ ] GradientButton scales on press (0.98)
+- [ ] NeumorphicInput focus glow animation works
+- [ ] AnimatedCard FadeInDown animation plays
+
+**Filter System (Wizard Experience):** ⭐ UPDATED
+
+- [ ] Progress bar updates with each level
+- [ ] 2-column card grid displays correctly
+- [ ] Card selection shows primary color + checkmark
+- [ ] SlideInRight animation on forward navigation
+- [ ] SlideOutLeft animation on back navigation
+- [ ] Backdrop blur visible on iOS
 - [ ] Root qualifications load
 - [ ] Drilling down shows correct children
-- [ ] Breadcrumb displays full path
 - [ ] Back button works correctly
-- [ ] Clear All resets to root
 - [ ] Apply Filters closes modal and updates feed
+
+**Floating Tab Bar:** ⭐ NEW
+
+- [ ] Tab bar floats with margin on all sides
+- [ ] BorderRadius 30 visible
+- [ ] Blur backdrop visible on iOS
+- [ ] Glowing dot appears under active tab
+- [ ] Dot scales in/out on tab change
+- [ ] Shadow/glow effect visible
+- [ ] Safe area insets respected
 
 **Feed Display:**
 
 - [ ] Posts load on home screen
+- [ ] List items animate in with cascade effect
 - [ ] Pull-to-refresh updates posts
 - [ ] Filtered mode shows career path card
 - [ ] Related posts display correctly
@@ -2313,6 +2569,7 @@ eas submit --platform ios
 **Admin Features:**
 
 - [ ] Only admins can create posts
+- [ ] Create tab hidden for non-admins
 - [ ] Post creation links to filters
 - [ ] Image upload works
 - [ ] Post appears in feed immediately
@@ -2372,6 +2629,7 @@ npx convex dev
 - **Convex**: https://docs.convex.dev
 - **Clerk**: https://clerk.com/docs
 - **React Native**: https://reactnative.dev
+- **React Native Reanimated**: https://docs.swmansion.com/react-native-reanimated/
 
 ### Community
 
@@ -2381,6 +2639,73 @@ npx convex dev
 
 ---
 
-**Last Updated:** 2026-01-11
-**Version:** 1.0.0
+## Changelog
+
+### Version 1.1.0 - UI/UX Overhaul (2026-02-01)
+
+**New Features:**
+
+- ✨ **Dribbble-Inspired Theme System**: Completely redesigned color palettes
+  - Light Theme: EdTech-inspired with soft purple (#6C5DD3) primary
+  - Dark Theme: AI/Futuristic with glowing lavender (#A0A6FF) accents
+- ✨ **Poppins Typography**: Professional font family with Regular, SemiBold, Bold variants
+- ✨ **Theme Toggle**: Quick toggle (light/dark) and full toggle (light/dark/system)
+- ✨ **Modern UI Component Library**:
+  - `GlassCard`: Glassmorphism cards with theme-aware styling
+  - `GradientButton`: Animated gradient buttons with press feedback
+  - `NeumorphicInput`: Soft UI input fields with glow effects
+  - `ThemeToggle`: Multiple theme switching components
+- ✨ **Wizard-Style Filter Modal**: Complete redesign with:
+  - Progress bar showing current level
+  - 2-column selectable card grid
+  - Slide transitions (SlideInRight/SlideOutLeft)
+  - Backdrop blur on iOS
+- ✨ **Floating Tab Bar**: Modern navigation with:
+  - Floating design with rounded corners (30px)
+  - BlurView backdrop on iOS
+  - Glowing dot active indicator
+  - Animated scale/opacity transitions
+- ✨ **List Animations**: FadeInDown entering animations with cascade delay
+
+**Technical Improvements:**
+
+- 📦 Added expo-blur for glassmorphism effects
+- 📦 Added expo-linear-gradient for gradient buttons
+- 📦 Added @gorhom/bottom-sheet
+- 📦 Added expo-font for custom typography
+- 🔧 Font loading with useFonts hook and SplashScreen management
+- 🔧 `toggleTheme()` function in ThemeContext
+- 🔧 `useThemedStyles()` utility hook
+
+**Files Modified:**
+
+- `constants/Colors.ts` - NEW: Dribbble color palettes
+- `constants/theme.ts` - UPDATED: Poppins typography, integrated Colors
+- `providers/ThemeProvider.tsx` - UPDATED: Font loading, toggleTheme
+- `components/ui/GlassCard.tsx` - NEW
+- `components/ui/GradientButton.tsx` - NEW
+- `components/ui/NeumorphicInput.tsx` - NEW
+- `components/ui/ThemeToggle.tsx` - NEW
+- `components/ui/index.ts` - NEW: Barrel export
+- `components/FilterModal.tsx` - REDESIGNED: Wizard experience
+- `app/(tabs)/_layout.tsx` - UPDATED: Floating tab bar with blur
+- `components/ui/AnimatedCard.tsx` - UPDATED: FadeInDown animations
+
+---
+
+### Version 1.0.0 - Initial Release (2026-01-11)
+
+- 🚀 Career discovery platform launch
+- 📱 6-level hierarchical filter system
+- 👥 Admin-only posting model
+- 💬 Comments and likes on posts/career paths
+- 🔖 Bookmarks functionality
+- 🔔 Real-time notifications
+- 🔐 Google OAuth authentication via Clerk
+- 📊 Convex real-time database
+
+---
+
+**Last Updated:** 2026-02-01
+**Version:** 1.1.0
 **Author:** SkillsApp Team

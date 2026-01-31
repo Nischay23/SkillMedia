@@ -3,18 +3,18 @@
  * Shows how to use the three new theme-aware components
  */
 
-import React, { useState } from 'react';
+import { GlassCard } from "@/components/ui/GlassCard";
+import { GradientButton } from "@/components/ui/GradientButton";
+import { NeumorphicInput } from "@/components/ui/NeumorphicInput";
+import { useTheme } from "@/providers/ThemeProvider";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
-} from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { GradientButton } from '@/components/ui/GradientButton';
-import { NeumorphicInput } from '@/components/ui/NeumorphicInput';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 /**
  * Example usage of all three components
@@ -22,8 +22,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
  */
 export function UIComponentsDemo() {
   const { theme, isDark, toggleTheme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [email, setEmail] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [email, setEmail] = useState("");
 
   return (
     <ScrollView
@@ -40,7 +40,7 @@ export function UIComponentsDemo() {
             {
               color: theme.colors.textPrimary,
               fontFamily: theme.typography.fontFamily.bold,
-              fontSize: theme.typography.size['2xl'],
+              fontSize: theme.typography.size["2xl"],
             },
           ]}
         >
@@ -51,17 +51,23 @@ export function UIComponentsDemo() {
             styles.subtitle,
             {
               color: theme.colors.textSecondary,
-              fontFamily: theme.typography.fontFamily.regular,
+              fontFamily:
+                theme.typography.fontFamily.regular,
               fontSize: theme.typography.size.sm,
             },
           ]}
         >
-          {isDark ? '🌙 Dark Mode' : '☀️ Light Mode'}
+          {isDark ? "🌙 Dark Mode" : "☀️ Light Mode"}
         </Text>
       </View>
 
       {/* Component Showcase */}
-      <View style={{ padding: theme.spacing.lg, gap: theme.spacing.lg }}>
+      <View
+        style={{
+          padding: theme.spacing.lg,
+          gap: theme.spacing.lg,
+        }}
+      >
         {/* ============ 1. GlassCard Examples ============ */}
         <View>
           <Text
@@ -69,7 +75,8 @@ export function UIComponentsDemo() {
               styles.sectionTitle,
               {
                 color: theme.colors.primary,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               },
             ]}
           >
@@ -77,12 +84,15 @@ export function UIComponentsDemo() {
           </Text>
 
           {/* Glass Card - Default */}
-          <GlassCard style={{ marginBottom: theme.spacing.md }}>
+          <GlassCard
+            style={{ marginBottom: theme.spacing.md }}
+          >
             <Text
               style={{
                 color: theme.colors.textPrimary,
                 fontSize: theme.typography.size.base,
-                fontFamily: theme.typography.fontFamily.regular,
+                fontFamily:
+                  theme.typography.fontFamily.regular,
                 marginBottom: theme.spacing.sm,
               }}
             >
@@ -92,12 +102,13 @@ export function UIComponentsDemo() {
               style={{
                 color: theme.colors.textSecondary,
                 fontSize: theme.typography.size.sm,
-                fontFamily: theme.typography.fontFamily.regular,
+                fontFamily:
+                  theme.typography.fontFamily.regular,
               }}
             >
               {isDark
-                ? '✨ Dark: Subtle glass border with smooth shadow'
-                : '✨ Light: Pure white with soft purple shadow'}
+                ? "✨ Dark: Subtle glass border with smooth shadow"
+                : "✨ Light: Pure white with soft purple shadow"}
             </Text>
           </GlassCard>
 
@@ -107,7 +118,8 @@ export function UIComponentsDemo() {
               style={{
                 color: theme.colors.primary,
                 fontSize: theme.typography.size.base,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               }}
             >
               Glass Card (Bordered)
@@ -122,7 +134,8 @@ export function UIComponentsDemo() {
               styles.sectionTitle,
               {
                 color: theme.colors.primary,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               },
             ]}
           >
@@ -154,11 +167,13 @@ export function UIComponentsDemo() {
             style={{
               color: theme.colors.textSecondary,
               fontSize: theme.typography.size.xs,
-              fontFamily: theme.typography.fontFamily.regular,
+              fontFamily:
+                theme.typography.fontFamily.regular,
               marginTop: theme.spacing.sm,
             }}
           >
-            ✨ Focus to see the glow effect and icon color change
+            ✨ Focus to see the glow effect and icon color
+            change
           </Text>
         </View>
 
@@ -169,7 +184,8 @@ export function UIComponentsDemo() {
               styles.sectionTitle,
               {
                 color: theme.colors.primary,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               },
             ]}
           >
@@ -179,7 +195,7 @@ export function UIComponentsDemo() {
           {/* Primary Button - Large */}
           <GradientButton
             label="Get Started"
-            onPress={() => alert('Button Pressed!')}
+            onPress={() => alert("Button Pressed!")}
             size="lg"
             style={{ marginBottom: theme.spacing.md }}
           />
@@ -187,19 +203,29 @@ export function UIComponentsDemo() {
           {/* Primary Button - Medium */}
           <GradientButton
             label="Explore Courses"
-            onPress={() => alert('Button Pressed!')}
+            onPress={() => alert("Button Pressed!")}
             size="md"
-            leftIcon={<MaterialIcons name="school" size={20} color="#FFF" />}
+            leftIcon={
+              <MaterialIcons
+                name="school"
+                size={20}
+                color="#FFF"
+              />
+            }
             style={{ marginBottom: theme.spacing.md }}
           />
 
           {/* Primary Button - Small */}
           <GradientButton
             label="Learn More"
-            onPress={() => alert('Button Pressed!')}
+            onPress={() => alert("Button Pressed!")}
             size="sm"
             rightIcon={
-              <MaterialIcons name="arrow-forward" size={18} color="#FFF" />
+              <MaterialIcons
+                name="arrow-forward"
+                size={18}
+                color="#FFF"
+              />
             }
           />
         </View>
@@ -211,7 +237,8 @@ export function UIComponentsDemo() {
               styles.sectionTitle,
               {
                 color: theme.colors.primary,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               },
             ]}
           >
@@ -223,7 +250,8 @@ export function UIComponentsDemo() {
               style={{
                 color: theme.colors.textPrimary,
                 fontSize: theme.typography.size.lg,
-                fontFamily: theme.typography.fontFamily.bold,
+                fontFamily:
+                  theme.typography.fontFamily.bold,
                 marginBottom: theme.spacing.md,
               }}
             >
@@ -238,7 +266,7 @@ export function UIComponentsDemo() {
 
             <GradientButton
               label="Explore Now"
-              onPress={() => alert('Navigating...')}
+              onPress={() => alert("Navigating...")}
               size="md"
             />
           </GlassCard>
@@ -250,7 +278,8 @@ export function UIComponentsDemo() {
             style={{
               color: theme.colors.textPrimary,
               fontSize: theme.typography.size.sm,
-              fontFamily: theme.typography.fontFamily.semibold,
+              fontFamily:
+                theme.typography.fontFamily.semibold,
               marginBottom: theme.spacing.sm,
             }}
           >
@@ -276,7 +305,7 @@ export function UIComponentsDemo() {
           </View>
 
           <GradientButton
-            label={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+            label={`Switch to ${isDark ? "Light" : "Dark"} Mode`}
             onPress={toggleTheme}
             size="sm"
             style={{ marginTop: theme.spacing.lg }}
@@ -307,8 +336,8 @@ function ColorBox({
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: "row",
+        alignItems: "center",
         gap: theme.spacing.md,
       }}
     >
@@ -326,7 +355,8 @@ function ColorBox({
         <Text
           style={{
             color: textColor,
-            fontFamily: theme.typography.fontFamily.semibold,
+            fontFamily:
+              theme.typography.fontFamily.semibold,
             fontSize: theme.typography.size.sm,
           }}
         >

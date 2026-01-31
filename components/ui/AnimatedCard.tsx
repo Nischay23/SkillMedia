@@ -1,21 +1,21 @@
 // components/ui/AnimatedCard.tsx
-import React, { useEffect } from 'react';
-import { ViewStyle } from 'react-native';
+import { useThemedStyles } from "@/providers/ThemeProvider";
+import React, { useEffect } from "react";
+import { ViewStyle } from "react-native";
 import Animated, {
+  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withSpring,
   withTiming,
-  FadeInDown,
-} from 'react-native-reanimated';
-import { useThemedStyles } from '@/providers/ThemeProvider';
+} from "react-native-reanimated";
 
 interface AnimatedCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   delay?: number;
-  variant?: 'default' | 'elevated' | 'outlined';
+  variant?: "default" | "elevated" | "outlined";
   pressable?: boolean;
   onPress?: () => void;
   /**
@@ -30,13 +30,17 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   children,
   style,
   delay = 0,
-  variant = 'default',
+  variant = "default",
   pressable = false,
   onPress,
   useEnteringAnimation = true,
 }) => {
-  const opacity = useSharedValue(useEnteringAnimation ? 1 : 0);
-  const translateY = useSharedValue(useEnteringAnimation ? 0 : 30);
+  const opacity = useSharedValue(
+    useEnteringAnimation ? 1 : 0,
+  );
+  const translateY = useSharedValue(
+    useEnteringAnimation ? 0 : 30,
+  );
   const scale = useSharedValue(1);
 
   const styles = useThemedStyles((theme) => ({
@@ -44,7 +48,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
       backgroundColor: theme.colors.card,
       borderRadius: theme.borderRadius.xl,
       padding: theme.spacing.lg,
-      overflow: 'hidden' as const,
+      overflow: "hidden" as const,
     },
     default: {
       ...theme.shadows.md,
@@ -73,9 +77,9 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   const getVariantStyle = () => {
     switch (variant) {
-      case 'elevated':
+      case "elevated":
         return styles.elevated;
-      case 'outlined':
+      case "outlined":
         return styles.outlined;
       default:
         return styles.default;
@@ -87,33 +91,42 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     if (!useEnteringAnimation) {
       opacity.value = withDelay(
         delay,
-        withTiming(1, { duration: 600 })
+        withTiming(1, { duration: 600 }),
       );
       translateY.value = withDelay(
         delay,
         withSpring(0, {
           damping: 20,
           stiffness: 90,
-        })
+        }),
       );
     }
   }, [delay, opacity, translateY, useEnteringAnimation]);
 
   const handlePressIn = () => {
     if (pressable) {
-      scale.value = withSpring(0.98, { damping: 10, stiffness: 400 });
+      scale.value = withSpring(0.98, {
+        damping: 10,
+        stiffness: 400,
+      });
     }
   };
 
   const handlePressOut = () => {
     if (pressable) {
-      scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+      scale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 400,
+      });
     }
   };
 
   // Calculate entering animation with staggered delay
   const enteringAnimation = useEnteringAnimation
-    ? FadeInDown.delay(delay).duration(400).springify().damping(15)
+    ? FadeInDown.delay(delay)
+        .duration(400)
+        .springify()
+        .damping(15)
     : undefined;
 
   if (pressable && onPress) {

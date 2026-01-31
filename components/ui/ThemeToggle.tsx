@@ -1,7 +1,13 @@
-import React from 'react';
-import { View, Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useTheme } from "@/providers/ThemeProvider";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import React from "react";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 
 interface ThemeToggleProps {
   /**
@@ -25,13 +31,13 @@ interface ThemeToggleProps {
    * Toggle mode: 'quick' (light/dark) or 'full' (light/dark/system)
    * @default 'quick'
    */
-  mode?: 'quick' | 'full';
+  mode?: "quick" | "full";
 
   /**
    * Size of the toggle: 'small' | 'medium' | 'large'
    * @default 'medium'
    */
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
 const sizeConfig = {
@@ -56,30 +62,36 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   showLabel = true,
   showModeText = true,
   style,
-  mode = 'quick',
-  size = 'medium',
+  mode = "quick",
+  size = "medium",
 }) => {
-  const { theme, isDark, toggleTheme, setThemeMode, themeMode } = useTheme();
+  const {
+    theme,
+    isDark,
+    toggleTheme,
+    setThemeMode,
+    themeMode,
+  } = useTheme();
   const config = sizeConfig[size];
 
   const handleToggle = async () => {
-    if (mode === 'quick') {
+    if (mode === "quick") {
       await toggleTheme();
     } else {
       // Cycle through: light -> dark -> system -> light
-      if (themeMode === 'light') {
-        await setThemeMode('dark');
-      } else if (themeMode === 'dark') {
-        await setThemeMode('system');
+      if (themeMode === "light") {
+        await setThemeMode("dark");
+      } else if (themeMode === "dark") {
+        await setThemeMode("system");
       } else {
-        await setThemeMode('light');
+        await setThemeMode("light");
       }
     }
   };
 
   const getThemeLabel = () => {
-    if (themeMode === 'system') return 'System';
-    return isDark ? 'Dark' : 'Light';
+    if (themeMode === "system") return "System";
+    return isDark ? "Dark" : "Light";
   };
 
   return (
@@ -135,7 +147,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
               {
                 color: theme.colors.textPrimary,
                 fontSize: config.fontSize,
-                fontFamily: theme.typography.fontFamily.semibold,
+                fontFamily:
+                  theme.typography.fontFamily.semibold,
               },
             ]}
           >
@@ -158,7 +171,9 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
  * Quick Theme Toggle Button
  * Minimal toggle for headers or quick access
  */
-export const QuickThemeToggle: React.FC<{ style?: ViewStyle }> = ({ style }) => {
+export const QuickThemeToggle: React.FC<{
+  style?: ViewStyle;
+}> = ({ style }) => {
   const { theme, isDark, toggleTheme } = useTheme();
 
   return (
@@ -170,14 +185,14 @@ export const QuickThemeToggle: React.FC<{ style?: ViewStyle }> = ({ style }) => 
           height: 44,
           borderRadius: theme.borderRadius.full,
           backgroundColor: theme.colors.surfaceHighlight,
-          justifyContent: 'center',
-          alignItems: 'center',
+          justifyContent: "center",
+          alignItems: "center",
         },
         style,
       ]}
     >
       <MaterialIcons
-        name={isDark ? 'light-mode' : 'dark-mode'}
+        name={isDark ? "light-mode" : "dark-mode"}
         size={24}
         color={theme.colors.primary}
       />
@@ -189,25 +204,31 @@ export const QuickThemeToggle: React.FC<{ style?: ViewStyle }> = ({ style }) => 
  * Theme Mode Selector
  * Shows all three theme modes: Light, Dark, System
  */
-export const ThemeModeSelector: React.FC<{ style?: ViewStyle }> = ({ style }) => {
+export const ThemeModeSelector: React.FC<{
+  style?: ViewStyle;
+}> = ({ style }) => {
   const { theme, setThemeMode, themeMode } = useTheme();
 
-  const modes: ('light' | 'dark' | 'system')[] = ['light', 'dark', 'system'];
+  const modes: ("light" | "dark" | "system")[] = [
+    "light",
+    "dark",
+    "system",
+  ];
 
-  const getModeLabel = (m: typeof modes[0]) => {
+  const getModeLabel = (m: (typeof modes)[0]) => {
     return m.charAt(0).toUpperCase() + m.slice(1);
   };
 
-  const getModeIcon = (m: typeof modes[0]) => {
+  const getModeIcon = (m: (typeof modes)[0]) => {
     switch (m) {
-      case 'light':
-        return 'light-mode';
-      case 'dark':
-        return 'dark-mode';
-      case 'system':
-        return 'brightness-auto';
+      case "light":
+        return "light-mode";
+      case "dark":
+        return "dark-mode";
+      case "system":
+        return "brightness-auto";
       default:
-        return 'palette';
+        return "palette";
     }
   };
 
@@ -215,7 +236,7 @@ export const ThemeModeSelector: React.FC<{ style?: ViewStyle }> = ({ style }) =>
     <View
       style={[
         {
-          flexDirection: 'row',
+          flexDirection: "row",
           gap: theme.spacing.md,
           backgroundColor: theme.colors.surface,
           padding: theme.spacing.md,
@@ -240,7 +261,7 @@ export const ThemeModeSelector: React.FC<{ style?: ViewStyle }> = ({ style }) =>
                 themeMode === m
                   ? theme.colors.primary
                   : theme.colors.surfaceLight,
-              alignItems: 'center',
+              alignItems: "center",
               gap: theme.spacing.xs,
             },
           ]}
@@ -248,13 +269,21 @@ export const ThemeModeSelector: React.FC<{ style?: ViewStyle }> = ({ style }) =>
           <MaterialIcons
             name={getModeIcon(m)}
             size={20}
-            color={themeMode === m ? '#FFF' : theme.colors.textPrimary}
+            color={
+              themeMode === m
+                ? "#FFF"
+                : theme.colors.textPrimary
+            }
           />
           <Text
             style={{
               fontSize: 12,
-              color: themeMode === m ? '#FFF' : theme.colors.textPrimary,
-              fontFamily: theme.typography.fontFamily.semibold,
+              color:
+                themeMode === m
+                  ? "#FFF"
+                  : theme.colors.textPrimary,
+              fontFamily:
+                theme.typography.fontFamily.semibold,
             }}
           >
             {getModeLabel(m)}
@@ -267,24 +296,24 @@ export const ThemeModeSelector: React.FC<{ style?: ViewStyle }> = ({ style }) =>
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 12,
     gap: 12,
   },
   iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     flex: 1,
     gap: 2,
   },
   label: {
-    fontWeight: '500',
+    fontWeight: "500",
   },
   modeText: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

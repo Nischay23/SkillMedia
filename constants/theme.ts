@@ -1,6 +1,6 @@
 // app/constants/theme.ts
 
-import { Dimensions, Platform } from "react-native";
+import { Dimensions } from "react-native";
 import { Colors } from "./Colors";
 
 const { width, height } = Dimensions.get("window");
@@ -8,9 +8,9 @@ const { width, height } = Dimensions.get("window");
 // Typography system - Using Poppins for modern, professional look
 const typography = {
   fontFamily: {
-    regular: 'Poppins-Regular',
-    semibold: 'Poppins-SemiBold',
-    bold: 'Poppins-Bold',
+    regular: "Poppins-Regular",
+    semibold: "Poppins-SemiBold",
+    bold: "Poppins-Bold",
   },
   size: {
     xs: 12,
@@ -18,9 +18,9 @@ const typography = {
     base: 16,
     lg: 18,
     xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-    '4xl': 36,
+    "2xl": 24,
+    "3xl": 30,
+    "4xl": 36,
   },
   lineHeight: {
     xs: 16,
@@ -28,16 +28,16 @@ const typography = {
     base: 24,
     lg: 28,
     xl: 32,
-    '2xl': 36,
-    '3xl': 42,
-    '4xl': 48,
+    "2xl": 36,
+    "3xl": 42,
+    "4xl": 48,
   },
   weight: {
-    light: '300',
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
+    light: "300",
+    normal: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
   },
 };
 
@@ -48,11 +48,11 @@ const spacing = {
   md: 12,
   lg: 16,
   xl: 20,
-  '2xl': 24,
-  '3xl': 32,
-  '4xl': 40,
-  '5xl': 48,
-  '6xl': 64,
+  "2xl": 24,
+  "3xl": 32,
+  "4xl": 40,
+  "5xl": 48,
+  "6xl": 64,
 };
 
 // Border radius system
@@ -62,8 +62,8 @@ const borderRadius = {
   md: 8,
   lg: 12,
   xl: 16,
-  '2xl': 20,
-  '3xl': 24,
+  "2xl": 20,
+  "3xl": 24,
   full: 9999,
 };
 
@@ -103,10 +103,10 @@ const animation = {
     slow: 500,
   },
   easing: {
-    ease: 'ease',
-    easeIn: 'ease-in',
-    easeOut: 'ease-out',
-    easeInOut: 'ease-in-out',
+    ease: "ease",
+    easeIn: "ease-in",
+    easeOut: "ease-out",
+    easeInOut: "ease-in-out",
   },
 };
 
@@ -120,9 +120,12 @@ const screen = {
 };
 
 // Complete theme object
-export const createTheme = (colorScheme: 'dark' | 'light' = 'light') => {
-  const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
-  
+export const createTheme = (
+  colorScheme: "dark" | "light" = "light",
+) => {
+  const colors =
+    colorScheme === "dark" ? Colors.dark : Colors.light;
+
   return {
     colors: {
       primary: colors.primary,
@@ -150,8 +153,9 @@ export const createTheme = (colorScheme: 'dark' | 'light' = 'light') => {
       secondaryDark: colors.secondaryDark,
       surfaceHighlight: colors.surfaceHighlight,
       textPrimary: colors.textPrimary,
-      ...(colorScheme === 'dark' && {
-        accentGradientStart: Colors.dark.accentGradientStart,
+      ...(colorScheme === "dark" && {
+        accentGradientStart:
+          Colors.dark.accentGradientStart,
         accentGradientEnd: Colors.dark.accentGradientEnd,
       }),
     },
@@ -165,7 +169,7 @@ export const createTheme = (colorScheme: 'dark' | 'light' = 'light') => {
 };
 
 // Default theme (light theme as primary)
-export const defaultTheme = createTheme('light');
+export const defaultTheme = createTheme("light");
 
 // Legacy color export for backward compatibility
 export const COLORS = defaultTheme.colors;

@@ -3,6 +3,7 @@
 ## Overview
 
 Your React Native Career Advisor app now has a robust, modern theming system with:
+
 - **Light Theme**: EdTech-inspired with clean, approachable colors
 - **Dark Theme**: AI/Futuristic-inspired with glowing accents
 - **Custom Typography**: Poppins font family (setup with fallbacks)
@@ -31,6 +32,7 @@ app/
 ## Color Palettes
 
 ### Light Theme (EdTech-Inspired)
+
 ```
 Background: #F8F9FE (Very light purple-white)
 Surface/Card: #FFFFFF
@@ -42,6 +44,7 @@ Border: #E5E7EB (Light gray)
 ```
 
 ### Dark Theme (AI/Futuristic-Inspired)
+
 ```
 Background: #0F1115 (Deep Gunmetal)
 Surface/Card: #181A20 (Slightly lighter gray)
@@ -104,7 +107,7 @@ interface ThemeContextType {
     animation: Animation;
     screen: Screen;
   };
-  themeMode: 'dark' | 'light' | 'system';
+  themeMode: "dark" | "light" | "system";
   setThemeMode: (mode) => Promise<void>;
   isDark: boolean;
   toggleTheme: () => Promise<void>;
@@ -147,30 +150,34 @@ export function StyledComponent() {
 ## Theme Mode Options
 
 ### 1. **System** (Default)
+
 Follows device's system theme preference. Changes automatically when user switches device theme.
 
 ```typescript
 const { setThemeMode } = useTheme();
-await setThemeMode('system');
+await setThemeMode("system");
 ```
 
 ### 2. **Light**
+
 Always use light theme, regardless of system preference.
 
 ```typescript
-await setThemeMode('light');
+await setThemeMode("light");
 ```
 
 ### 3. **Dark**
+
 Always use dark theme, regardless of system preference.
 
 ```typescript
-await setThemeMode('dark');
+await setThemeMode("dark");
 ```
 
 ## Font Configuration
 
 ### Current Setup
+
 - Using fallback fonts: SpaceMono-Regular, JetBrainsMono-Medium
 - Font family keys: `'Poppins-Regular'`, `'Poppins-SemiBold'`, `'Poppins-Bold'`
 
@@ -182,6 +189,7 @@ To use actual Poppins fonts instead of fallbacks:
    - Download: Poppins-Regular.ttf, Poppins-SemiBold.ttf, Poppins-Bold.ttf
 
 2. **Add to your project**
+
    ```
    assets/fonts/
    ├── Poppins-Regular.ttf
@@ -190,20 +198,21 @@ To use actual Poppins fonts instead of fallbacks:
    ```
 
 3. **Enable in code** - In `utils/fontLoader.ts`:
+
    ```typescript
    const fontsToLoad = {
-     'Poppins-Regular': require('@/assets/fonts/Poppins-Regular.ttf'),
-     'Poppins-SemiBold': require('@/assets/fonts/Poppins-SemiBold.ttf'),
-     'Poppins-Bold': require('@/assets/fonts/Poppins-Bold.ttf'),
+     "Poppins-Regular": require("@/assets/fonts/Poppins-Regular.ttf"),
+     "Poppins-SemiBold": require("@/assets/fonts/Poppins-SemiBold.ttf"),
+     "Poppins-Bold": require("@/assets/fonts/Poppins-Bold.ttf"),
    };
    ```
 
 4. **Update ThemeProvider** - In `providers/ThemeProvider.tsx`:
    ```typescript
    const [loadedFonts] = useFonts({
-     'Poppins-Regular': require('@/assets/fonts/Poppins-Regular.ttf'),
-     'Poppins-SemiBold': require('@/assets/fonts/Poppins-SemiBold.ttf'),
-     'Poppins-Bold': require('@/assets/fonts/Poppins-Bold.ttf'),
+     "Poppins-Regular": require("@/assets/fonts/Poppins-Regular.ttf"),
+     "Poppins-SemiBold": require("@/assets/fonts/Poppins-SemiBold.ttf"),
+     "Poppins-Bold": require("@/assets/fonts/Poppins-Bold.ttf"),
    });
    ```
 
@@ -213,26 +222,26 @@ To use actual Poppins fonts instead of fallbacks:
 const { theme } = useTheme();
 
 // Font sizes
-theme.typography.size.xs    // 12
-theme.typography.size.sm    // 14
-theme.typography.size.base  // 16
-theme.typography.size.lg    // 18
-theme.typography.size.xl    // 20
-theme.typography.size['2xl'] // 24
-theme.typography.size['3xl'] // 30
-theme.typography.size['4xl'] // 36
+theme.typography.size.xs; // 12
+theme.typography.size.sm; // 14
+theme.typography.size.base; // 16
+theme.typography.size.lg; // 18
+theme.typography.size.xl; // 20
+theme.typography.size["2xl"]; // 24
+theme.typography.size["3xl"]; // 30
+theme.typography.size["4xl"]; // 36
 
 // Font families
-theme.typography.fontFamily.regular    // 'Poppins-Regular'
-theme.typography.fontFamily.semibold   // 'Poppins-SemiBold'
-theme.typography.fontFamily.bold       // 'Poppins-Bold'
+theme.typography.fontFamily.regular; // 'Poppins-Regular'
+theme.typography.fontFamily.semibold; // 'Poppins-SemiBold'
+theme.typography.fontFamily.bold; // 'Poppins-Bold'
 
 // Font weights
-theme.typography.weight.light    // '300'
-theme.typography.weight.normal   // '400'
-theme.typography.weight.medium   // '500'
-theme.typography.weight.semibold // '600'
-theme.typography.weight.bold     // '700'
+theme.typography.weight.light; // '300'
+theme.typography.weight.normal; // '400'
+theme.typography.weight.medium; // '500'
+theme.typography.weight.semibold; // '600'
+theme.typography.weight.bold; // '700'
 ```
 
 ## Using Spacing System
@@ -240,21 +249,22 @@ theme.typography.weight.bold     // '700'
 ```typescript
 const { theme } = useTheme();
 
-theme.spacing.xs   // 4
-theme.spacing.sm   // 8
-theme.spacing.md   // 12
-theme.spacing.lg   // 16
-theme.spacing.xl   // 20
-theme.spacing['2xl'] // 24
-theme.spacing['3xl'] // 32
-theme.spacing['4xl'] // 40
-theme.spacing['5xl'] // 48
-theme.spacing['6xl'] // 64
+theme.spacing.xs; // 4
+theme.spacing.sm; // 8
+theme.spacing.md; // 12
+theme.spacing.lg; // 16
+theme.spacing.xl; // 20
+theme.spacing["2xl"]; // 24
+theme.spacing["3xl"]; // 32
+theme.spacing["4xl"]; // 40
+theme.spacing["5xl"]; // 48
+theme.spacing["6xl"]; // 64
 ```
 
 ## Persistence
 
 Theme preferences are automatically saved to AsyncStorage:
+
 - **Key**: `'theme_mode'`
 - **Values**: `'light'`, `'dark'`, or `'system'`
 - **Loaded on app start**: Theme setting is restored when app launches
@@ -264,6 +274,7 @@ Theme preferences are automatically saved to AsyncStorage:
 If migrating existing components:
 
 **Before:**
+
 ```typescript
 import { defaultTheme } from '@/constants/theme';
 
@@ -271,6 +282,7 @@ import { defaultTheme } from '@/constants/theme';
 ```
 
 **After:**
+
 ```typescript
 import { useTheme } from '@/providers/ThemeProvider';
 
@@ -290,16 +302,19 @@ const { theme } = useTheme();
 ## Troubleshooting
 
 ### Fonts not loading?
+
 - Check that font files exist in `assets/fonts/`
 - Verify file names match exactly (case-sensitive)
 - Check console for error messages
 
 ### Theme not persisting?
+
 - Ensure AsyncStorage permission is granted
 - Check device storage space
 - Try clearing app cache and reinstalling
 
 ### Colors not updating?
+
 - Ensure component is wrapped in `ThemeProvider`
 - Use `useTheme()` hook in functional components
 - Rebuild and clear Metro cache: `npx expo start --clear`
@@ -307,10 +322,12 @@ const { theme } = useTheme();
 ## Files Modified/Created
 
 ✅ **Created:**
+
 - `constants/Colors.ts` - Color palettes
 - `utils/fontLoader.ts` - Font loading utilities
 
 ✅ **Updated:**
+
 - `constants/theme.ts` - Integrated Colors, updated typography to Poppins
 - `providers/ThemeProvider.tsx` - Added font loading, toggleTheme function
 - `app/_layout.tsx` - Simplified font handling, added fontsLoaded check

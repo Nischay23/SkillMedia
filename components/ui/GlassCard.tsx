@@ -6,13 +6,9 @@
  * Light Mode: Clean white card with soft, diffused shadow
  */
 
-import React, { ReactNode } from 'react';
-import {
-  View,
-  ViewStyle,
-  Platform,
-} from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
+import { useTheme } from "@/providers/ThemeProvider";
+import React, { ReactNode } from "react";
+import { Platform, View, ViewStyle } from "react-native";
 
 interface GlassCardProps {
   children: ReactNode;
@@ -24,7 +20,7 @@ interface GlassCardProps {
    * Padding inside the card
    * @default 'lg' (16)
    */
-  padding?: 'sm' | 'md' | 'lg' | 'xl';
+  padding?: "sm" | "md" | "lg" | "xl";
   /**
    * Optional onPress for touchable cards
    */
@@ -46,7 +42,7 @@ const paddingMap = {
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   style,
-  padding = 'lg',
+  padding = "lg",
   onPress,
   bordered = false,
 }) => {
@@ -55,7 +51,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const containerStyle: ViewStyle = {
     borderRadius: 24,
     padding: paddingMap[padding],
-    overflow: 'hidden',
+    overflow: "hidden",
   };
 
   if (isDark) {
@@ -63,15 +59,15 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     Object.assign(containerStyle, {
       backgroundColor: theme.colors.surface,
       borderWidth: bordered ? 1 : 0.5,
-      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderColor: "rgba(255, 255, 255, 0.1)",
       // Shadow for dark mode
-      ...(Platform.OS === 'ios' && {
+      ...(Platform.OS === "ios" && {
         shadowColor: theme.colors.shadow,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 12,
       }),
-      ...(Platform.OS === 'android' && {
+      ...(Platform.OS === "android" && {
         elevation: 4,
       }),
     });
@@ -80,15 +76,15 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     Object.assign(containerStyle, {
       backgroundColor: theme.colors.surface,
       borderWidth: 0,
-      borderColor: 'transparent',
+      borderColor: "transparent",
       // Soft, diffused shadow using primary color
-      ...(Platform.OS === 'ios' && {
+      ...(Platform.OS === "ios" && {
         shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.12,
         shadowRadius: 16,
       }),
-      ...(Platform.OS === 'android' && {
+      ...(Platform.OS === "android" && {
         elevation: 10,
       }),
     });

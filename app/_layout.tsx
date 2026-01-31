@@ -23,10 +23,10 @@ function ThemedApp() {
   useEffect(() => {
     if (Platform.OS === "android" && fontsLoaded) {
       NavigationBar.setBackgroundColorAsync(
-        theme.colors.background
+        theme.colors.background,
       );
       NavigationBar.setButtonStyleAsync(
-        isDark ? "light" : "dark"
+        isDark ? "light" : "dark",
       );
     }
   }, [theme.colors.background, isDark, fontsLoaded]);

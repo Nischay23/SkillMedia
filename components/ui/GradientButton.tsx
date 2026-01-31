@@ -7,22 +7,22 @@
  * Both: Smooth scale animation on press (0.98)
  */
 
-import React, { useCallback } from 'react';
+import { useTheme } from "@/providers/ThemeProvider";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback } from "react";
 import {
-  Pressable,
-  Text,
-  StyleSheet,
-  ViewStyle,
   Platform,
+  Pressable,
+  StyleSheet,
+  Text,
   View,
-} from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import { LinearGradient } from 'expo-linear-gradient';
+  ViewStyle,
+} from "react-native";
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface GradientButtonProps {
   /**
@@ -39,7 +39,7 @@ interface GradientButtonProps {
    * Button size
    * @default 'md'
    */
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 
   /**
    * Loading state
@@ -95,10 +95,12 @@ const sizeConfig = {
   },
 };
 
-export const GradientButton: React.FC<GradientButtonProps> = ({
+export const GradientButton: React.FC<
+  GradientButtonProps
+> = ({
   label,
   onPress,
-  size = 'md',
+  size = "md",
   loading = false,
   disabled = false,
   style,
@@ -128,26 +130,31 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
 
   // Determine button style based on theme
   const gradientColors = isDark
-    ? [theme.colors.primary, '#8676FF'] // Purple to Blue
+    ? [theme.colors.primary, "#8676FF"] // Purple to Blue
     : [theme.colors.primary, theme.colors.primaryLight]; // Solid gradient
 
   const buttonContent = (
     <View style={styles.content}>
-      {leftIcon && <View style={styles.icon}>{leftIcon}</View>}
+      {leftIcon && (
+        <View style={styles.icon}>{leftIcon}</View>
+      )}
       <Text
         style={[
           styles.text,
           {
             fontSize: config.fontSize,
-            color: isDark ? '#FFFFFF' : '#FFFFFF',
-            fontFamily: theme.typography.fontFamily.semibold,
+            color: isDark ? "#FFFFFF" : "#FFFFFF",
+            fontFamily:
+              theme.typography.fontFamily.semibold,
             opacity: isDisabled ? 0.6 : 1,
           },
         ]}
       >
-        {loading ? 'Loading...' : label}
+        {loading ? "Loading..." : label}
       </Text>
-      {rightIcon && <View style={styles.icon}>{rightIcon}</View>}
+      {rightIcon && (
+        <View style={styles.icon}>{rightIcon}</View>
+      )}
     </View>
   );
 
@@ -156,7 +163,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
       style={[
         {
           borderRadius: config.borderRadius,
-          overflow: 'hidden',
+          overflow: "hidden",
           opacity: isDisabled ? 0.6 : 1,
         },
         animatedStyle,
@@ -176,28 +183,30 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
           },
           !isDark && {
             // Light mode: shadow effect
-            ...(Platform.OS === 'ios' && {
+            ...(Platform.OS === "ios" && {
               shadowColor: theme.colors.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
             }),
-            ...(Platform.OS === 'android' && {
+            ...(Platform.OS === "android" && {
               elevation: 8,
             }),
           },
         ]}
       >
         <LinearGradient
-          colors={gradientColors as [string, string, ...string[]]}
+          colors={
+            gradientColors as [string, string, ...string[]]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
             paddingVertical: config.paddingVertical,
             paddingHorizontal: config.paddingHorizontal,
             borderRadius: config.borderRadius,
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           {buttonContent}
@@ -209,17 +218,17 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   text: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   icon: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

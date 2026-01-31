@@ -124,6 +124,7 @@ export function Card() {
 ## 🎨 Color Reference
 
 ### Light Theme
+
 ```
 Primary: #6C5DD3 (Soft Purple)
 Secondary: #FFCFA2 (Peach/Orange)
@@ -133,6 +134,7 @@ Text: #1F2937
 ```
 
 ### Dark Theme
+
 ```
 Primary: #A0A6FF (Glowing Lavender)
 Secondary: #8676FF (Lighter Purple)
@@ -147,31 +149,31 @@ Text: #FFFFFF
 const { theme } = useTheme();
 
 // Colors
-theme.colors.primary
-theme.colors.background
-theme.colors.surface
-theme.colors.textPrimary
+theme.colors.primary;
+theme.colors.background;
+theme.colors.surface;
+theme.colors.textPrimary;
 
 // Spacing
-theme.spacing.sm   // 8
-theme.spacing.md   // 12
-theme.spacing.lg   // 16
+theme.spacing.sm; // 8
+theme.spacing.md; // 12
+theme.spacing.lg; // 16
 
 // Typography
-theme.typography.size.base       // 16
-theme.typography.fontFamily.bold // 'Poppins-Bold'
+theme.typography.size.base; // 16
+theme.typography.fontFamily.bold; // 'Poppins-Bold'
 
 // Border Radius
-theme.borderRadius.md  // 8
-theme.borderRadius.lg  // 12
+theme.borderRadius.md; // 8
+theme.borderRadius.lg; // 12
 
 // Shadows
-theme.shadows.md       // { shadowOffset, shadowOpacity, ... }
+theme.shadows.md; // { shadowOffset, shadowOpacity, ... }
 
 // Screen Info
-theme.screen.width
-theme.screen.height
-theme.screen.isSmall
+theme.screen.width;
+theme.screen.height;
+theme.screen.isSmall;
 ```
 
 ## 🔧 Customization
@@ -179,13 +181,17 @@ theme.screen.isSmall
 ### Change Default Theme
 
 In `providers/ThemeProvider.tsx`, change:
+
 ```typescript
-const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+const [themeMode, setThemeModeState] =
+  useState<ThemeMode>("system");
 ```
 
 To:
+
 ```typescript
-const [themeMode, setThemeModeState] = useState<ThemeMode>('dark'); // Always start with dark
+const [themeMode, setThemeModeState] =
+  useState<ThemeMode>("dark"); // Always start with dark
 ```
 
 ### Modify Colors
@@ -195,11 +201,11 @@ Edit `constants/Colors.ts` to adjust any color:
 ```typescript
 export const Colors = {
   light: {
-    primary: '#YOUR_COLOR', // Change hex value
+    primary: "#YOUR_COLOR", // Change hex value
     // ... other colors
   },
   dark: {
-    primary: '#YOUR_COLOR',
+    primary: "#YOUR_COLOR",
     // ... other colors
   },
 };
@@ -213,11 +219,11 @@ Add new color values to `Colors.ts`:
 export const Colors = {
   light: {
     // ... existing colors
-    customColor: '#F0F0F0',
+    customColor: "#F0F0F0",
   },
   dark: {
     // ... existing colors
-    customColor: '#2A2A2A',
+    customColor: "#2A2A2A",
   },
 };
 ```
@@ -245,6 +251,7 @@ See [THEMING_GUIDE.md](./THEMING_GUIDE.md) for detailed instructions.
 ## 📚 Full Documentation
 
 See [THEMING_GUIDE.md](./THEMING_GUIDE.md) for:
+
 - Complete API reference
 - Advanced usage patterns
 - Architecture explanation
