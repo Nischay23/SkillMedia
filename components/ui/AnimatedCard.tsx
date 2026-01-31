@@ -7,6 +7,7 @@ import Animated, {
   withDelay,
   withSpring,
   withTiming,
+  FadeInDown,
 } from 'react-native-reanimated';
 import { useThemedStyles } from '@/providers/ThemeProvider';
 
@@ -17,6 +18,12 @@ interface AnimatedCardProps {
   variant?: 'default' | 'elevated' | 'outlined';
   pressable?: boolean;
   onPress?: () => void;
+  /**
+   * Use entering animation from Reanimated for list items
+   * Provides smoother cascade animations
+   * @default true
+   */
+  useEnteringAnimation?: boolean;
 }
 
 export const AnimatedCard: React.FC<AnimatedCardProps> = ({
@@ -26,10 +33,11 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   variant = 'default',
   pressable = false,
   onPress,
+  useEnteringAnimation = true,
 }) => {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(30);
-  const scale = useSharedValue(pressable ? 1 : 1);
+  const opacity = useSharedValue(useEnteringAnimation ? 1 : 0);
+  const translateY = useSharedValue(useEnteringAnimation ? 0 : 30);
+  const scale = useSharedValue(1);
 
   const styles = useThemedStyles((theme) => ({
     card: {
@@ -74,19 +82,22 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     }
   };
 
+  // Only use manual animation if not using entering animation
   useEffect(() => {
-    opacity.value = withDelay(
-      delay,
-      withTiming(1, { duration: 600 })
-    );
-    translateY.value = withDelay(
-      delay,
-      withSpring(0, {
-        damping: 20,
-        stiffness: 90,
-      })
-    );
-  }, [delay, opacity, translateY]);
+    if (!useEnteringAnimation) {
+      opacity.value = withDelay(
+        delay,
+        withTiming(1, { duration: 600 })
+      );
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
+          damping: 20,
+          stiffness: 90,
+        })
+      );
+    }
+  }, [delay, opacity, translateY, useEnteringAnimation]);
 
   const handlePressIn = () => {
     if (pressable) {
@@ -100,13 +111,19 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     }
   };
 
+  // Calculate entering animation with staggered delay
+  const enteringAnimation = useEnteringAnimation
+    ? FadeInDown.delay(delay).duration(400).springify().damping(15)
+    : undefined;
+
   if (pressable && onPress) {
     return (
       <Animated.View
+        entering={enteringAnimation}
         style={[
           styles.card,
           getVariantStyle(),
-          animatedStyle,
+          !useEnteringAnimation && animatedStyle,
           style,
         ]}
         onTouchStart={handlePressIn}
@@ -120,10 +137,11 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   return (
     <Animated.View
+      entering={enteringAnimation}
       style={[
         styles.card,
         getVariantStyle(),
-        animatedStyle,
+        !useEnteringAnimation && animatedStyle,
         style,
       ]}
     >

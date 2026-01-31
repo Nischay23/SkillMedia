@@ -1,59 +1,16 @@
 // app/constants/theme.ts
 
 import { Dimensions, Platform } from "react-native";
+import { Colors } from "./Colors";
 
 const { width, height } = Dimensions.get("window");
 
-// Base color palettes
-const darkTheme = {
-  primary: "#4ADE80",
-  secondary: "#2DD4BF", 
-  accent: "#34D399",
-  background: "#0A0A0B",
-  surface: "#1A1A1B",
-  surfaceLight: "#2A2A2B",
-  card: "#161617",
-  text: "#FFFFFF",
-  textSecondary: "#B0B0B0",
-  textMuted: "#6B7280",
-  border: "#374151",
-  borderLight: "#4B5563",
-  success: "#22C55E",
-  warning: "#F59E0B",
-  danger: "#EF4444",
-  info: "#3B82F6",
-  overlay: "rgba(0, 0, 0, 0.8)",
-  shadow: "rgba(74, 222, 128, 0.2)",
-};
-
-const lightTheme = {
-  primary: "#059669",
-  secondary: "#0891B2",
-  accent: "#10B981",
-  background: "#FFFFFF",
-  surface: "#F9FAFB",
-  surfaceLight: "#F3F4F6",
-  card: "#FFFFFF",
-  text: "#111827",
-  textSecondary: "#4B5563",
-  textMuted: "#9CA3AF",
-  border: "#E5E7EB",
-  borderLight: "#D1D5DB",
-  success: "#059669",
-  warning: "#D97706",
-  danger: "#DC2626",
-  info: "#2563EB",
-  overlay: "rgba(0, 0, 0, 0.5)",
-  shadow: "rgba(0, 0, 0, 0.1)",
-};
-
-// Typography system
+// Typography system - Using Poppins for modern, professional look
 const typography = {
   fontFamily: {
-    regular: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
-    medium: Platform.OS === 'ios' ? 'SF Pro Display Medium' : 'Roboto-Medium',
-    bold: Platform.OS === 'ios' ? 'SF Pro Display Bold' : 'Roboto-Bold',
-    light: Platform.OS === 'ios' ? 'SF Pro Display Light' : 'Roboto-Light',
+    regular: 'Poppins-Regular',
+    semibold: 'Poppins-SemiBold',
+    bold: 'Poppins-Bold',
   },
   size: {
     xs: 12,
@@ -163,18 +120,52 @@ const screen = {
 };
 
 // Complete theme object
-export const createTheme = (colorScheme: 'dark' | 'light' = 'dark') => ({
-  colors: colorScheme === 'dark' ? darkTheme : lightTheme,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-  animation,
-  screen,
-});
+export const createTheme = (colorScheme: 'dark' | 'light' = 'light') => {
+  const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  
+  return {
+    colors: {
+      primary: colors.primary,
+      secondary: colors.secondary,
+      accent: colors.accentGradientEnd || colors.secondary,
+      background: colors.background,
+      surface: colors.surface,
+      surfaceLight: colors.surfaceLight,
+      card: colors.surface,
+      text: colors.textPrimary,
+      textSecondary: colors.textSecondary,
+      textMuted: colors.textMuted,
+      border: colors.border,
+      borderLight: colors.borderLight,
+      success: colors.success,
+      warning: colors.warning,
+      danger: colors.error,
+      info: colors.info,
+      overlay: colors.overlay,
+      shadow: colors.shadow,
+      // New color mappings from the modern palette
+      primaryLight: colors.primaryLight,
+      primaryDark: colors.primaryDark,
+      secondaryLight: colors.secondaryLight,
+      secondaryDark: colors.secondaryDark,
+      surfaceHighlight: colors.surfaceHighlight,
+      textPrimary: colors.textPrimary,
+      ...(colorScheme === 'dark' && {
+        accentGradientStart: Colors.dark.accentGradientStart,
+        accentGradientEnd: Colors.dark.accentGradientEnd,
+      }),
+    },
+    typography,
+    spacing,
+    borderRadius,
+    shadows,
+    animation,
+    screen,
+  };
+};
 
-// Default theme (can be overridden by theme provider)
-export const defaultTheme = createTheme('dark');
+// Default theme (light theme as primary)
+export const defaultTheme = createTheme('light');
 
 // Legacy color export for backward compatibility
 export const COLORS = defaultTheme.colors;

@@ -4,7 +4,6 @@ import {
   ThemeProvider,
   useTheme,
 } from "@/providers/ThemeProvider";
-import { useFonts } from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
 import { SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -19,10 +18,10 @@ SplashScreen.preventAutoHideAsync();
 
 // Inner component to access theme after provider is set up
 function ThemedApp() {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, fontsLoaded } = useTheme();
 
   useEffect(() => {
-    if (Platform.OS === "android") {
+    if (Platform.OS === "android" && fontsLoaded) {
       NavigationBar.setBackgroundColorAsync(
         theme.colors.background
       );
@@ -30,7 +29,11 @@ function ThemedApp() {
         isDark ? "light" : "dark"
       );
     }
-  }, [theme.colors.background, isDark]);
+  }, [theme.colors.background, isDark, fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <SafeAreaProvider>
@@ -52,16 +55,6 @@ function ThemedApp() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    "JetBrainsMono-Medium": require("../assets/fonts/JetBrainsMono-Medium.ttf"),
-    Roboto: require("../assets/fonts/SpaceMono-Regular.ttf"), // Using available font as fallback
-  });
-
-  useEffect(() => {
-    if (!fontsLoaded) return;
-    SplashScreen.hideAsync();
-  }, [fontsLoaded]);
-
   return (
     <ClerkAndConvexProvider>
       <ThemeProvider>
