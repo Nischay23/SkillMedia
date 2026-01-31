@@ -21,6 +21,10 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Next.js Admin Dashboard
+admin-dashboard/.next/
+admin-dashboard/node_modules/
+
 # debug
 npm-debug.*
 yarn-debug.*
@@ -28,6 +32,8 @@ yarn-error.*
 
 # macOS
 .DS_Store
+.env.local
+.env.*.local
 *.pem
 
 # local env files
