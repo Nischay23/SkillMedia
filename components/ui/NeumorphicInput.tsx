@@ -7,6 +7,7 @@
  */
 
 import { useTheme } from "@/providers/ThemeProvider";
+import { FontSize } from "@/constants/theme";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { useRef, useState } from "react";
 import {
@@ -103,19 +104,19 @@ const sizeConfig = {
   sm: {
     height: 40,
     paddingHorizontal: 12,
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
     borderRadius: 10,
   },
   md: {
     height: 48,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: FontSize.body,
     borderRadius: 12,
   },
   lg: {
     height: 56,
     paddingHorizontal: 20,
-    fontSize: 18,
+    fontSize: FontSize.h3,
     borderRadius: 14,
   },
 };

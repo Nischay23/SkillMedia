@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from "@/providers/ThemeProvider";
+import { FontSize, FontWeight } from "@/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback } from "react";
 import {
@@ -78,19 +79,19 @@ const sizeConfig = {
   sm: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
     borderRadius: 12,
   },
   md: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    fontSize: 16,
+    fontSize: FontSize.body,
     borderRadius: 14,
   },
   lg: {
     paddingVertical: 16,
     paddingHorizontal: 32,
-    fontSize: 18,
+    fontSize: FontSize.h3,
     borderRadius: 16,
   },
 };
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   text: {
-    fontWeight: "600",
+    fontWeight: FontWeight.semibold,
     textAlign: "center",
   },
   icon: {

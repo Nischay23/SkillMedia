@@ -1,4 +1,5 @@
 import { useTheme } from "@/providers/ThemeProvider";
+import { FontSize, FontWeight } from "@/constants/theme";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React from "react";
 import {
@@ -44,17 +45,17 @@ const sizeConfig = {
   small: {
     iconSize: 20,
     padding: 8,
-    fontSize: 12,
+    fontSize: FontSize.caption,
   },
   medium: {
     iconSize: 24,
     padding: 12,
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
   },
   large: {
     iconSize: 28,
     padding: 16,
-    fontSize: 16,
+    fontSize: FontSize.body,
   },
 };
 
@@ -277,7 +278,7 @@ export const ThemeModeSelector: React.FC<{
           />
           <Text
             style={{
-              fontSize: 12,
+              fontSize: FontSize.caption,
               color:
                 themeMode === m
                   ? "#FFF"
@@ -311,9 +312,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   label: {
-    fontWeight: "500",
+    fontWeight: FontWeight.medium,
   },
   modeText: {
-    fontWeight: "600",
+    fontWeight: FontWeight.semibold,
   },
 });

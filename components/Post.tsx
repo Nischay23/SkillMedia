@@ -10,7 +10,15 @@ import {
 import { Image } from "expo-image"; // Ensure expo-image is installed
 import { Ionicons } from "@expo/vector-icons"; // Ensure @expo/vector-icons is installed
 
-import { COLORS } from "@/constants/theme";
+import {
+  COLORS,
+  FontSize,
+  FontWeight,
+  SpacingValues,
+  ComponentSpacing,
+  ScreenPadding,
+} from "@/constants/theme";
+import { baseCard } from "@/constants/CardStyles";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-expo";
@@ -29,24 +37,34 @@ export default function Post({ post }: PostProps) {
   // Query if the current user has liked this post
   const isLiked = useQuery(
     api.likes.getIsLiked,
-    clerkUser ? { postId: post._id as Id<"posts"> } : "skip"
+    clerkUser
+      ? { postId: post._id as Id<"posts"> }
+      : "skip",
   );
   // Query if the current user has saved this post
   const isSaved = useQuery(
     api.savedPosts.getIsSaved,
-    clerkUser ? { postId: post._id as Id<"posts"> } : "skip"
+    clerkUser
+      ? { postId: post._id as Id<"posts"> }
+      : "skip",
   );
 
   // Get current logged-in user's Convex ID and isAdmin status for delete button logic
   const currentUserConvex = useQuery(
     api.users.getUserByClerkId,
-    clerkUser ? { clerkId: clerkUser.id } : "skip"
+    clerkUser ? { clerkId: clerkUser.id } : "skip",
   );
 
   // Mutations for interaction
-  const toggleLikeMutation = useMutation(api.posts.toggleLike);
-  const toggleSavePostMutation = useMutation(api.savedPosts.toggleSavePost);
-  const deletePostMutation = useMutation(api.posts.deletePost); // For admin/owner to delete
+  const toggleLikeMutation = useMutation(
+    api.posts.toggleLike,
+  );
+  const toggleSavePostMutation = useMutation(
+    api.savedPosts.toggleSavePost,
+  );
+  const deletePostMutation = useMutation(
+    api.posts.deletePost,
+  ); // For admin/owner to delete
 
   // State for comments modal (if you have one)
   // const [showComments, setShowComments] = useState(false); // Add this state if using CommentsModal
@@ -90,7 +108,7 @@ export default function Post({ post }: PostProps) {
       post.createdBy?._id !== currentUserConvex?._id
     ) {
       console.warn(
-        "Unauthorized delete attempt: User is not an admin or not the post owner."
+        "Unauthorized delete attempt: User is not an admin or not the post owner.",
       );
       // Optionally show an error message to the user
       return;
@@ -108,7 +126,7 @@ export default function Post({ post }: PostProps) {
   const handleSourceLink = () => {
     if (post.sourceUrl) {
       Linking.openURL(post.sourceUrl).catch((err) =>
-        console.error("Failed to open URL:", err)
+        console.error("Failed to open URL:", err),
       );
     }
   };
@@ -146,7 +164,11 @@ export default function Post({ post }: PostProps) {
         {currentUserConvex?._id === post.createdBy?._id &&
         currentUserConvex?.isAdmin ? (
           <TouchableOpacity onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+            <Ionicons
+              name="trash-outline"
+              size={20}
+              color={COLORS.danger}
+            />
           </TouchableOpacity>
         ) : (
           // Optional: A placeholder icon or empty view if no other actions are present
@@ -172,30 +194,38 @@ export default function Post({ post }: PostProps) {
         <Text style={styles.postTitle}>{post.title}</Text>
 
         {/* Emphasize Description (now the primary 'what is this job about' content) */}
-        <Text style={styles.postDescription}>{post.description}</Text>
+        <Text style={styles.postDescription}>
+          {post.description}
+        </Text>
 
         {/* New Job/Skill Specific Details */}
         {post.postType && (
           <Text style={styles.detailText}>
             <Text style={styles.detailLabel}>Type:</Text>{" "}
-            {post.postType.charAt(0).toUpperCase() + post.postType.slice(1)}
+            {post.postType.charAt(0).toUpperCase() +
+              post.postType.slice(1)}
           </Text>
         )}
         {post.location && post.location.length > 0 && (
           <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Location:</Text>{" "}
+            <Text style={styles.detailLabel}>
+              Location:
+            </Text>{" "}
             {post.location.join(", ")}
           </Text>
         )}
         {post.experience && (
           <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Experience:</Text>{" "}
+            <Text style={styles.detailLabel}>
+              Experience:
+            </Text>{" "}
             {post.experience}
           </Text>
         )}
         {post.salary && (
           <Text style={styles.detailText}>
-            <Text style={styles.detailLabel}>Salary:</Text> {post.salary}
+            <Text style={styles.detailLabel}>Salary:</Text>{" "}
+            {post.salary}
           </Text>
         )}
 
@@ -205,30 +235,42 @@ export default function Post({ post }: PostProps) {
             onPress={handleSourceLink}
             style={styles.sourceLinkButton}
           >
-            <Ionicons name="link-outline" size={16} color={COLORS.link} />
-            <Text style={styles.sourceLinkText}>View Details / Apply</Text>
+            <Ionicons
+              name="link-outline"
+              size={16}
+              color={COLORS.link}
+            />
+            <Text style={styles.sourceLinkText}>
+              View Details / Apply
+            </Text>
           </TouchableOpacity>
         )}
 
         {/* Filter Tags (Always show these as they define the path) */}
-        {post.filterOptionNames && post.filterOptionNames.length > 0 && (
-          <Text style={styles.filterTags}>
-            Path: {post.filterOptionNames.join(" • ")}{" "}
-            {/* Changed "Tags" to "Path" */}
-          </Text>
-        )}
+        {post.filterOptionNames &&
+          post.filterOptionNames.length > 0 && (
+            <Text style={styles.filterTags}>
+              Path: {post.filterOptionNames.join(" • ")}{" "}
+              {/* Changed "Tags" to "Path" */}
+            </Text>
+          )}
       </View>
 
       {/* POST ACTIONS (Like, Comment, Save) */}
       <View style={styles.postActions}>
         <View style={styles.postActionsLeft}>
-          <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
+          <TouchableOpacity
+            onPress={handleLike}
+            style={styles.actionButton}
+          >
             <Ionicons
               name={isLiked ? "heart" : "heart-outline"}
               size={24}
               color={isLiked ? COLORS.primary : COLORS.gray}
             />
-            <Text style={styles.actionCount}>{post.likes}</Text>
+            <Text style={styles.actionCount}>
+              {post.likes}
+            </Text>
           </TouchableOpacity>
           {/* Comment button - Uncomment if you use CommentsModal */}
           <TouchableOpacity
@@ -236,11 +278,20 @@ export default function Post({ post }: PostProps) {
               styles.actionButton
             }
           >
-            <Ionicons name="chatbubble-outline" size={22} color={COLORS.gray} />
-            <Text style={styles.actionCount}>{post.comments}</Text>
+            <Ionicons
+              name="chatbubble-outline"
+              size={22}
+              color={COLORS.gray}
+            />
+            <Text style={styles.actionCount}>
+              {post.comments}
+            </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handleSave} style={styles.actionButton}>
+        <TouchableOpacity
+          onPress={handleSave}
+          style={styles.actionButton}
+        >
           <Ionicons
             name={isSaved ? "bookmark" : "bookmark-outline"}
             size={22}
@@ -262,16 +313,10 @@ export default function Post({ post }: PostProps) {
 // --- Styles for Post Component ---
 const styles = StyleSheet.create({
   postContainer: {
+    ...baseCard,
     backgroundColor: COLORS.cardBackground,
-    borderRadius: 10,
-    marginVertical: 8,
+    marginVertical: SpacingValues.sm,
     marginHorizontal: 15,
-    overflow: "hidden", // Ensures image corners are rounded
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   postHeader: {
     flexDirection: "row",
@@ -292,9 +337,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGray, // Placeholder background
   },
   postUsername: {
-    fontWeight: "bold",
+    fontWeight: FontWeight.bold,
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: FontSize.body,
   },
   postImage: {
     width: "100%",
@@ -305,44 +350,44 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   postTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: FontSize.h2,
+    fontWeight: FontWeight.bold,
     color: COLORS.white,
-    marginBottom: 8,
+    marginBottom: SpacingValues.sm,
   },
   postDescription: {
-    fontSize: 15, // Slightly larger for emphasis
+    fontSize: FontSize.body,
     color: COLORS.white, // Made white for primary description
     marginBottom: 15, // More space
     lineHeight: 22, // Better readability
   },
   detailText: {
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
     color: COLORS.gray, // Secondary details in gray
     marginBottom: 5,
   },
   detailLabel: {
-    fontWeight: "bold",
+    fontWeight: FontWeight.bold,
     color: COLORS.white, // Labels remain white
   },
   sourceLinkButton: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 15, // More separation from description
-    paddingVertical: 8,
+    paddingVertical: SpacingValues.sm,
     paddingHorizontal: 15,
     backgroundColor: COLORS.surfaceLight, // Subtle button background
-    borderRadius: 8,
+    borderRadius: SpacingValues.sm,
     alignSelf: "flex-start",
   },
   sourceLinkText: {
     color: COLORS.link,
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: "bold",
+    marginLeft: ComponentSpacing.iconMargin,
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
   },
   filterTags: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
     color: COLORS.lightGray, // Very subtle tags
     marginTop: 15, // More separation
     fontStyle: "italic",
@@ -364,11 +409,11 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20,
+    marginRight: ScreenPadding.vertical,
   },
   actionCount: {
     marginLeft: 5,
     color: COLORS.white, // White text for counts
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
   },
 });

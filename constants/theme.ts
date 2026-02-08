@@ -2,10 +2,27 @@
 
 import { Dimensions } from "react-native";
 import { Colors } from "./Colors";
+import {
+  Typography as TypographySystem,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  LineHeight,
+  LetterSpacing,
+} from "./Typography";
+import {
+  Spacing as SpacingSystem,
+  SpacingValues,
+  ScreenPadding,
+  CardSpacing,
+  ComponentSpacing,
+  BorderRadius as SpacingBorderRadius,
+} from "./Spacing";
 
 const { width, height } = Dimensions.get("window");
 
 // Typography system - Using Poppins for modern, professional look
+// Legacy typography object for backward compatibility
 const typography = {
   fontFamily: {
     regular: "Poppins-Regular",
@@ -39,9 +56,17 @@ const typography = {
     semibold: "600",
     bold: "700",
   },
+  // New comprehensive typography system
+  variants: TypographySystem,
+  family: FontFamily,
+  sizes: FontSize,
+  weights: FontWeight,
+  lineHeights: LineHeight,
+  letterSpacing: LetterSpacing,
 };
 
 // Spacing system
+// Legacy spacing object for backward compatibility
 const spacing = {
   xs: 4,
   sm: 8,
@@ -53,6 +78,11 @@ const spacing = {
   "4xl": 40,
   "5xl": 48,
   "6xl": 64,
+  // New comprehensive spacing system
+  values: SpacingValues,
+  screen: ScreenPadding,
+  card: CardSpacing,
+  component: ComponentSpacing,
 };
 
 // Border radius system
@@ -65,6 +95,8 @@ const borderRadius = {
   "2xl": 20,
   "3xl": 24,
   full: 9999,
+  // Alias to new spacing border radius
+  ...SpacingBorderRadius,
 };
 
 // Shadow system
@@ -173,3 +205,39 @@ export const defaultTheme = createTheme("light");
 
 // Legacy color export for backward compatibility
 export const COLORS = defaultTheme.colors;
+
+// Re-export new Typography and Spacing systems for direct access
+export {
+  Typography as TypographyVariants,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  LineHeight,
+  LetterSpacing,
+  getTypography,
+  mergeTypography,
+} from "./Typography";
+
+export {
+  Spacing as SpacingConfig,
+  SpacingValues,
+  ScreenPadding,
+  CardSpacing,
+  ComponentSpacing,
+  BorderRadius as SpacingBorderRadius,
+  spacing as getSpacing,
+  paddingXY,
+  margin,
+  gap,
+} from "./Spacing";
+
+export {
+  baseCard,
+  elevatedCard,
+  flatCard,
+  getCardStyle,
+  getThemedCardStyle,
+  CARD_BORDER_RADIUS,
+  CARD_PADDING,
+} from "./CardStyles";
+export type { CardVariant } from "./CardStyles";

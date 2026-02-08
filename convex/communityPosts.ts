@@ -11,12 +11,12 @@ import { getAuthenticatedUser } from "./users";
 // Helper: Recursively get all descendant filter IDs
 async function getAllDescendantFilterIds(
   ctx: QueryCtx,
-  parentId: Id<"FilterOption">
+  parentId: Id<"FilterOption">,
 ): Promise<Id<"FilterOption">[]> {
   const children = await ctx.db
     .query("FilterOption")
     .withIndex("by_parentId", (q) =>
-      q.eq("parentId", parentId)
+      q.eq("parentId", parentId),
     )
     .filter((q) => q.eq(q.field("isActive"), true))
     .collect();
@@ -28,8 +28,8 @@ async function getAllDescendantFilterIds(
   // Recursive call for each child
   const nestedDescendants = await Promise.all(
     children.map((child) =>
-      getAllDescendantFilterIds(ctx, child._id)
-    )
+      getAllDescendantFilterIds(ctx, child._id),
+    ),
   );
 
   return [...childIds, ...nestedDescendants.flat()];
@@ -43,8 +43,8 @@ export const getCommunityPostsByFilterHierarchy = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
     limit: v.optional(v.number()),
   },
@@ -54,7 +54,7 @@ export const getCommunityPostsByFilterHierarchy = query({
     // 1. Recursively get all descendant filter IDs
     const descendantIds = await getAllDescendantFilterIds(
       ctx,
-      args.filterOptionId
+      args.filterOptionId,
     );
 
     // 2. Include parent + all descendants
@@ -72,8 +72,8 @@ export const getCommunityPostsByFilterHierarchy = query({
     // 4. Filter posts where linkedFilterOptionIds intersects with relevant IDs
     let filteredPosts = allPosts.filter((post) =>
       post.linkedFilterOptionIds.some((id) =>
-        allRelevantFilterIds.includes(id)
-      )
+        allRelevantFilterIds.includes(id),
+      ),
     );
 
     // 5. Apply status filter
@@ -81,12 +81,12 @@ export const getCommunityPostsByFilterHierarchy = query({
     if (!currentUser?.isAdmin) {
       // Regular users only see published posts
       filteredPosts = filteredPosts.filter(
-        (p) => p.status === "published"
+        (p) => p.status === "published",
       );
     } else if (statusFilter !== "all") {
       // Admins can filter by status
       filteredPosts = filteredPosts.filter(
-        (p) => p.status === statusFilter
+        (p) => p.status === statusFilter,
       );
     }
 
@@ -109,10 +109,11 @@ export const getCommunityPostsByFilterHierarchy = query({
                 username: user.username,
                 fullname: user.fullname,
                 profileImage: user.profileImage,
+                isAdmin: user.isAdmin === true,
               }
             : null,
         };
-      })
+      }),
     );
 
     return postsWithUsers;
@@ -125,8 +126,8 @@ export const getCommunityPosts = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
   },
   handler: async (ctx, args) => {
@@ -147,7 +148,7 @@ export const getCommunityPosts = query({
     ) {
       // Admins can filter by status
       posts = posts.filter(
-        (p) => p.status === args.statusFilter
+        (p) => p.status === args.statusFilter,
       );
     }
 
@@ -165,10 +166,11 @@ export const getCommunityPosts = query({
                 username: user.username,
                 fullname: user.fullname,
                 profileImage: user.profileImage,
+                isAdmin: user.isAdmin === true,
               }
             : null,
         };
-      })
+      }),
     );
 
     return postsWithUsers;
@@ -191,8 +193,8 @@ export const getCommunityPostsByFilterOption = query({
     const filteredPosts = allPosts
       .filter((post) =>
         post.linkedFilterOptionIds.includes(
-          args.filterOptionId
-        )
+          args.filterOptionId,
+        ),
       )
       .slice(0, 20); // Take only first 20
 
@@ -208,10 +210,11 @@ export const getCommunityPostsByFilterOption = query({
                 username: user.username,
                 fullname: user.fullname,
                 profileImage: user.profileImage,
+                isAdmin: user.isAdmin === true,
               }
             : null,
         };
-      })
+      }),
     );
 
     return postsWithUsers;
@@ -224,10 +227,10 @@ export const createCommunityPost = mutation({
     content: v.string(),
     imageUrl: v.optional(v.string()),
     linkedFilterOptionIds: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"))
+      v.union(v.literal("draft"), v.literal("published")),
     ),
   },
   handler: async (ctx, args) => {
@@ -276,7 +279,7 @@ export const deleteCommunityPost = mutation({
     const comments = await ctx.db
       .query("comments")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -287,7 +290,7 @@ export const deleteCommunityPost = mutation({
     const likes = await ctx.db
       .query("likes")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -298,7 +301,7 @@ export const deleteCommunityPost = mutation({
     const savedContent = await ctx.db
       .query("savedContent")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -379,10 +382,10 @@ export const updateCommunityPost = mutation({
     content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     linkedFilterOptionIds: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"))
+      v.union(v.literal("draft"), v.literal("published")),
     ),
   },
   handler: async (ctx, args) => {
@@ -430,8 +433,8 @@ export const searchCommunityPosts = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
     filterOptionId: v.optional(v.id("FilterOption")),
   },
@@ -450,14 +453,14 @@ export const searchCommunityPosts = query({
       posts = posts.filter(
         (post) =>
           post.title.toLowerCase().includes(query) ||
-          post.content.toLowerCase().includes(query)
+          post.content.toLowerCase().includes(query),
       );
     }
 
     // Status filter
     if (args.statusFilter && args.statusFilter !== "all") {
       posts = posts.filter(
-        (post) => post.status === args.statusFilter
+        (post) => post.status === args.statusFilter,
       );
     }
 
@@ -465,8 +468,8 @@ export const searchCommunityPosts = query({
     if (args.filterOptionId) {
       posts = posts.filter((post) =>
         post.linkedFilterOptionIds.includes(
-          args.filterOptionId!
-        )
+          args.filterOptionId!,
+        ),
       );
     }
 
@@ -488,7 +491,7 @@ export const searchCommunityPosts = query({
               }
             : null,
         };
-      })
+      }),
     );
 
     return postsWithUsers;
@@ -510,17 +513,17 @@ export const getPostStats = query({
     return {
       total: allPosts.length,
       published: allPosts.filter(
-        (p) => p.status === "published"
+        (p) => p.status === "published",
       ).length,
       drafts: allPosts.filter((p) => p.status === "draft")
         .length,
       totalLikes: allPosts.reduce(
         (sum, p) => sum + p.likes,
-        0
+        0,
       ),
       totalComments: allPosts.reduce(
         (sum, p) => sum + p.comments,
-        0
+        0,
       ),
     };
   },
@@ -542,7 +545,7 @@ export const bulkDeletePosts = mutation({
       const comments = await ctx.db
         .query("comments")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const comment of comments) {
@@ -553,7 +556,7 @@ export const bulkDeletePosts = mutation({
       const likes = await ctx.db
         .query("likes")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const like of likes) {
@@ -564,7 +567,7 @@ export const bulkDeletePosts = mutation({
       const savedContent = await ctx.db
         .query("savedContent")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const saved of savedContent) {
@@ -585,7 +588,7 @@ export const bulkUpdateStatus = mutation({
     postIds: v.array(v.id("communityPosts")),
     status: v.union(
       v.literal("draft"),
-      v.literal("published")
+      v.literal("published"),
     ),
   },
   handler: async (ctx, args) => {
@@ -616,10 +619,10 @@ export const bulkUpdateFilters = mutation({
   args: {
     postIds: v.array(v.id("communityPosts")),
     filterIdsToAdd: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     filterIdsToRemove: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
   },
   handler: async (ctx, args) => {
@@ -637,14 +640,14 @@ export const bulkUpdateFilters = mutation({
         newFilterIds = [
           ...newFilterIds,
           ...args.filterIdsToAdd.filter(
-            (id) => !newFilterIds.includes(id)
+            (id) => !newFilterIds.includes(id),
           ),
         ];
       }
 
       if (args.filterIdsToRemove) {
         newFilterIds = newFilterIds.filter(
-          (id) => !args.filterIdsToRemove!.includes(id)
+          (id) => !args.filterIdsToRemove!.includes(id),
         );
       }
 

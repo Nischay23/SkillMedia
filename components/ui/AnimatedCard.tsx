@@ -1,5 +1,6 @@
 // components/ui/AnimatedCard.tsx
 import { useThemedStyles } from "@/providers/ThemeProvider";
+import { getThemedCardStyle } from "@/constants/CardStyles";
 import React, { useEffect } from "react";
 import { ViewStyle } from "react-native";
 import Animated, {
@@ -15,7 +16,7 @@ interface AnimatedCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   delay?: number;
-  variant?: "default" | "elevated" | "outlined";
+  variant?: "default" | "elevated" | "outlined" | "transparent";
   pressable?: boolean;
   onPress?: () => void;
   /**
@@ -45,25 +46,31 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   const styles = useThemedStyles((theme) => ({
     card: {
+      ...getThemedCardStyle("base", theme.colors.shadow),
       backgroundColor: theme.colors.card,
-      borderRadius: theme.borderRadius.xl,
       padding: theme.spacing.lg,
-      overflow: "hidden" as const,
     },
     default: {
       ...theme.shadows.md,
       shadowColor: theme.colors.shadow,
     },
     elevated: {
-      ...theme.shadows.lg,
-      shadowColor: theme.colors.shadow,
-      elevation: 8,
+      ...getThemedCardStyle(
+        "elevated",
+        theme.colors.shadow,
+      ),
+      backgroundColor: theme.colors.card,
+      padding: theme.spacing.lg,
     },
     outlined: {
-      borderWidth: 1,
+      ...getThemedCardStyle("flat", theme.colors.shadow),
       borderColor: theme.colors.border,
-      ...theme.shadows.sm,
-      shadowColor: theme.colors.shadow,
+      backgroundColor: theme.colors.card,
+      padding: theme.spacing.lg,
+    },
+    transparent: {
+      backgroundColor: "transparent",
+      padding: 0,
     },
   }));
 
@@ -81,6 +88,8 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
         return styles.elevated;
       case "outlined":
         return styles.outlined;
+      case "transparent":
+        return styles.transparent;
       default:
         return styles.default;
     }
@@ -134,7 +143,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
       <Animated.View
         entering={enteringAnimation}
         style={[
-          styles.card,
+          variant !== "transparent" && styles.card,
           getVariantStyle(),
           !useEnteringAnimation && animatedStyle,
           style,
@@ -152,7 +161,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     <Animated.View
       entering={enteringAnimation}
       style={[
-        styles.card,
+        variant !== "transparent" && styles.card,
         getVariantStyle(),
         !useEnteringAnimation && animatedStyle,
         style,

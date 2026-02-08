@@ -6,7 +6,11 @@ import {
   Text,
   StyleSheet,
 } from "react-native";
-import { COLORS } from "@/constants/theme"; // Import your colors
+import {
+  COLORS,
+  FontSize,
+  SpacingValues,
+} from "@/constants/theme"; // Import your colors
 
 export const Loader = () => (
   <View style={styles.container}>
@@ -30,6 +34,6 @@ const styles = StyleSheet.create({
   text: {
     marginTop: 10,
     color: COLORS.gray, // A readable color for loading text
-    fontSize: 16,
+    fontSize: FontSize.body,
   },
 });

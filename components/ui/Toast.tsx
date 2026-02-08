@@ -1,159 +1,200 @@
+/**
+ * Toast notification system
+ * ─────────────────────────────────────────────
+ * Provides a global `showToast(message, type)` via React context.
+ *
+ * Usage:
+ *   const { showToast } = useToast();
+ *   showToast("Career path saved!", "success");
+ *
+ * Wrap your app in <ToastProvider>{children}</ToastProvider>.
+ */
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
-  Animated,
+  Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInUp,
+  SlideOutUp,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 
-type ToastVariant = "default" | "success" | "destructive";
+import { Typography } from "@/components/ui/Typography";
+import { useTheme } from "@/providers/ThemeProvider";
 
-type ToastInput = {
-  title: string;
-  description?: string;
-  variant?: ToastVariant;
-  durationMs?: number;
-};
+// ── Types ────────────────────────────────────────────────
+export type ToastType = "success" | "error" | "info";
 
-type ToastRecord = ToastInput & {
+interface ToastRecord {
   id: string;
+  message: string;
+  type: ToastType;
+  duration: number;
+}
+
+interface ToastContextValue {
+  /** New recommended API */
+  showToast: (
+    message: string,
+    type?: ToastType,
+    duration?: number,
+  ) => void;
+  /** Legacy-compatible API (title → message) */
+  toast: (input: {
+    title: string;
+    description?: string;
+    variant?: "default" | "success" | "destructive";
+    durationMs?: number;
+  }) => void;
+}
+
+// ── Icon / colour config ─────────────────────────────────
+const CONFIG: Record<
+  ToastType,
+  { icon: keyof typeof Ionicons.glyphMap; color: string }
+> = {
+  success: { icon: "checkmark-circle", color: "#22C55E" },
+  error: { icon: "close-circle", color: "#EF4444" },
+  info: { icon: "information-circle", color: "#3B82F6" },
 };
 
-type ToastContextValue = {
-  toast: (input: ToastInput) => void;
-};
-
+// ── Context ──────────────────────────────────────────────
 const ToastContext =
   createContext<ToastContextValue | null>(null);
 
-export function useToast() {
+export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) {
+  if (!ctx)
     throw new Error(
-      "useToast must be used within ToastProvider"
+      "useToast must be used within <ToastProvider>",
     );
-  }
   return ctx;
 }
 
-function variantStyles(variant: ToastVariant | undefined) {
-  switch (variant) {
-    case "success":
-      return {
-        borderColor: "rgba(16, 185, 129, 0.35)",
-        titleColor: "#e5e7eb",
-        descriptionColor: "#9ca3af",
-        accentDot: "#10b981",
-      };
-    case "destructive":
-      return {
-        borderColor: "rgba(239, 68, 68, 0.35)",
-        titleColor: "#e5e7eb",
-        descriptionColor: "#9ca3af",
-        accentDot: "#ef4444",
-      };
-    default:
-      return {
-        borderColor: "#2d3748",
-        titleColor: "#e5e7eb",
-        descriptionColor: "#9ca3af",
-        accentDot: "#6b7280",
-      };
-  }
-}
-
-function ToastItem({
+// ── Single toast card ────────────────────────────────────
+function ToastCard({
   record,
+  index,
   onDismiss,
 }: {
   record: ToastRecord;
-  onDismiss: () => void;
+  index: number;
+  onDismiss: (id: string) => void;
 }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const { theme, isDark } = useTheme();
+  const { icon, color } = CONFIG[record.type];
 
-  React.useEffect(() => {
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 160,
-      useNativeDriver: true,
-    }).start();
+  // Auto-dismiss progress
+  const progress = useSharedValue(1);
 
-    return () => {
-      anim.stopAnimation();
-    };
-  }, [anim]);
+  useEffect(() => {
+    progress.value = withDelay(
+      250, // let the enter animation finish
+      withTiming(
+        0,
+        { duration: record.duration },
+        (done) => {
+          if (done) runOnJS(onDismiss)(record.id);
+        },
+      ),
+    );
+  }, [record.id, record.duration, onDismiss, progress]);
 
-  const v = variantStyles(record.variant);
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%` as unknown as number,
+  }));
 
-  const handleDismiss = () => {
-    Animated.timing(anim, {
-      toValue: 0,
-      duration: 140,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) onDismiss();
-    });
-  };
+  const topOffset = 8 + index * 72;
+  const bgColor = isDark
+    ? "rgba(24,26,32,0.92)"
+    : "rgba(255,255,255,0.92)";
+  const borderColor = isDark
+    ? "rgba(255,255,255,0.08)"
+    : "rgba(0,0,0,0.06)";
 
   return (
-    <Pressable
-      onPress={handleDismiss}
-      style={[styles.toast, { borderColor: v.borderColor }]}
+    <Animated.View
+      entering={SlideInUp.duration(300)
+        .springify()
+        .damping(18)}
+      exiting={SlideOutUp.duration(250)}
+      style={[styles.cardWrapper, { top: topOffset }]}
+      pointerEvents="box-none"
     >
-      <Animated.View
-        style={{
-          opacity: anim,
-          transform: [
-            {
-              translateY: anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-6, 0],
-              }),
-            },
-          ],
-        }}
+      <Pressable
+        onPress={() => onDismiss(record.id)}
+        style={[
+          styles.card,
+          {
+            backgroundColor:
+              Platform.OS === "ios"
+                ? "transparent"
+                : bgColor,
+            borderColor,
+          },
+        ]}
       >
-        <View style={styles.toastRow}>
-          <View
-            style={[
-              styles.accentDot,
-              { backgroundColor: v.accentDot },
-            ]}
+        {Platform.OS === "ios" && (
+          <BlurView
+            intensity={60}
+            tint={isDark ? "dark" : "light"}
+            style={StyleSheet.absoluteFill}
           />
-          <View style={styles.toastBody}>
-            <Text
-              style={[
-                styles.toastTitle,
-                { color: v.titleColor },
-              ]}
-            >
-              {record.title}
-            </Text>
-            {!!record.description && (
-              <Text
-                style={[
-                  styles.toastDescription,
-                  { color: v.descriptionColor },
-                ]}
-                numberOfLines={3}
-              >
-                {record.description}
-              </Text>
-            )}
-          </View>
-        </View>
-      </Animated.View>
-    </Pressable>
+        )}
+
+        {/* Icon */}
+        <Ionicons
+          name={icon}
+          size={22}
+          color={color}
+          style={styles.icon}
+        />
+
+        {/* Message */}
+        <Typography
+          variant="body"
+          weight="medium"
+          color="text"
+          numberOfLines={2}
+          style={styles.message}
+        >
+          {record.message}
+        </Typography>
+
+        {/* Progress bar */}
+        <Animated.View
+          style={[
+            styles.progressBar,
+            { backgroundColor: color + "44" },
+            progressStyle,
+          ]}
+        />
+      </Pressable>
+    </Animated.View>
   );
 }
+
+// ── Provider ─────────────────────────────────────────────
+const MAX_VISIBLE = 3;
 
 export function ToastProvider({
   children,
@@ -161,109 +202,121 @@ export function ToastProvider({
   children: React.ReactNode;
 }) {
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
-  const timers = useRef(
-    new Map<string, ReturnType<typeof setTimeout>>()
-  );
+  const idCounter = useRef(0);
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-    const timer = timers.current.get(id);
-    if (timer) {
-      clearTimeout(timer);
-      timers.current.delete(id);
-    }
   }, []);
 
-  const toast = useCallback(
-    ({
-      title,
-      description,
-      variant,
-      durationMs,
-    }: ToastInput) => {
-      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const record: ToastRecord = {
-        id,
-        title,
-        description,
-        variant,
-        durationMs,
-      };
-
-      setToasts((prev) => [record, ...prev].slice(0, 3));
-
-      const timeout = setTimeout(() => {
-        dismiss(id);
-      }, durationMs ?? 3200);
-
-      timers.current.set(id, timeout);
+  const showToast = useCallback(
+    (
+      message: string,
+      type: ToastType = "info",
+      duration = 3000,
+    ) => {
+      idCounter.current += 1;
+      const id = `toast-${idCounter.current}-${Date.now()}`;
+      setToasts((prev) =>
+        [{ id, message, type, duration }, ...prev].slice(
+          0,
+          MAX_VISIBLE,
+        ),
+      );
     },
-    [dismiss]
+    [],
   );
 
-  const value = useMemo(() => ({ toast }), [toast]);
+  // Legacy-compatible bridge
+  const toast = useCallback(
+    (input: {
+      title: string;
+      description?: string;
+      variant?: "default" | "success" | "destructive";
+      durationMs?: number;
+    }) => {
+      const typeMap: Record<string, ToastType> = {
+        success: "success",
+        destructive: "error",
+        default: "info",
+      };
+      const mapped =
+        typeMap[input.variant ?? "default"] ?? "info";
+      const msg = input.description
+        ? `${input.title} — ${input.description}`
+        : input.title;
+      showToast(msg, mapped, input.durationMs ?? 3000);
+    },
+    [showToast],
+  );
+
+  const value = useMemo(
+    () => ({ showToast, toast }),
+    [showToast, toast],
+  );
 
   return (
     <ToastContext.Provider value={value}>
-      <View style={styles.root}>
-        {children}
-        <View pointerEvents="box-none" style={styles.stack}>
-          {toasts.map((t) => (
-            <ToastItem
-              key={t.id}
-              record={t}
-              onDismiss={() => dismiss(t.id)}
-            />
-          ))}
-        </View>
+      {children}
+
+      {/* Toast layer */}
+      <View pointerEvents="box-none" style={styles.overlay}>
+        {toasts.map((t, i) => (
+          <ToastCard
+            key={t.id}
+            record={t}
+            index={i}
+            onDismiss={dismiss}
+          />
+        ))}
       </View>
     </ToastContext.Provider>
   );
 }
 
+// ── Styles ───────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    position: "relative",
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
+    pointerEvents: "box-none",
   },
-  stack: {
+  cardWrapper: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    left: 16,
-    alignItems: "flex-end",
-    gap: 10,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    pointerEvents: "box-none",
   },
-  toast: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  toastRow: {
+  card: {
+    marginHorizontal: 16,
     flexDirection: "row",
-    gap: 10,
-    alignItems: "flex-start",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.14,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+    }),
   },
-  accentDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    marginTop: 6,
+  icon: {
+    marginRight: 12,
   },
-  toastBody: {
+  message: {
     flex: 1,
-    gap: 4,
   },
-  toastTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  toastDescription: {
-    fontSize: 12,
-    lineHeight: 16,
+  progressBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    height: 3,
+    borderBottomLeftRadius: 16,
   },
 });

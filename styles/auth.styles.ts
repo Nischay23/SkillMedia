@@ -1,5 +1,11 @@
 // styles/auth.styles.ts
-import { COLORS } from "@/constants/theme";
+import {
+  COLORS,
+  FontSize,
+  FontWeight,
+  SpacingValues,
+  ScreenPadding,
+} from "@/constants/theme";
 import { StyleSheet, Dimensions } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -20,19 +26,19 @@ export const styles = StyleSheet.create({
     backgroundColor: "rgba(74, 222, 128, 0.15)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: ScreenPadding.vertical,
   },
   appName: {
     fontSize: 42,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
     fontFamily: "JetBrainsMono-Medium",
     color: COLORS.primary,
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginBottom: SpacingValues.sm,
   },
   tagline: {
-    fontSize: 16,
-    color: COLORS.grey,
+    fontSize: FontSize.body,
+    color: COLORS.textMuted,
     letterSpacing: 1,
     textTransform: "lowercase",
   },
@@ -49,7 +55,7 @@ export const styles = StyleSheet.create({
   },
   loginSection: {
     width: "100%",
-    paddingHorizontal: 24,
+    paddingHorizontal: SpacingValues.lg,
     paddingBottom: 40,
     alignItems: "center",
   },
@@ -57,11 +63,11 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: SpacingValues.base,
+    paddingHorizontal: SpacingValues.lg,
     borderRadius: 14,
-    marginBottom: 20,
+    marginBottom: ScreenPadding.vertical,
     width: "100%",
     maxWidth: 300,
     shadowColor: "#000",
@@ -78,17 +84,17 @@ export const styles = StyleSheet.create({
     height: 24,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: SpacingValues.md,
   },
   googleButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
     color: COLORS.surface,
   },
   termsText: {
     textAlign: "center",
-    fontSize: 12,
-    color: COLORS.grey,
+    fontSize: FontSize.caption,
+    color: COLORS.textMuted,
     maxWidth: 280,
   },
 });

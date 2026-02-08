@@ -7,14 +7,15 @@ import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 import {
   View,
+  Text,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -27,20 +28,25 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
-import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 
 export default function Profile() {
   const { signOut, userId } = useAuth();
   const { theme, isDark } = useTheme();
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  
+  const [isEditModalVisible, setIsEditModalVisible] =
+    useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
   // Animation values
   const headerOpacity = useSharedValue(1);
   const buttonScale = useSharedValue(1);
 
   const currentUser = useQuery(
     api.users.getUserByClerkId,
-    userId ? { clerkId: userId } : "skip"
+    userId ? { clerkId: userId } : "skip",
   );
 
   const [editedProfile, setEditedProfile] = useState({
@@ -48,14 +54,28 @@ export default function Profile() {
     bio: currentUser?.bio || "",
   });
 
-  const [selectedPost, setSelectedPost] = useState<any>(null);
-  
+  const [selectedPost, setSelectedPost] =
+    useState<any>(null);
+
   const posts = useQuery(
     api.posts.getPostsByUser,
-    currentUser ? { userId: currentUser._id } : "skip"
+    currentUser ? { userId: currentUser._id } : "skip",
   );
 
-  const updateProfile = useMutation(api.users.updateProfile);
+  // Disable entering animations after first data load
+  useEffect(() => {
+    if (posts !== undefined && isFirstLoad) {
+      const timer = setTimeout(
+        () => setIsFirstLoad(false),
+        800,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [posts, isFirstLoad]);
+
+  const updateProfile = useMutation(
+    api.users.updateProfile,
+  );
 
   const styles = useThemedStyles((theme) => ({
     container: {
@@ -63,20 +83,20 @@ export default function Profile() {
       backgroundColor: theme.colors.background,
     },
     header: {
-      flexDirection: 'row' as const,
-      justifyContent: 'space-between' as const,
-      alignItems: 'center' as const,
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
       paddingHorizontal: theme.spacing.lg,
       paddingVertical: theme.spacing.md,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
     headerLeft: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
     },
     headerRight: {
-      flexDirection: 'row' as const,
+      flexDirection: "row" as const,
       gap: theme.spacing.lg,
     },
     headerIcon: {
@@ -85,79 +105,119 @@ export default function Profile() {
       backgroundColor: theme.colors.surface,
     },
     profileInfo: {
-      padding: theme.spacing.lg,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 0,
     },
     avatarAndStats: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      marginBottom: theme.spacing.lg,
-    },
-    avatarContainer: {
-      marginRight: theme.spacing['2xl'],
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
     },
     avatar: {
-      width: 86,
-      height: 86,
-      borderRadius: 43,
-      borderWidth: 3,
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      borderWidth: 2,
       borderColor: theme.colors.primary,
     },
     statsContainer: {
-      flexDirection: 'row' as const,
       flex: 1,
-      justifyContent: 'space-around' as const,
+      flexDirection: "row" as const,
+      justifyContent: "space-evenly" as const,
+      marginLeft: 20,
     },
     statItem: {
-      alignItems: 'center' as const,
+      alignItems: "center" as const,
     },
-    actionButtons: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      marginTop: theme.spacing.lg,
-      gap: theme.spacing.md,
+    statNumber: {
+      fontSize: 17,
+      fontWeight: "700" as const,
+      color: theme.colors.text,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginTop: 1,
+    },
+    nameText: {
+      fontSize: 14,
+      fontWeight: "600" as const,
+      color: theme.colors.text,
+      marginTop: 10,
+    },
+    bioText: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
+      lineHeight: 18,
+    },
+    actionRow: {
+      flexDirection: "row" as const,
+      gap: 8,
+      marginTop: 12,
     },
     editButton: {
       flex: 1,
-    },
-    shareButton: {
-      padding: theme.spacing.sm,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: theme.colors.surface,
+      height: 34,
       borderWidth: 1,
       borderColor: theme.colors.border,
+      borderRadius: 8,
+      backgroundColor: theme.colors.surface,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+    },
+    editButtonText: {
+      fontSize: 13,
+      fontWeight: "600" as const,
+      color: theme.colors.text,
+    },
+    shareButton: {
+      height: 34,
+      width: 34,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      backgroundColor: theme.colors.surface,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+    },
+    gridDivider: {
+      height: 1,
+      backgroundColor: theme.colors.border,
+      marginTop: 14,
     },
     gridContainer: {
-      paddingHorizontal: theme.spacing.xs,
+      paddingHorizontal: 0,
+      marginTop: 2,
     },
     gridItem: {
       flex: 1 / 3,
       aspectRatio: 1,
-      margin: theme.spacing.xs,
-      borderRadius: theme.borderRadius.sm,
-      overflow: 'hidden' as const,
+      margin: 1,
+      overflow: "hidden" as const,
     },
     gridImage: {
-      width: '100%' as const,
-      height: '100%' as const,
+      width: "100%" as const,
+      height: "100%" as const,
     },
     modalContainer: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
     },
     modalContent: {
       backgroundColor: theme.colors.surface,
       borderRadius: theme.borderRadius.lg,
       padding: theme.spacing.xl,
       margin: theme.spacing.lg,
-      width: '90%' as const,
-      maxHeight: '80%' as const,
+      width: "90%" as const,
+      maxHeight: "80%" as const,
     },
     modalHeader: {
-      flexDirection: 'row' as const,
-      justifyContent: 'space-between' as const,
-      alignItems: 'center' as const,
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
       marginBottom: theme.spacing.lg,
     },
     inputContainer: {
@@ -170,36 +230,36 @@ export default function Profile() {
       color: theme.colors.text,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      fontSize: 16,
+      fontSize: theme.typography.sizes.body,
     },
     bioInput: {
       height: 100,
-      textAlignVertical: 'top' as const,
+      textAlignVertical: "top" as const,
     },
     modalBackdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
+      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
     },
     postDetailContainer: {
-      width: '90%' as const,
-      maxHeight: '80%' as const,
+      width: "90%" as const,
+      maxHeight: "80%" as const,
     },
     postDetailHeader: {
-      flexDirection: 'row' as const,
-      justifyContent: 'flex-end' as const,
+      flexDirection: "row" as const,
+      justifyContent: "flex-end" as const,
       padding: theme.spacing.md,
     },
     postDetailImage: {
-      width: '100%' as const,
+      width: "100%" as const,
       aspectRatio: 1,
       borderRadius: theme.borderRadius.lg,
     },
     emptyStateContainer: {
       height: 200,
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
       marginTop: theme.spacing.xl,
     },
   }));
@@ -219,94 +279,131 @@ export default function Profile() {
   };
 
   const handleEditPress = () => {
-    buttonScale.value = withSpring(0.95, { damping: 10, stiffness: 400 });
+    buttonScale.value = withSpring(0.95, {
+      damping: 10,
+      stiffness: 400,
+    });
     setTimeout(() => {
-      buttonScale.value = withSpring(1, { damping: 10, stiffness: 400 });
+      buttonScale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 400,
+      });
       setIsEditModalVisible(true);
     }, 100);
   };
 
-  if (!currentUser || posts === undefined) return <Loader />;
+  if (!currentUser || posts === undefined)
+    return <Loader />;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={isDark ? "light-content" : "dark-content"} />
-      
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={isDark ? "light-content" : "dark-content"}
+      />
+
       {/* HEADER */}
-      <Animated.View style={[styles.header, headerAnimatedStyle]}>
+      <Animated.View
+        style={[styles.header, headerAnimatedStyle]}
+      >
         <View style={styles.headerLeft}>
-          <Typography variant="h2" color="text" weight="bold">
+          <Typography
+            variant="h2"
+            color="text"
+            weight="bold"
+          >
             {currentUser.username}
           </Typography>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerIcon} onPress={() => signOut()}>
-            <Ionicons name="log-out-outline" size={24} color={theme.colors.text} />
+          <TouchableOpacity
+            style={styles.headerIcon}
+            onPress={() => signOut()}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={24}
+              color={theme.colors.text}
+            />
           </TouchableOpacity>
         </View>
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <AnimatedCard delay={0} style={styles.profileInfo}>
-          {/* AVATAR & STATS */}
+        <View style={styles.profileInfo}>
+          {/* Avatar + Stats row (Instagram style) */}
           <View style={styles.avatarAndStats}>
-            <View style={styles.avatarContainer}>
-              <Image
-                source={currentUser.image}
-                style={styles.avatar}
-                contentFit="cover"
-                transition={200}
-              />
-            </View>
+            <Image
+              source={currentUser.image}
+              style={styles.avatar}
+              contentFit="cover"
+              transition={200}
+            />
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Typography variant="h3" color="text" weight="bold">
+                <Text style={styles.statNumber}>
                   {currentUser.posts}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">Posts</Typography>
+                </Text>
+                <Text style={styles.statLabel}>Posts</Text>
               </View>
               <View style={styles.statItem}>
-                <Typography variant="h3" color="text" weight="bold">
+                <Text style={styles.statNumber}>
                   {currentUser.followers}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
+                </Text>
+                <Text style={styles.statLabel}>
                   Followers
-                </Typography>
+                </Text>
               </View>
               <View style={styles.statItem}>
-                <Typography variant="h3" color="text" weight="bold">
+                <Text style={styles.statNumber}>
                   {currentUser.following}
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
+                </Text>
+                <Text style={styles.statLabel}>
                   Following
-                </Typography>
+                </Text>
               </View>
             </View>
           </View>
 
-          <Typography variant="h3" color="text" weight="semibold" style={{ marginTop: theme.spacing.md }}>
+          {/* Name + Bio */}
+          <Text style={styles.nameText}>
             {currentUser.fullname}
-          </Typography>
+          </Text>
           {currentUser.bio && (
-            <Typography variant="body" color="textSecondary" style={{ marginTop: theme.spacing.sm }}>
+            <Text style={styles.bioText} numberOfLines={2}>
               {currentUser.bio}
-            </Typography>
+            </Text>
           )}
 
-          <View style={styles.actionButtons}>
-            <Animated.View style={[styles.editButton, buttonAnimatedStyle]}>
-              <AnimatedButton
-                title="Edit Profile"
+          {/* Action row: Edit Profile + Share */}
+          <View style={styles.actionRow}>
+            <Animated.View
+              style={[{ flex: 1 }, buttonAnimatedStyle]}
+            >
+              <TouchableOpacity
+                style={styles.editButton}
                 onPress={handleEditPress}
-                variant="outline"
-              />
+                activeOpacity={0.7}
+              >
+                <Text style={styles.editButtonText}>
+                  Edit profile
+                </Text>
+              </TouchableOpacity>
             </Animated.View>
             <TouchableOpacity style={styles.shareButton}>
-              <Ionicons name="share-outline" size={20} color={theme.colors.text} />
+              <Ionicons
+                name="person-add-outline"
+                size={16}
+                color={theme.colors.text}
+              />
             </TouchableOpacity>
           </View>
-        </AnimatedCard>
+
+          {/* Grid divider */}
+          <View style={styles.gridDivider} />
+        </View>
 
         {posts.length === 0 && <NoPostsFound />}
 
@@ -316,8 +413,14 @@ export default function Profile() {
           scrollEnabled={false}
           contentContainerStyle={styles.gridContainer}
           renderItem={({ item, index }) => (
-            <AnimatedCard delay={(index + 1) * 50} style={styles.gridItem}>
-              <TouchableOpacity onPress={() => setSelectedPost(item)}>
+            <AnimatedCard
+              delay={Math.min((index + 1) * 100, 500)}
+              useEnteringAnimation={isFirstLoad}
+              style={styles.gridItem}
+            >
+              <TouchableOpacity
+                onPress={() => setSelectedPost(item)}
+              >
                 <Image
                   source={item.imageUrl}
                   style={styles.gridImage}
@@ -337,23 +440,44 @@ export default function Profile() {
         transparent={true}
         onRequestClose={() => setIsEditModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+        >
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={
+              Platform.OS === "ios" ? "padding" : "height"
+            }
             style={styles.modalContainer}
           >
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Typography variant="h3" color="text" weight="bold">
+                <Typography
+                  variant="h3"
+                  color="text"
+                  weight="bold"
+                >
                   Edit Profile
                 </Typography>
-                <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
-                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                <TouchableOpacity
+                  onPress={() =>
+                    setIsEditModalVisible(false)
+                  }
+                >
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={theme.colors.text}
+                  />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.inputContainer}>
-                <Typography variant="body" color="text" weight="medium" style={{ marginBottom: theme.spacing.sm }}>
+                <Typography
+                  variant="body"
+                  color="text"
+                  weight="medium"
+                  style={{ marginBottom: theme.spacing.sm }}
+                >
                   Name
                 </Typography>
                 <TextInput
@@ -365,12 +489,19 @@ export default function Profile() {
                       fullname: text,
                     }))
                   }
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={
+                    theme.colors.textMuted
+                  }
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Typography variant="body" color="text" weight="medium" style={{ marginBottom: theme.spacing.sm }}>
+                <Typography
+                  variant="body"
+                  color="text"
+                  weight="medium"
+                  style={{ marginBottom: theme.spacing.sm }}
+                >
                   Bio
                 </Typography>
                 <TextInput
@@ -384,7 +515,9 @@ export default function Profile() {
                   }
                   multiline
                   numberOfLines={4}
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={
+                    theme.colors.textMuted
+                  }
                 />
               </View>
 
@@ -409,8 +542,14 @@ export default function Profile() {
           {selectedPost && (
             <View style={styles.postDetailContainer}>
               <View style={styles.postDetailHeader}>
-                <TouchableOpacity onPress={() => setSelectedPost(null)}>
-                  <Ionicons name="close" size={24} color={theme.colors.background} />
+                <TouchableOpacity
+                  onPress={() => setSelectedPost(null)}
+                >
+                  <Ionicons
+                    name="close"
+                    size={24}
+                    color={theme.colors.background}
+                  />
                 </TouchableOpacity>
               </View>
               <Image
@@ -428,17 +567,27 @@ export default function Profile() {
 
 function NoPostsFound() {
   const { theme } = useTheme();
-  
+
   return (
-    <View style={{
-      height: 200,
-      backgroundColor: theme.colors.background,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginTop: 20,
-    }}>
-      <Ionicons name="images-outline" size={48} color={theme.colors.primary} />
-      <Typography variant="h4" color="text" style={{ marginTop: 12 }}>
+    <View
+      style={{
+        height: 200,
+        backgroundColor: theme.colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 20,
+      }}
+    >
+      <Ionicons
+        name="images-outline"
+        size={48}
+        color={theme.colors.primary}
+      />
+      <Typography
+        variant="h4"
+        color="text"
+        style={{ marginTop: 12 }}
+      >
         No posts yet
       </Typography>
     </View>

@@ -10,7 +10,16 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 
-import { COLORS } from "@/constants/theme";
+import {
+  COLORS,
+  FontSize,
+  FontWeight,
+  SpacingValues,
+  ScreenPadding,
+  CardSpacing,
+  ComponentSpacing,
+} from "@/constants/theme";
+import { elevatedCard } from "@/constants/CardStyles";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-expo";
@@ -21,25 +30,33 @@ interface CareerPathDetailsProps {
   filterOption: FilterOption;
 }
 
-export default function CareerPathDetails({ filterOption }: CareerPathDetailsProps) {
+export default function CareerPathDetails({
+  filterOption,
+}: CareerPathDetailsProps) {
   const { user: clerkUser } = useUser();
 
   // Query if the current user has liked this career path (temporarily disabled)
   const isLiked = false; // useQuery(api.likes.getIsLiked, clerkUser ? { filterOptionId: filterOption._id } : "skip");
-  
+
   // Query if the current user has saved this career path
   const isSaved = useQuery(
     api.savedContent.getIsSaved,
-    clerkUser ? { filterOptionId: filterOption._id } : "skip"
+    clerkUser
+      ? { filterOptionId: filterOption._id }
+      : "skip",
   );
 
   // Mutations for interaction (likes temporarily disabled)
   // const toggleLikeMutation = useMutation(api.likes.toggleLike);
-  const toggleSaveMutation = useMutation(api.savedContent.toggleSave);
+  const toggleSaveMutation = useMutation(
+    api.savedContent.toggleSave,
+  );
 
   const handleLike = async () => {
     if (!clerkUser) {
-      console.warn("User not logged in. Cannot like career path.");
+      console.warn(
+        "User not logged in. Cannot like career path.",
+      );
       return;
     }
     // TODO: Implement likes functionality when API is available
@@ -48,7 +65,9 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 
   const handleSave = async () => {
     if (!clerkUser) {
-      console.warn("User not logged in. Cannot save career path.");
+      console.warn(
+        "User not logged in. Cannot save career path.",
+      );
       return;
     }
     try {
@@ -62,14 +81,26 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 
   const renderRequirements = () => {
     if (!filterOption.requirements) return null;
-    const requirements = filterOption.requirements.split(/,|\n/).map(req => req.trim()).filter(req => req);
+    const requirements = filterOption.requirements
+      .split(/,|\n/)
+      .map((req) => req.trim())
+      .filter((req) => req);
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Requirements</Text>
+        <Text style={styles.sectionTitle}>
+          Requirements
+        </Text>
         {requirements.map((requirement, index) => (
           <View key={index} style={styles.requirementRow}>
-            <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.requirementText}>{requirement}</Text>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={COLORS.primary}
+              style={{ marginRight: SpacingValues.sm }}
+            />
+            <Text style={styles.requirementText}>
+              {requirement}
+            </Text>
           </View>
         ))}
       </View>
@@ -78,12 +109,17 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 
   const renderExams = () => {
     if (!filterOption.relevantExams) return null;
-    
-    const exams = filterOption.relevantExams.split(',').map(exam => exam.trim()).filter(exam => exam);
-    
+
+    const exams = filterOption.relevantExams
+      .split(",")
+      .map((exam) => exam.trim())
+      .filter((exam) => exam);
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Relevant Exams</Text>
+        <Text style={styles.sectionTitle}>
+          Relevant Exams
+        </Text>
         <View style={styles.examContainer}>
           {exams.map((exam, index) => (
             <View key={index} style={styles.examTag}>
@@ -100,9 +136,13 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
       {/* Header with career path name and type */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{filterOption.name}</Text>
+          <Text style={styles.title}>
+            {filterOption.name}
+          </Text>
           <View style={styles.typeTag}>
-            <Text style={styles.typeText}>{filterOption.type.toUpperCase()}</Text>
+            <Text style={styles.typeText}>
+              {filterOption.type.toUpperCase()}
+            </Text>
           </View>
         </View>
       </View>
@@ -116,22 +156,37 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
         />
       )}
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Description */}
         {filterOption.description && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About This Career Path</Text>
-            <Text style={styles.description}>{filterOption.description}</Text>
+            <Text style={styles.sectionTitle}>
+              About This Career Path
+            </Text>
+            <Text style={styles.description}>
+              {filterOption.description}
+            </Text>
           </View>
         )}
 
         {/* Average Salary */}
         {filterOption.avgSalary && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Average Salary</Text>
+            <Text style={styles.sectionTitle}>
+              Average Salary
+            </Text>
             <View style={styles.salaryContainer}>
-              <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.salaryText}>{filterOption.avgSalary}</Text>
+              <Ionicons
+                name="cash-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+              <Text style={styles.salaryText}>
+                {filterOption.avgSalary}
+              </Text>
             </View>
           </View>
         )}
@@ -146,7 +201,10 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
       {/* Action buttons */}
       <View style={styles.actionContainer}>
         <TouchableOpacity
-          style={[styles.actionButton, isLiked && styles.likedButton]}
+          style={[
+            styles.actionButton,
+            isLiked && styles.likedButton,
+          ]}
           onPress={handleLike}
         >
           <Ionicons
@@ -154,13 +212,21 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
             size={24}
             color={isLiked ? COLORS.white : COLORS.primary}
           />
-          <Text style={[styles.actionText, isLiked && styles.likedText]}>
+          <Text
+            style={[
+              styles.actionText,
+              isLiked && styles.likedText,
+            ]}
+          >
             {filterOption.likes || 0}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, isSaved && styles.savedButton]}
+          style={[
+            styles.actionButton,
+            isSaved && styles.savedButton,
+          ]}
           onPress={handleSave}
         >
           <Ionicons
@@ -168,13 +234,22 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
             size={24}
             color={isSaved ? COLORS.white : COLORS.primary}
           />
-          <Text style={[styles.actionText, isSaved && styles.savedText]}>
+          <Text
+            style={[
+              styles.actionText,
+              isSaved && styles.savedText,
+            ]}
+          >
             {isSaved ? "Saved" : "Save"}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="chatbubble-outline" size={24} color={COLORS.primary} />
+          <Ionicons
+            name="chatbubble-outline"
+            size={24}
+            color={COLORS.primary}
+          />
           <Text style={styles.actionText}>
             {filterOption.comments || 0}
           </Text>
@@ -186,34 +261,27 @@ export default function CareerPathDetails({ filterOption }: CareerPathDetailsPro
 
 const styles = StyleSheet.create({
   requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    marginLeft: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SpacingValues.sm,
+    marginLeft: SpacingValues.sm,
   },
   requirementText: {
-    fontSize: 14,
-    color: '#B0B0B0',
+    fontSize: FontSize.bodySmall,
+    color: "#B0B0B0",
     flex: 1,
     lineHeight: 22,
   },
   container: {
+    ...elevatedCard,
     backgroundColor: COLORS.surface,
     borderRadius: 18,
-    marginVertical: 16,
-    marginHorizontal: 8,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
-    overflow: 'hidden',
+    padding: 0, // sections handle their own padding
+    marginVertical: SpacingValues.base,
+    marginHorizontal: SpacingValues.sm,
   },
   header: {
-    padding: 20,
+    padding: ScreenPadding.vertical,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.darkGray,
     backgroundColor: COLORS.surface,
@@ -221,107 +289,108 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
   },
   titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: FontSize.h1,
+    fontWeight: FontWeight.bold,
     color: COLORS.white,
     flex: 1,
     letterSpacing: 0.5,
   },
   typeTag: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: SpacingValues.sm,
+    paddingVertical: SpacingValues.xs,
     borderRadius: 6,
-    marginLeft: 8,
+    marginLeft: SpacingValues.sm,
   },
   typeText: {
     color: COLORS.white,
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: FontWeight.semibold,
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 200,
   },
   content: {
     maxHeight: 400,
   },
   section: {
-    padding: 16,
+    padding: CardSpacing.padding,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
     color: COLORS.black,
-    marginBottom: 8,
+    marginBottom: SpacingValues.sm,
   },
   description: {
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
     color: COLORS.gray,
     lineHeight: 20,
   },
   salaryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   salaryText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.semibold,
     color: COLORS.primary,
-    marginLeft: 8,
+    marginLeft: ComponentSpacing.iconMargin,
   },
   bulletPoint: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 4,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: SpacingValues.xs,
   },
   bullet: {
-    fontSize: 14,
+    fontSize: FontSize.bodySmall,
     color: COLORS.primary,
-    marginRight: 8,
+    marginRight: SpacingValues.sm,
     marginTop: 2,
   },
   examContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SpacingValues.sm,
   },
   examTag: {
     backgroundColor: COLORS.lightGray,
-    paddingHorizontal: 12,
+    paddingHorizontal: SpacingValues.md,
     paddingVertical: 6,
     borderRadius: 20,
   },
   examText: {
-    fontSize: 12,
+    fontSize: FontSize.caption,
     color: COLORS.black,
-    fontWeight: '500',
+    fontWeight: FontWeight.medium,
   },
   actionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: SpacingValues.md,
+    paddingHorizontal: SpacingValues.base,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal:
+      ComponentSpacing.buttonPaddingHorizontal,
+    paddingVertical: SpacingValues.sm,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: COLORS.primary,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   likedButton: {
     backgroundColor: COLORS.primary,
@@ -330,10 +399,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   actionText: {
-    marginLeft: 4,
-    fontSize: 14,
+    marginLeft: SpacingValues.xs,
+    fontSize: FontSize.bodySmall,
     color: COLORS.primary,
-    fontWeight: '500',
+    fontWeight: FontWeight.medium,
   },
   likedText: {
     color: COLORS.white,

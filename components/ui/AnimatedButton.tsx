@@ -1,26 +1,26 @@
 // components/ui/AnimatedButton.tsx
-import React from 'react';
+import React from "react";
 import {
   TouchableOpacity,
   Text,
   ViewStyle,
   TextStyle,
   GestureResponderEvent,
-} from 'react-native';
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
   runOnJS,
-} from 'react-native-reanimated';
-import { useThemedStyles } from '@/providers/ThemeProvider';
+} from "react-native-reanimated";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 
 interface AnimatedButtonProps {
   title: string;
   onPress: (event: GestureResponderEvent) => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -28,13 +28,17 @@ interface AnimatedButtonProps {
   icon?: React.ReactNode;
 }
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedTouchable = Animated.createAnimatedComponent(
+  TouchableOpacity,
+);
 
-export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+export const AnimatedButton: React.FC<
+  AnimatedButtonProps
+> = ({
   title,
   onPress,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
   style,
   textStyle,
@@ -46,12 +50,15 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   const styles = useThemedStyles((theme) => ({
     button: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
       borderRadius: theme.borderRadius.lg,
       ...theme.shadows.md,
-      shadowColor: variant === 'primary' ? theme.colors.primary : theme.colors.shadow,
+      shadowColor:
+        variant === "primary"
+          ? theme.colors.primary
+          : theme.colors.shadow,
     },
     primary: {
       backgroundColor: theme.colors.primary,
@@ -62,12 +69,12 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       borderWidth: 0,
     },
     outline: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 2,
       borderColor: theme.colors.primary,
     },
     ghost: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       borderWidth: 0,
     },
     disabled: {
@@ -84,20 +91,27 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       minHeight: 44,
     },
     lg: {
-      paddingHorizontal: theme.spacing['2xl'],
+      paddingHorizontal: theme.spacing["2xl"],
       paddingVertical: theme.spacing.lg,
       minHeight: 52,
     },
     text: {
       fontFamily: theme.typography.fontFamily.medium,
-      fontWeight: '600' as const,
-      textAlign: 'center' as const,
+      fontWeight: theme.typography.weights
+        .semibold as "600",
+      textAlign: "center" as const,
     },
     textPrimary: {
-      color: variant === 'primary' ? theme.colors.card : theme.colors.primary,
+      color:
+        variant === "primary"
+          ? theme.colors.card
+          : theme.colors.primary,
     },
     textSecondary: {
-      color: variant === 'secondary' ? theme.colors.card : theme.colors.secondary,
+      color:
+        variant === "secondary"
+          ? theme.colors.card
+          : theme.colors.secondary,
     },
     textOutline: {
       color: theme.colors.primary,
@@ -128,12 +142,20 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 10, stiffness: 400 });
-    shadowOpacity.value = withTiming(0.4, { duration: 150 });
+    scale.value = withSpring(0.95, {
+      damping: 10,
+      stiffness: 400,
+    });
+    shadowOpacity.value = withTiming(0.4, {
+      duration: 150,
+    });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+    scale.value = withSpring(1, {
+      damping: 10,
+      stiffness: 400,
+    });
     shadowOpacity.value = withTiming(0, { duration: 150 });
   };
 
@@ -145,13 +167,13 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   const getVariantStyle = () => {
     switch (variant) {
-      case 'primary':
+      case "primary":
         return styles.primary;
-      case 'secondary':
+      case "secondary":
         return styles.secondary;
-      case 'outline':
+      case "outline":
         return styles.outline;
-      case 'ghost':
+      case "ghost":
         return styles.ghost;
       default:
         return styles.primary;
@@ -160,13 +182,13 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   const getTextVariantStyle = () => {
     switch (variant) {
-      case 'primary':
+      case "primary":
         return styles.textPrimary;
-      case 'secondary':
+      case "secondary":
         return styles.textSecondary;
-      case 'outline':
+      case "outline":
         return styles.textOutline;
-      case 'ghost':
+      case "ghost":
         return styles.textGhost;
       default:
         return styles.textPrimary;
@@ -175,11 +197,11 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   const getSizeStyle = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return styles.sm;
-      case 'md':
+      case "md":
         return styles.md;
-      case 'lg':
+      case "lg":
         return styles.lg;
       default:
         return styles.md;
@@ -188,11 +210,11 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   const getTextSizeStyle = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return styles.textSm;
-      case 'md':
+      case "md":
         return styles.textMd;
-      case 'lg':
+      case "lg":
         return styles.textLg;
       default:
         return styles.textMd;
@@ -215,7 +237,11 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       disabled={disabled || loading}
       activeOpacity={1}
     >
-      {icon && <Animated.View style={styles.icon}>{icon}</Animated.View>}
+      {icon && (
+        <Animated.View style={styles.icon}>
+          {icon}
+        </Animated.View>
+      )}
       <Text
         style={[
           styles.text,
@@ -224,7 +250,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           textStyle,
         ]}
       >
-        {loading ? 'Loading...' : title}
+        {loading ? "Loading..." : title}
       </Text>
     </AnimatedTouchable>
   );

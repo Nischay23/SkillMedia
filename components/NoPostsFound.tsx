@@ -7,7 +7,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Ensure @expo/vector-icons is installed
-import { COLORS } from "@/constants/theme"; // Import your colors
+import {
+  COLORS,
+  FontSize,
+  FontWeight,
+  SpacingValues,
+  ScreenPadding,
+  ComponentSpacing,
+} from "@/constants/theme"; // Import your colors
 
 interface NoPostsFoundProps {
   message: string;
@@ -46,23 +53,23 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background, // Use your app's main background color
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: ScreenPadding.vertical,
   },
   icon: {
-    marginBottom: 20,
+    marginBottom: ScreenPadding.vertical,
   },
   messageText: {
-    fontSize: 18,
+    fontSize: FontSize.h3,
     color: COLORS.gray, // A soft color for informative text
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: ScreenPadding.vertical,
     lineHeight: 25,
   },
   button: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.accent, // A distinct color for the button
-    paddingVertical: 12,
+    paddingVertical: ComponentSpacing.buttonPaddingVertical,
     paddingHorizontal: 25,
     borderRadius: 30,
     elevation: 5, // Android shadow
@@ -73,8 +80,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: COLORS.white, // Button text should be white
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: FontSize.body,
+    fontWeight: FontWeight.bold,
     marginLeft: 10,
   },
 });

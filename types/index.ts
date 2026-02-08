@@ -53,6 +53,7 @@ export type CommunityPost = {
     username?: string;
     fullname?: string;
     profileImage?: string;
+    isAdmin?: boolean;
   } | null;
   linkedFilterOptionNames?: string[];
 };

@@ -1,4 +1,5 @@
 import InitialLayout from "@/components/InitialLayout";
+import { ToastProvider } from "@/components/ui/Toast";
 import ClerkAndConvexProvider from "@/providers/ClerkAndConvexProvider";
 import {
   ThemeProvider,
@@ -9,6 +10,7 @@ import { SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Platform } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   SafeAreaView,
@@ -36,21 +38,25 @@ function ThemedApp() {
   }
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        <InitialLayout />
-      </SafeAreaView>
-      <StatusBar
-        style={isDark ? "light" : "dark"}
-        translucent
-        backgroundColor="transparent"
-      />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ToastProvider>
+        <SafeAreaProvider>
+          <SafeAreaView
+            style={{
+              flex: 1,
+              backgroundColor: theme.colors.background,
+            }}
+          >
+            <InitialLayout />
+          </SafeAreaView>
+          <StatusBar
+            style={isDark ? "light" : "dark"}
+            translucent
+            backgroundColor="transparent"
+          />
+        </SafeAreaProvider>
+      </ToastProvider>
+    </GestureHandlerRootView>
   );
 }
 

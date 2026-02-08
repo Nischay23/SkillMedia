@@ -4,18 +4,27 @@ import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   Alert,
-  StyleSheet,
-  Text,
+  Platform,
+  Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { COLORS } from "@/constants/theme";
+import { AnimatedLikeButton } from "@/components/ui/AnimatedLikeButton";
+import { Typography } from "@/components/ui/Typography";
+import {
+  SpacingValues,
+  CardSpacing,
+  ComponentSpacing,
+} from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
+import { CommunityPost as CommunityPostType } from "@/types";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
-
-import { CommunityPost as CommunityPostType } from "@/types";
 
 interface CommunityPostProps {
   post: CommunityPostType;
@@ -24,48 +33,49 @@ interface CommunityPostProps {
 export default function CommunityPost({
   post,
 }: CommunityPostProps) {
+  const { theme } = useTheme();
   const { user: clerkUser } = useUser();
   const [showFullContent, setShowFullContent] =
     useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Check if the post author is an admin
+  const postAuthor = useQuery(
+    api.users.getUserProfile,
+    post.userId ? { id: post.userId } : "skip",
+  );
+  const isAdminPost = postAuthor?.isAdmin === true;
 
   // Query if the current user has liked this post (temporarily disabled)
-  const isLiked = false; // useQuery(api.likes.getIsLiked, clerkUser ? { communityPostId: post._id } : "skip");
+  const isLiked = false;
 
   // Query if the current user has saved this post
   const isSaved = useQuery(
     api.savedContent.getIsSaved,
-    clerkUser ? { communityPostId: post._id } : "skip"
+    clerkUser ? { communityPostId: post._id } : "skip",
   );
 
   // Get current logged-in user for delete permissions
   const currentUserConvex = useQuery(
     api.users.getUserByClerkId,
-    clerkUser ? { clerkId: clerkUser.id } : "skip"
+    clerkUser ? { clerkId: clerkUser.id } : "skip",
   );
 
-  // Mutations for interaction (likes temporarily disabled)
-  // const toggleLikeMutation = useMutation(api.likes.toggleLike);
   const toggleSaveMutation = useMutation(
-    api.savedContent.toggleSave
+    api.savedContent.toggleSave,
   );
   const deleteCommunityPostMutation = useMutation(
-    api.communityPosts.deleteCommunityPost
+    api.communityPosts.deleteCommunityPost,
   );
 
+  // ── Handlers ────────────────────────────────────────
   const handleLike = async () => {
-    if (!clerkUser) {
-      console.warn("User not logged in. Cannot like post.");
-      return;
-    }
-    // TODO: Implement likes functionality when API is available
+    if (!clerkUser) return;
     console.log("Like functionality coming soon");
   };
 
   const handleSave = async () => {
-    if (!clerkUser) {
-      console.warn("User not logged in. Cannot save post.");
-      return;
-    }
+    if (!clerkUser) return;
     try {
       await toggleSaveMutation({
         communityPostId: post._id,
@@ -94,7 +104,7 @@ export default function CommunityPost({
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -106,81 +116,157 @@ export default function CommunityPost({
     );
   };
 
+  // ── Helpers ─────────────────────────────────────────
   const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours =
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor(diffInHours * 60);
-      return `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
-    }
+    const now = Date.now();
+    const diffH = (now - timestamp) / 3_600_000;
+    if (diffH < 1) return `${Math.floor(diffH * 60)}m ago`;
+    if (diffH < 24) return `${Math.floor(diffH)}h ago`;
+    return `${Math.floor(diffH / 24)}d ago`;
   };
 
-  const truncateContent = (
-    content: string,
-    maxLength: number = 200
-  ) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + "...";
-  };
+  const truncateContent = (text: string, max = 200) =>
+    text.length <= max ? text : text.slice(0, max) + "…";
 
-  const renderLinkedPaths = () => {
-    if (
-      !post.linkedFilterOptionNames ||
-      post.linkedFilterOptionNames.length === 0
-    ) {
-      return null;
-    }
+  // ── Themed styles ───────────────────────────────────
+  const styles = useThemedStyles((t) => ({
+    card: {
+      width: "100%" as const,
+    },
 
-    return (
-      <View style={styles.linkedPathsContainer}>
-        <Text style={styles.linkedPathsLabel}>
-          Related to:
-        </Text>
-        <View style={styles.pathTagsContainer}>
-          {post.linkedFilterOptionNames.map(
-            (pathName, index) => (
-              <View key={index} style={styles.pathTag}>
-                <Text style={styles.pathTagText}>
-                  {pathName}
-                </Text>
-              </View>
-            )
-          )}
-        </View>
-      </View>
-    );
-  };
+    /* ── Header ─────────────────────────────── */
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginBottom: CardSpacing.gap,
+      paddingHorizontal: 16,
+    },
+    avatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginRight: 10,
+      backgroundColor: t.colors.surfaceLight,
+    },
+    avatarPlaceholder: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginRight: 10,
+      backgroundColor: t.colors.primary + "20",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    headerMeta: {
+      flex: 1,
+    },
+    deleteButton: {
+      padding: 6,
+    },
+    separator: {
+      height: 1,
+      backgroundColor: t.colors.border,
+      marginBottom: CardSpacing.gap,
+      marginHorizontal: 16,
+    },
+
+    /* ── Content ────────────────────────────── */
+    titleContainer: {
+      marginBottom: 6,
+      paddingHorizontal: 16,
+    },
+    content: {
+      marginBottom: CardSpacing.gap,
+      paddingHorizontal: 16,
+    },
+
+    /* ── Image ──────────────────────────────── */
+    imageWrapper: {
+      overflow: "hidden" as const,
+      marginBottom: CardSpacing.gap,
+      backgroundColor: t.colors.surfaceLight,
+    },
+    postImage: {
+      width: "100%" as const,
+      aspectRatio: 16 / 9,
+    },
+    imagePlaceholder: {
+      width: "100%" as const,
+      aspectRatio: 16 / 9,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: t.colors.surfaceLight,
+    },
+
+    /* ── Linked paths ───────────────────────── */
+    linkedPaths: {
+      flexDirection: "row" as const,
+      flexWrap: "wrap" as const,
+      gap: 6,
+      marginBottom: CardSpacing.gap,
+      paddingHorizontal: 16,
+    },
+    pathTag: {
+      backgroundColor: t.colors.primary + "14",
+      paddingHorizontal: 10,
+      paddingVertical: SpacingValues.xs,
+      borderRadius: 12,
+    },
+
+    /* ── Engagement bar ─────────────────────── */
+    engagementBar: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.border,
+      paddingTop: CardSpacing.gap,
+      gap: SpacingValues.lg,
+      paddingHorizontal: 16,
+    },
+    engagementItem: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 5,
+    },
+  }));
+
+  // ── Render ──────────────────────────────────────────
+  const authorName =
+    post.user?.fullname ||
+    post.user?.username ||
+    "Anonymous";
 
   return (
-    <View style={styles.container}>
-      {/* Header with user info and delete button */}
+    <View style={styles.card}>
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <View style={styles.userInfo}>
-          {post.user?.profileImage && (
-            <Image
-              source={{ uri: post.user.profileImage }}
-              style={styles.avatar}
-              contentFit="cover"
+        {post.user?.profileImage ? (
+          <Image
+            source={{ uri: post.user.profileImage }}
+            style={styles.avatar}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons
+              name="person"
+              size={18}
+              color={theme.colors.primary}
             />
-          )}
-          <View style={styles.userDetails}>
-            <Text style={styles.username}>
-              {post.user?.fullname ||
-                post.user?.username ||
-                "Anonymous"}
-            </Text>
-            <Text style={styles.timestamp}>
-              {formatDate(post.createdAt)}
-            </Text>
           </View>
+        )}
+
+        <View style={styles.headerMeta}>
+          <Typography
+            variant="body"
+            weight="semibold"
+            numberOfLines={1}
+          >
+            {authorName}
+          </Typography>
+          <Typography variant="caption" color="textMuted">
+            {formatDate(post.createdAt)}
+          </Typography>
         </View>
 
         {canDeletePost() && (
@@ -189,252 +275,143 @@ export default function CommunityPost({
             style={styles.deleteButton}
           >
             <Ionicons
-              name="trash-outline"
-              size={20}
-              color={COLORS.danger}
+              name="ellipsis-vertical"
+              size={18}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Post title (if exists) */}
-      {post.title && (
-        <View style={styles.titleContainer}>
-          <Text style={styles.postTitle}>{post.title}</Text>
-        </View>
-      )}
+      {/* ── Separator ── */}
+      <View style={styles.separator} />
 
-      {/* Post content */}
+      {/* ── Title ── */}
+      {post.title ? (
+        <View style={styles.titleContainer}>
+          <Typography variant="h3" weight="bold">
+            {post.title}
+          </Typography>
+        </View>
+      ) : null}
+
+      {/* ── Body text ── */}
       <View style={styles.content}>
-        <Text style={styles.postText}>
+        <Typography variant="body" color="text">
           {showFullContent
             ? post.content
             : truncateContent(post.content)}
-        </Text>
+        </Typography>
 
         {post.content.length > 200 && (
-          <TouchableOpacity
+          <Pressable
             onPress={() =>
               setShowFullContent(!showFullContent)
             }
           >
-            <Text style={styles.readMoreText}>
+            <Typography
+              variant="body"
+              color="primary"
+              weight="medium"
+              style={{ marginTop: SpacingValues.xs }}
+            >
               {showFullContent ? "Show less" : "Read more"}
-            </Text>
-          </TouchableOpacity>
+            </Typography>
+          </Pressable>
         )}
       </View>
 
-      {/* Post image */}
-      {post.imageUrl && (
-        <Image
-          source={{ uri: post.imageUrl }}
-          style={styles.postImage}
-          contentFit="cover"
-        />
-      )}
-
-      {/* Linked career paths */}
-      {renderLinkedPaths()}
-
-      {/* Action buttons */}
-      <View style={styles.actionContainer}>
-        <TouchableOpacity
-          style={[
-            styles.actionButton,
-            isLiked && styles.likedButton,
-          ]}
-          onPress={handleLike}
-        >
-          <Ionicons
-            name={isLiked ? "heart" : "heart-outline"}
-            size={20}
-            color={isLiked ? COLORS.white : COLORS.gray}
-          />
-          <Text
+      {/* ── Image ── */}
+      {post.imageUrl ? (
+        <View style={styles.imageWrapper}>
+          {imageLoading && (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons
+                name="image-outline"
+                size={28}
+                color={theme.colors.textMuted}
+              />
+            </View>
+          )}
+          <Image
+            source={{ uri: post.imageUrl }}
             style={[
-              styles.actionText,
-              isLiked && styles.likedText,
+              styles.postImage,
+              imageLoading && {
+                position: "absolute",
+                opacity: 0,
+              },
             ]}
-          >
-            {post.likes}
-          </Text>
-        </TouchableOpacity>
+            contentFit="cover"
+            onLoad={() => setImageLoading(false)}
+          />
+        </View>
+      ) : null}
 
-        <TouchableOpacity style={styles.actionButton}>
+      {/* ── Linked career paths ── */}
+      {post.linkedFilterOptionNames &&
+        post.linkedFilterOptionNames.length > 0 && (
+          <View style={styles.linkedPaths}>
+            {post.linkedFilterOptionNames.map((name, i) => (
+              <View key={i} style={styles.pathTag}>
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  weight="medium"
+                >
+                  {name}
+                </Typography>
+              </View>
+            ))}
+          </View>
+        )}
+
+      {/* ── Engagement bar ── */}
+      <View style={styles.engagementBar}>
+        <AnimatedLikeButton
+          isLiked={isLiked === true}
+          count={post.likes}
+          onPress={handleLike}
+          size={20}
+        />
+
+        <Pressable style={styles.engagementItem}>
           <Ionicons
             name="chatbubble-outline"
             size={20}
-            color={COLORS.gray}
+            color={theme.colors.textMuted}
           />
-          <Text style={styles.actionText}>
+          <Typography
+            variant="caption"
+            color="textMuted"
+            weight="medium"
+          >
             {post.comments}
-          </Text>
-        </TouchableOpacity>
+          </Typography>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[
-            styles.actionButton,
-            isSaved && styles.savedButton,
-          ]}
+        <Pressable
           onPress={handleSave}
+          style={styles.engagementItem}
         >
           <Ionicons
             name={isSaved ? "bookmark" : "bookmark-outline"}
             size={20}
-            color={isSaved ? COLORS.white : COLORS.gray}
+            color={
+              isSaved
+                ? theme.colors.primary
+                : theme.colors.textMuted
+            }
           />
-          <Text
-            style={[
-              styles.actionText,
-              isSaved && styles.savedText,
-            ]}
+          <Typography
+            variant="caption"
+            color={isSaved ? "primary" : "textMuted"}
+            weight="medium"
           >
             {isSaved ? "Saved" : "Save"}
-          </Text>
-        </TouchableOpacity>
+          </Typography>
+        </Pressable>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    shadowColor: COLORS.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  userDetails: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.black,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginTop: 2,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  titleContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.black,
-    lineHeight: 24,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  postText: {
-    fontSize: 14,
-    color: COLORS.black,
-    lineHeight: 20,
-  },
-  readMoreText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  postImage: {
-    width: "100%",
-    height: 250,
-    marginBottom: 12,
-  },
-  linkedPathsContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  linkedPathsLabel: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginBottom: 8,
-  },
-  pathTagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  pathTag: {
-    backgroundColor: COLORS.lightGray,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  pathTagText: {
-    fontSize: 11,
-    color: COLORS.primary,
-    fontWeight: "500",
-  },
-  actionContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: "transparent",
-  },
-  likedButton: {
-    backgroundColor: COLORS.primary,
-  },
-  savedButton: {
-    backgroundColor: COLORS.primary,
-  },
-  actionText: {
-    marginLeft: 4,
-    fontSize: 14,
-    color: COLORS.gray,
-    fontWeight: "500",
-  },
-  likedText: {
-    color: COLORS.white,
-  },
-  savedText: {
-    color: COLORS.white,
-  },
-});

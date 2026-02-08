@@ -7,6 +7,10 @@
  */
 
 import { useTheme } from "@/providers/ThemeProvider";
+import {
+  CARD_BORDER_RADIUS,
+  CARD_PADDING,
+} from "@/constants/CardStyles";
 import React, { ReactNode } from "react";
 import { Platform, View, ViewStyle } from "react-native";
 
@@ -35,7 +39,7 @@ interface GlassCardProps {
 const paddingMap = {
   sm: 8,
   md: 12,
-  lg: 16,
+  lg: CARD_PADDING,
   xl: 24,
 };
 
@@ -49,7 +53,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const { theme, isDark } = useTheme();
 
   const containerStyle: ViewStyle = {
-    borderRadius: 24,
+    borderRadius: CARD_BORDER_RADIUS,
     padding: paddingMap[padding],
     overflow: "hidden",
   };
