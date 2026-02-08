@@ -101,8 +101,8 @@ export function FilterSelector({
       <div key={filter._id}>
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[#2d3748]",
-            isSelected && "bg-[#10b981]/10"
+            "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted",
+            isSelected && "bg-primary-muted"
           )}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
         >
@@ -114,7 +114,7 @@ export function FilterSelector({
                 e.stopPropagation();
                 toggleExpand(filter._id);
               }}
-              className="shrink-0 rounded p-0.5 text-[#9ca3af] hover:bg-[#2d3748] hover:text-[#e5e7eb]"
+              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
@@ -133,8 +133,8 @@ export function FilterSelector({
             className={cn(
               "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
               isSelected
-                ? "border-[#10b981] bg-[#10b981] text-[#0b0f19]"
-                : "border-[#2d3748] bg-transparent hover:border-[#10b981]"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-transparent hover:border-primary"
             )}
           >
             {isSelected && <Check className="h-3 w-3" />}
@@ -144,13 +144,13 @@ export function FilterSelector({
           <button
             type="button"
             onClick={() => toggleFilter(filter._id)}
-            className="flex-1 text-left text-sm text-[#e5e7eb]"
+            className="flex-1 text-left text-sm text-foreground"
           >
             {filter.name}
           </button>
 
           {/* Type badge */}
-          <span className="text-xs text-[#9ca3af] capitalize">
+          <span className="text-xs text-muted-foreground capitalize">
             {filter.type}
           </span>
         </div>
@@ -174,19 +174,19 @@ export function FilterSelector({
         className={cn(
           "flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors",
           isOpen
-            ? "border-[#10b981] ring-1 ring-[#10b981]"
-            : "border-[#2d3748] hover:border-[#10b981]/50",
-          "bg-[#0b0f19]"
+            ? "border-primary ring-1 ring-primary"
+            : "border-border hover:border-primary/50",
+          "bg-background"
         )}
       >
-        <span className={selectedIds.length > 0 ? "text-[#e5e7eb]" : "text-[#9ca3af]"}>
+        <span className={selectedIds.length > 0 ? "text-foreground" : "text-muted-foreground"}>
           {selectedIds.length > 0
             ? `${selectedIds.length} filter${selectedIds.length > 1 ? "s" : ""} selected`
             : placeholder}
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-[#9ca3af] transition-transform",
+            "h-4 w-4 text-muted-foreground transition-transform",
             isOpen && "rotate-180"
           )}
         />
@@ -198,13 +198,13 @@ export function FilterSelector({
           {selectedNames.map((name, index) => (
             <span
               key={selectedIds[index]}
-              className="inline-flex items-center gap-1 rounded-full bg-[#10b981]/10 px-2.5 py-1 text-xs font-medium text-[#10b981]"
+              className="badge badge-primary inline-flex items-center gap-1"
             >
               {name}
               <button
                 type="button"
                 onClick={() => removeFilter(selectedIds[index])}
-                className="rounded-full p-0.5 hover:bg-[#10b981]/20"
+                className="rounded-full p-0.5 hover:bg-primary/20"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -214,7 +214,7 @@ export function FilterSelector({
             <button
               type="button"
               onClick={clearAll}
-              className="text-xs text-[#9ca3af] hover:text-[#e5e7eb]"
+              className="text-xs text-muted-foreground hover:text-foreground"
             >
               Clear all
             </button>
@@ -232,17 +232,17 @@ export function FilterSelector({
           />
 
           {/* Panel */}
-          <div className="absolute z-20 mt-2 w-full rounded-lg border border-[#2d3748] bg-[#111827] shadow-xl">
+          <div className="absolute z-20 mt-2 w-full rounded-lg border border-border bg-card shadow-theme-xl">
             {/* Search */}
-            <div className="border-b border-[#2d3748] p-2">
+            <div className="border-b border-border p-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search filters..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] py-2 pl-9 pr-4 text-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:border-[#10b981] focus:outline-none"
+                  className="input-field pl-9"
                 />
               </div>
             </div>
@@ -256,8 +256,8 @@ export function FilterSelector({
                     <div
                       key={filter._id}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[#2d3748]",
-                        selectedIds.includes(filter._id) && "bg-[#10b981]/10"
+                        "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted",
+                        selectedIds.includes(filter._id) && "bg-primary-muted"
                       )}
                     >
                       <button
@@ -266,8 +266,8 @@ export function FilterSelector({
                         className={cn(
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
                           selectedIds.includes(filter._id)
-                            ? "border-[#10b981] bg-[#10b981] text-[#0b0f19]"
-                            : "border-[#2d3748] bg-transparent hover:border-[#10b981]"
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-transparent hover:border-primary"
                         )}
                       >
                         {selectedIds.includes(filter._id) && <Check className="h-3 w-3" />}
@@ -275,17 +275,17 @@ export function FilterSelector({
                       <button
                         type="button"
                         onClick={() => toggleFilter(filter._id)}
-                        className="flex-1 text-left text-sm text-[#e5e7eb]"
+                        className="flex-1 text-left text-sm text-foreground"
                       >
                         {filter.name}
                       </button>
-                      <span className="text-xs text-[#9ca3af] capitalize">
+                      <span className="text-xs text-muted-foreground capitalize">
                         {filter.type}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="py-4 text-center text-sm text-[#9ca3af]">
+                  <p className="py-4 text-center text-sm text-muted-foreground">
                     No filters found
                   </p>
                 )

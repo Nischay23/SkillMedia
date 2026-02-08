@@ -32,7 +32,7 @@ interface FilterTreeNodeProps {
   onToggleExpand: (id: string) => void;
 }
 
-// Type colors for visual distinction
+// Type colors for visual distinction (using CSS variable-compatible Tailwind)
 const typeColors: Record<string, string> = {
   qualification: "text-purple-400",
   category: "text-blue-400",
@@ -69,17 +69,17 @@ export function FilterTreeNode({
   const isInactive = filter.isActive === false;
 
   const Icon = typeIcons[filter.type] || FileText;
-  const colorClass = typeColors[filter.type] || "text-[#9ca3af]";
+  const colorClass = typeColors[filter.type] || "text-muted-foreground";
 
   return (
     <div>
       {/* Node */}
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-lg py-1.5 pr-2 transition-colors",
+          "group flex items-center gap-1 rounded-lg py-1.5 pr-2 transition-all",
           isSelected
-            ? "bg-[#10b981]/10 text-[#e5e7eb]"
-            : "text-[#9ca3af] hover:bg-[#1f2937] hover:text-[#e5e7eb]",
+            ? "bg-primary-muted text-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
           isInactive && "opacity-50"
         )}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
@@ -93,7 +93,7 @@ export function FilterTreeNode({
           className={cn(
             "flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors",
             hasChildren
-              ? "hover:bg-[#2d3748]"
+              ? "hover:bg-muted"
               : "cursor-default opacity-0"
           )}
           disabled={!hasChildren}
@@ -130,7 +130,7 @@ export function FilterTreeNode({
               e.stopPropagation();
               onAddChild(filter);
             }}
-            className="ml-1 hidden rounded p-1 text-[#9ca3af] transition-colors hover:bg-[#2d3748] hover:text-[#10b981] group-hover:block"
+            className="ml-1 hidden rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-primary group-hover:block"
             title="Add child"
           >
             <svg
@@ -151,7 +151,7 @@ export function FilterTreeNode({
 
         {/* Inactive badge */}
         {isInactive && (
-          <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-xs text-red-400">
+          <span className="badge badge-error">
             Inactive
           </span>
         )}
@@ -229,24 +229,24 @@ export function FilterTree({
   return (
     <div className="space-y-2">
       {/* Tree Controls */}
-      <div className="flex items-center justify-between border-b border-[#2d3748] pb-2">
+      <div className="flex items-center justify-between border-b border-border pb-2">
         <div className="flex items-center gap-2">
           <button
             onClick={expandAll}
-            className="rounded px-2 py-1 text-xs text-[#9ca3af] transition-colors hover:bg-[#2d3748] hover:text-[#e5e7eb]"
+            className="btn-ghost rounded px-2 py-1 text-xs"
           >
             Expand All
           </button>
           <button
             onClick={collapseAll}
-            className="rounded px-2 py-1 text-xs text-[#9ca3af] transition-colors hover:bg-[#2d3748] hover:text-[#e5e7eb]"
+            className="btn-ghost rounded px-2 py-1 text-xs"
           >
             Collapse All
           </button>
         </div>
         <button
           onClick={onAddRoot}
-          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-[#10b981] transition-colors hover:bg-[#10b981]/10"
+          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-primary transition-colors hover:bg-primary-muted"
         >
           <svg
             className="h-3.5 w-3.5"
@@ -284,10 +284,10 @@ export function FilterTree({
             ))
         ) : (
           <div className="py-8 text-center">
-            <p className="text-sm text-[#9ca3af]">No filters yet.</p>
+            <p className="text-sm text-muted-foreground">No filters yet.</p>
             <button
               onClick={onAddRoot}
-              className="mt-2 text-sm text-[#10b981] hover:underline"
+              className="mt-2 text-sm text-primary hover:underline"
             >
               Create your first qualification
             </button>

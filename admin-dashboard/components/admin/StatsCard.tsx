@@ -19,18 +19,18 @@ export function StatsCard({
   loading = false,
 }: StatsCardProps) {
   return (
-    <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6 transition-colors hover:border-[#10b981]/30">
+    <div className="card-interactive rounded-xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#10b981]/10">
-          <Icon className="h-5 w-5 text-[#10b981]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-muted">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
         {change && (
           <span
             className={cn(
-              "text-xs font-medium rounded-full px-2 py-1",
-              changeType === "positive" && "bg-emerald-500/10 text-emerald-400",
-              changeType === "negative" && "bg-red-500/10 text-red-400",
-              changeType === "neutral" && "bg-gray-500/10 text-gray-400"
+              "badge",
+              changeType === "positive" && "badge-success",
+              changeType === "negative" && "badge-error",
+              changeType === "neutral" && "bg-muted text-muted-foreground"
             )}
           >
             {change}
@@ -39,11 +39,11 @@ export function StatsCard({
       </div>
       <div className="mt-4">
         {loading ? (
-          <div className="h-8 w-20 animate-pulse rounded bg-[#2d3748]" />
+          <div className="h-8 w-20 animate-pulse-subtle rounded bg-muted" />
         ) : (
-          <p className="text-3xl font-bold text-[#e5e7eb]">{value}</p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
         )}
-        <p className="mt-1 text-sm text-[#9ca3af]">{title}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{title}</p>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ export default function AdminLayout({
 }) {
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#0b0f19]">
+      <div className="min-h-screen bg-background">
         {/* Sidebar */}
         <Sidebar />
 

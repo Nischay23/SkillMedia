@@ -32,8 +32,8 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#e5e7eb]">Dashboard</h1>
-        <p className="mt-1 text-[#9ca3af]">
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="mt-1 text-muted-foreground">
           Welcome to the Skills App Admin Dashboard
         </p>
       </div>
@@ -75,11 +75,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-[#e5e7eb]">Quick Actions</h2>
-            <p className="mt-1 text-sm text-[#9ca3af]">
+            <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Common admin tasks
             </p>
           </div>
@@ -89,46 +89,46 @@ export default function AdminDashboard() {
           {/* Create New Post */}
           <Link
             href="/admin/posts/new"
-            className="group flex items-center gap-4 rounded-lg border border-[#2d3748] bg-[#0b0f19] p-4 transition-all hover:border-[#10b981] hover:bg-[#10b981]/5"
+            className="group flex items-center gap-4 rounded-lg border border-border bg-background p-4 transition-all hover:border-primary hover:bg-primary-muted"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#10b981]/10 transition-colors group-hover:bg-[#10b981]/20">
-              <Plus className="h-6 w-6 text-[#10b981]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-muted transition-colors group-hover:bg-primary/20">
+              <Plus className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-[#e5e7eb]">Create New Post</p>
-              <p className="text-xs text-[#9ca3af]">Add content to the app</p>
+              <p className="font-medium text-foreground">Create New Post</p>
+              <p className="text-xs text-muted-foreground">Add content to the app</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-[#9ca3af] transition-transform group-hover:translate-x-1 group-hover:text-[#10b981]" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
 
           {/* Manage Filters */}
           <Link
             href="/admin/filters"
-            className="group flex items-center gap-4 rounded-lg border border-[#2d3748] bg-[#0b0f19] p-4 transition-all hover:border-[#10b981] hover:bg-[#10b981]/5"
+            className="group flex items-center gap-4 rounded-lg border border-border bg-background p-4 transition-all hover:border-primary hover:bg-primary-muted"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#10b981]/10 transition-colors group-hover:bg-[#10b981]/20">
-              <ListTree className="h-6 w-6 text-[#10b981]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-muted transition-colors group-hover:bg-primary/20">
+              <ListTree className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-[#e5e7eb]">Manage Filters</p>
-              <p className="text-xs text-[#9ca3af]">Categories, Skills, Paths</p>
+              <p className="font-medium text-foreground">Manage Filters</p>
+              <p className="text-xs text-muted-foreground">Categories, Skills, Paths</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-[#9ca3af] transition-transform group-hover:translate-x-1 group-hover:text-[#10b981]" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
 
           {/* Manage Posts */}
           <Link
             href="/admin/posts"
-            className="group flex items-center gap-4 rounded-lg border border-[#2d3748] bg-[#0b0f19] p-4 transition-all hover:border-[#10b981] hover:bg-[#10b981]/5"
+            className="group flex items-center gap-4 rounded-lg border border-border bg-background p-4 transition-all hover:border-primary hover:bg-primary-muted"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#10b981]/10 transition-colors group-hover:bg-[#10b981]/20">
-              <Settings className="h-6 w-6 text-[#10b981]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-muted transition-colors group-hover:bg-primary/20">
+              <Settings className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-[#e5e7eb]">Manage Posts</p>
-              <p className="text-xs text-[#9ca3af]">Edit, Delete, Review</p>
+              <p className="font-medium text-foreground">Manage Posts</p>
+              <p className="text-xs text-muted-foreground">Edit, Delete, Review</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-[#9ca3af] transition-transform group-hover:translate-x-1 group-hover:text-[#10b981]" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
         </div>
       </div>
@@ -136,12 +136,12 @@ export default function AdminDashboard() {
       {/* Recent Activity Preview */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Posts */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
+        <div className="rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#e5e7eb]">Recent Posts</h2>
+            <h2 className="text-lg font-semibold text-foreground">Recent Posts</h2>
             <Link 
               href="/admin/posts" 
-              className="text-sm text-[#10b981] hover:underline"
+              className="text-sm text-primary hover:underline"
             >
               View all
             </Link>
@@ -150,11 +150,11 @@ export default function AdminDashboard() {
             {postsLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-[#0b0f19] p-3">
-                  <div className="h-10 w-10 animate-pulse rounded bg-[#2d3748]" />
+                <div key={i} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                  <div className="h-10 w-10 animate-pulse rounded bg-muted" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-[#2d3748]" />
-                    <div className="h-3 w-1/2 animate-pulse rounded bg-[#2d3748]" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
                   </div>
                 </div>
               ))
@@ -162,24 +162,24 @@ export default function AdminDashboard() {
               posts.slice(0, 5).map((post) => (
                 <div
                   key={post._id}
-                  className="flex items-center gap-3 rounded-lg bg-[#0b0f19] p-3 transition-colors hover:bg-[#1f2937]"
+                  className="flex items-center gap-3 rounded-lg bg-background p-3 transition-colors hover:bg-muted"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded bg-[#2d3748]">
-                    <FileText className="h-5 w-5 text-[#9ca3af]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium text-[#e5e7eb]">
+                    <p className="truncate font-medium text-foreground">
                       {post.title}
                     </p>
-                    <p className="text-xs text-[#9ca3af]">
+                    <p className="text-xs text-muted-foreground">
                       {post.status === "published" ? "Published" : "Draft"} • {post.user?.username || "Unknown"}
                     </p>
                   </div>
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
                       post.status === "published"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-amber-500/10 text-amber-400"
+                        ? "badge-success"
+                        : "badge-warning"
                     }`}
                   >
                     {post.status}
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-center text-sm text-[#9ca3af] py-4">
+              <p className="text-center text-sm text-muted-foreground py-4">
                 No posts yet. Create your first post!
               </p>
             )}
@@ -195,12 +195,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Filter Categories Overview */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
+        <div className="rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#e5e7eb]">Filter Categories</h2>
+            <h2 className="text-lg font-semibold text-foreground">Filter Categories</h2>
             <Link 
               href="/admin/filters" 
-              className="text-sm text-[#10b981] hover:underline"
+              className="text-sm text-primary hover:underline"
             >
               Manage
             </Link>
@@ -209,11 +209,11 @@ export default function AdminDashboard() {
             {filtersLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-[#0b0f19] p-3">
-                  <div className="h-10 w-10 animate-pulse rounded bg-[#2d3748]" />
+                <div key={i} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                  <div className="h-10 w-10 animate-pulse rounded bg-muted" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-[#2d3748]" />
-                    <div className="h-3 w-1/2 animate-pulse rounded bg-[#2d3748]" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
                   </div>
                 </div>
               ))
@@ -229,16 +229,16 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={filter._id}
-                      className="flex items-center gap-3 rounded-lg bg-[#0b0f19] p-3 transition-colors hover:bg-[#1f2937]"
+                      className="flex items-center gap-3 rounded-lg bg-background p-3 transition-colors hover:bg-muted"
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded bg-[#2d3748]">
-                        <ListTree className="h-5 w-5 text-[#9ca3af]" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                        <ListTree className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="truncate font-medium text-[#e5e7eb]">
+                        <p className="truncate font-medium text-foreground">
                           {filter.name}
                         </p>
-                        <p className="text-xs text-[#9ca3af]">
+                        <p className="text-xs text-muted-foreground">
                           {childCount} sub-categories
                         </p>
                       </div>
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
                   );
                 })
             ) : (
-              <p className="text-center text-sm text-[#9ca3af] py-4">
+              <p className="text-center text-sm text-muted-foreground py-4">
                 No filters configured yet.
               </p>
             )}

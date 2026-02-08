@@ -17,14 +17,14 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-[#2d3748] bg-[#111827]">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-sidebar">
       {/* Logo / Brand */}
-      <div className="flex h-16 items-center border-b border-[#2d3748] px-6">
-        <Link href="/admin" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#10b981]">
-            <LayoutDashboard className="h-5 w-5 text-[#0b0f19]" />
+      <div className="flex h-16 items-center border-b border-border px-6">
+        <Link href="/admin" className="flex items-center gap-2 group">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm group-hover:shadow-glow transition-shadow">
+            <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-semibold text-[#e5e7eb]">
+          <span className="text-lg font-semibold text-foreground tracking-tight">
             Admin CMS
           </span>
         </Link>
@@ -43,10 +43,10 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-[#10b981]/10 text-[#10b981]"
-                  : "text-[#9ca3af] hover:bg-[#1f2937] hover:text-[#e5e7eb]"
+                  ? "bg-primary-muted text-primary shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -57,8 +57,8 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-[#2d3748] p-4">
-        <p className="text-xs text-[#9ca3af]">
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border p-4">
+        <p className="text-xs text-muted-foreground">
           Skills App Admin v1.0
         </p>
       </div>

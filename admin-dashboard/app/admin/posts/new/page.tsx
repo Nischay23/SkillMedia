@@ -112,13 +112,13 @@ export default function NewPostPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/posts"
-            className="rounded-lg p-2 text-[#9ca3af] transition-colors hover:bg-[#2d3748] hover:text-[#e5e7eb]"
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-[#e5e7eb]">Create New Post</h1>
-            <p className="mt-1 text-[#9ca3af]">Add a new community post</p>
+            <h1 className="text-2xl font-bold text-foreground">Create New Post</h1>
+            <p className="mt-1 text-muted-foreground">Add a new community post</p>
           </div>
         </div>
 
@@ -128,7 +128,7 @@ export default function NewPostPage() {
             type="button"
             onClick={handleSaveDraft}
             disabled={!isValid || isSubmitting}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#2d3748] bg-transparent px-4 py-2.5 text-sm font-medium text-[#e5e7eb] transition-colors hover:bg-[#2d3748] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-secondary"
           >
             {isSubmitting && status === "draft" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,7 +141,7 @@ export default function NewPostPage() {
             type="button"
             onClick={handlePublish}
             disabled={!isValid || isSubmitting}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#10b981] px-4 py-2.5 text-sm font-medium text-[#0b0f19] transition-colors hover:bg-[#059669] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-primary"
           >
             {isSubmitting && status === "published" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -156,9 +156,9 @@ export default function NewPostPage() {
       {/* Form */}
       <form id="post-form" onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
-          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#e5e7eb]">
-            <FileText className="h-4 w-4 text-[#10b981]" />
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <FileText className="h-4 w-4 text-primary" />
             Title <span className="text-red-400">*</span>
           </label>
           <input
@@ -166,17 +166,17 @@ export default function NewPostPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter post title..."
-            className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-4 py-3 text-[#e5e7eb] placeholder-[#9ca3af] transition-colors focus:border-[#10b981] focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+            className="input-field"
           />
-          <p className="mt-2 text-xs text-[#9ca3af]">
+          <p className="mt-2 text-xs text-muted-foreground">
             A clear, descriptive title for your post
           </p>
         </div>
 
         {/* Content */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
-          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#e5e7eb]">
-            <FileText className="h-4 w-4 text-[#10b981]" />
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <FileText className="h-4 w-4 text-primary" />
             Content <span className="text-red-400">*</span>
           </label>
           <textarea
@@ -184,36 +184,36 @@ export default function NewPostPage() {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write your post content here..."
             rows={12}
-            className="w-full resize-none rounded-lg border border-[#2d3748] bg-[#0b0f19] px-4 py-3 text-[#e5e7eb] placeholder-[#9ca3af] transition-colors focus:border-[#10b981] focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+            className="input-field resize-none"
           />
-          <div className="mt-2 flex items-center justify-between text-xs text-[#9ca3af]">
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>Supports plain text content</span>
             <span>{content.length} characters</span>
           </div>
         </div>
 
         {/* Image URL */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
-          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#e5e7eb]">
-            <ImageIcon className="h-4 w-4 text-[#10b981]" />
-            Image URL <span className="text-[#9ca3af]">(optional)</span>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            Image URL <span className="text-muted-foreground">(optional)</span>
           </label>
           <input
             type="url"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://example.com/image.jpg"
-            className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-4 py-3 text-[#e5e7eb] placeholder-[#9ca3af] transition-colors focus:border-[#10b981] focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+            className="input-field"
           />
-          <p className="mt-2 text-xs text-[#9ca3af]">
+          <p className="mt-2 text-xs text-muted-foreground">
             Add an image URL to display with your post
           </p>
 
           {/* Image Preview */}
           {imageUrl && (
             <div className="mt-4">
-              <p className="mb-2 text-xs text-[#9ca3af]">Preview:</p>
-              <div className="relative aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-[#2d3748] bg-[#0b0f19]">
+              <p className="mb-2 text-xs text-muted-foreground">Preview:</p>
+              <div className="relative aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-border bg-background">
                 <img
                   src={imageUrl}
                   alt="Preview"
@@ -228,19 +228,19 @@ export default function NewPostPage() {
         </div>
 
         {/* Filter Selection */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827] p-6">
-          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#e5e7eb]">
-            <ListTree className="h-4 w-4 text-[#10b981]" />
-            Career Paths / Filters <span className="text-[#9ca3af]">(optional)</span>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <ListTree className="h-4 w-4 text-primary" />
+            Career Paths / Filters <span className="text-muted-foreground">(optional)</span>
           </label>
-          <p className="mb-4 text-xs text-[#9ca3af]">
+          <p className="mb-4 text-xs text-muted-foreground">
             Link this post to specific career paths, skills, or categories
           </p>
 
           {filters === undefined ? (
-            <div className="flex items-center gap-2 rounded-lg border border-[#2d3748] bg-[#0b0f19] px-4 py-3">
-              <Loader2 className="h-4 w-4 animate-spin text-[#9ca3af]" />
-              <span className="text-sm text-[#9ca3af]">Loading filters...</span>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-3">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Loading filters...</span>
             </div>
           ) : filters.length > 0 ? (
             <FilterSelector
@@ -250,8 +250,8 @@ export default function NewPostPage() {
               placeholder="Select career paths or filters..."
             />
           ) : (
-            <div className="rounded-lg border border-[#2d3748] bg-[#0b0f19] px-4 py-3">
-              <p className="text-sm text-[#9ca3af]">
+            <div className="rounded-lg border border-border bg-background px-4 py-3">
+              <p className="text-sm text-muted-foreground">
                 No filters available. Create filters first in the Filters section.
               </p>
             </div>
@@ -259,30 +259,30 @@ export default function NewPostPage() {
         </div>
 
         {/* Form Summary */}
-        <div className="rounded-xl border border-[#2d3748] bg-[#111827]/50 p-4">
-          <h3 className="mb-3 text-sm font-medium text-[#e5e7eb]">Summary</h3>
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h3 className="mb-3 text-sm font-medium text-foreground">Summary</h3>
           <div className="grid gap-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[#9ca3af]">Title</span>
-              <span className={title ? "text-[#e5e7eb]" : "text-[#9ca3af]"}>
+              <span className="text-muted-foreground">Title</span>
+              <span className={title ? "text-foreground" : "text-muted-foreground"}>
                 {title ? `${title.slice(0, 30)}${title.length > 30 ? "..." : ""}` : "Not set"}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#9ca3af]">Content Length</span>
-              <span className={content ? "text-[#e5e7eb]" : "text-[#9ca3af]"}>
+              <span className="text-muted-foreground">Content Length</span>
+              <span className={content ? "text-foreground" : "text-muted-foreground"}>
                 {content ? `${content.length} characters` : "Not set"}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#9ca3af]">Image</span>
-              <span className={imageUrl ? "text-[#10b981]" : "text-[#9ca3af]"}>
+              <span className="text-muted-foreground">Image</span>
+              <span className={imageUrl ? "text-primary" : "text-muted-foreground"}>
                 {imageUrl ? "Added" : "None"}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#9ca3af]">Linked Filters</span>
-              <span className={selectedFilterIds.length > 0 ? "text-[#10b981]" : "text-[#9ca3af]"}>
+              <span className="text-muted-foreground">Linked Filters</span>
+              <span className={selectedFilterIds.length > 0 ? "text-primary" : "text-muted-foreground"}>
                 {selectedFilterIds.length > 0 ? `${selectedFilterIds.length} selected` : "None"}
               </span>
             </div>

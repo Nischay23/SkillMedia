@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Generate breadcrumb items from pathname
 function getBreadcrumbs(pathname: string) {
@@ -27,24 +28,24 @@ export function Header() {
   const breadcrumbs = getBreadcrumbs(pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#2d3748] bg-[#0b0f19]/95 px-6 backdrop-blur supports-backdrop-filter:bg-[#0b0f19]/60">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border glass px-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm">
         <Link
           href="/admin"
-          className="flex items-center text-[#9ca3af] transition-colors hover:text-[#e5e7eb]"
+          className="flex items-center text-muted-foreground transition-colors hover:text-foreground"
         >
           <Home className="h-4 w-4" />
         </Link>
         {breadcrumbs.map((crumb, index) => (
           <div key={crumb.href} className="flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-[#2d3748]" />
+            <ChevronRight className="h-4 w-4 text-border" />
             {index === breadcrumbs.length - 1 ? (
-              <span className="font-medium text-[#e5e7eb]">{crumb.name}</span>
+              <span className="font-medium text-foreground">{crumb.name}</span>
             ) : (
               <Link
                 href={crumb.href}
-                className="text-[#9ca3af] transition-colors hover:text-[#e5e7eb]"
+                className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 {crumb.name}
               </Link>
@@ -53,16 +54,20 @@ export function Header() {
         ))}
       </nav>
 
-      {/* User Button */}
-      <div className="flex items-center gap-4">
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+        
+        {/* User Button */}
         <UserButton
           afterSignOutUrl="/"
           appearance={{
             elements: {
-              avatarBox: "h-9 w-9",
-              userButtonPopoverCard: "bg-[#111827] border-[#2d3748]",
-              userButtonPopoverActionButton: "text-[#e5e7eb] hover:bg-[#1f2937]",
-              userButtonPopoverActionButtonText: "text-[#e5e7eb]",
+              avatarBox: "h-9 w-9 ring-2 ring-border hover:ring-primary/50 transition-all",
+              userButtonPopoverCard: "bg-card border-border shadow-theme-lg",
+              userButtonPopoverActionButton: "text-foreground hover:bg-muted",
+              userButtonPopoverActionButtonText: "text-foreground",
               userButtonPopoverFooter: "hidden",
             },
           }}

@@ -159,7 +159,7 @@ export function FilterInspector({
   if (!filter) {
     return (
       <div className="flex h-full items-center justify-center p-6">
-        <p className="text-sm text-[#9ca3af]">
+        <p className="text-sm text-muted-foreground">
           Select a filter to view details
         </p>
       </div>
@@ -169,18 +169,18 @@ export function FilterInspector({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#2d3748] p-4">
+      <div className="flex items-center justify-between border-b border-border p-4">
         <div className="min-w-0 flex-1">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {typeLabels[filter.type] || filter.type}
           </span>
-          <h3 className="truncate text-lg font-semibold text-[#e5e7eb]">
+          <h3 className="truncate text-lg font-semibold text-foreground">
             {filter.name}
           </h3>
         </div>
         <button
           onClick={onClose}
-          className="ml-2 rounded-lg p-2 text-[#9ca3af] transition-colors hover:bg-[#2d3748] hover:text-[#e5e7eb]"
+          className="ml-2 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <X className="h-5 w-5" />
         </button>
@@ -193,46 +193,46 @@ export function FilterInspector({
           <div className="space-y-4">
             {/* Name */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
-                Name <span className="text-red-400">*</span>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Name <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full resize-none rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field resize-none"
               />
             </div>
 
             {/* Requirements */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Requirements
               </label>
               <textarea
                 value={requirements}
                 onChange={(e) => setRequirements(e.target.value)}
                 rows={2}
-                className="w-full resize-none rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field resize-none"
               />
             </div>
 
             {/* Avg Salary */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Average Salary
               </label>
               <input
@@ -240,33 +240,33 @@ export function FilterInspector({
                 value={avgSalary}
                 onChange={(e) => setAvgSalary(e.target.value)}
                 placeholder="e.g., $50,000 - $80,000"
-                className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field"
               />
             </div>
 
             {/* Relevant Exams */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Relevant Exams
               </label>
               <input
                 type="text"
                 value={relevantExams}
                 onChange={(e) => setRelevantExams(e.target.value)}
-                className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field"
               />
             </div>
 
             {/* Image URL */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#e5e7eb]">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Image URL
               </label>
               <input
                 type="url"
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
-                className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] px-3 py-2 text-sm text-[#e5e7eb] focus:border-[#10b981] focus:outline-none"
+                className="input-field"
               />
             </div>
           </div>
@@ -277,16 +277,16 @@ export function FilterInspector({
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
+                  "badge",
                   filter.isActive !== false
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-red-500/10 text-red-400"
+                    ? "badge-success"
+                    : "badge-error"
                 )}
               >
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    filter.isActive !== false ? "bg-emerald-400" : "bg-red-400"
+                    filter.isActive !== false ? "bg-success" : "bg-error"
                   )}
                 />
                 {filter.isActive !== false ? "Active" : "Inactive"}
@@ -296,55 +296,55 @@ export function FilterInspector({
             {/* Description */}
             {filter.description && (
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <FileText className="h-3.5 w-3.5" />
                   Description
                 </div>
-                <p className="text-sm text-[#e5e7eb]">{filter.description}</p>
+                <p className="text-sm text-foreground">{filter.description}</p>
               </div>
             )}
 
             {/* Requirements */}
             {filter.requirements && (
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <BookOpen className="h-3.5 w-3.5" />
                   Requirements
                 </div>
-                <p className="text-sm text-[#e5e7eb]">{filter.requirements}</p>
+                <p className="text-sm text-foreground">{filter.requirements}</p>
               </div>
             )}
 
             {/* Avg Salary */}
             {filter.avgSalary && (
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <DollarSign className="h-3.5 w-3.5" />
                   Average Salary
                 </div>
-                <p className="text-sm text-[#e5e7eb]">{filter.avgSalary}</p>
+                <p className="text-sm text-foreground">{filter.avgSalary}</p>
               </div>
             )}
 
             {/* Relevant Exams */}
             {filter.relevantExams && (
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <Briefcase className="h-3.5 w-3.5" />
                   Relevant Exams
                 </div>
-                <p className="text-sm text-[#e5e7eb]">{filter.relevantExams}</p>
+                <p className="text-sm text-foreground">{filter.relevantExams}</p>
               </div>
             )}
 
             {/* Image */}
             {filter.image && (
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
+                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                   <ImageIcon className="h-3.5 w-3.5" />
                   Image
                 </div>
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-[#2d3748]">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-border">
                   <img
                     src={filter.image}
                     alt={filter.name}
@@ -358,16 +358,16 @@ export function FilterInspector({
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 rounded-lg bg-[#0b0f19] p-3">
+            <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3">
               <div>
-                <p className="text-xs text-[#9ca3af]">Likes</p>
-                <p className="text-lg font-semibold text-[#e5e7eb]">
+                <p className="text-xs text-muted-foreground">Likes</p>
+                <p className="text-lg font-semibold text-foreground">
                   {filter.likes || 0}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[#9ca3af]">Comments</p>
-                <p className="text-lg font-semibold text-[#e5e7eb]">
+                <p className="text-xs text-muted-foreground">Comments</p>
+                <p className="text-lg font-semibold text-foreground">
                   {filter.comments || 0}
                 </p>
               </div>
@@ -379,7 +379,7 @@ export function FilterInspector({
               !filter.avgSalary &&
               !filter.relevantExams &&
               !filter.image && (
-                <p className="py-4 text-center text-sm text-[#9ca3af]">
+                <p className="py-4 text-center text-sm text-muted-foreground">
                   No additional details. Click Edit to add content.
                 </p>
               )}
@@ -388,20 +388,20 @@ export function FilterInspector({
       </div>
 
       {/* Actions */}
-      <div className="border-t border-[#2d3748] p-4">
+      <div className="border-t border-border p-4">
         {isEditing ? (
           <div className="flex gap-2">
             <button
               onClick={() => resetForm()}
               disabled={isSaving}
-              className="flex-1 rounded-lg border border-[#2d3748] bg-transparent px-4 py-2 text-sm font-medium text-[#e5e7eb] transition-colors hover:bg-[#2d3748] disabled:opacity-50"
+              className="btn-secondary flex-1"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving || !name.trim()}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#10b981] px-4 py-2 text-sm font-medium text-[#0b0f19] transition-colors hover:bg-[#059669] disabled:opacity-50"
+              className="btn-primary flex flex-1 items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -418,7 +418,7 @@ export function FilterInspector({
                 resetForm();
                 setIsEditing(true);
               }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#2d3748] bg-transparent px-4 py-2 text-sm font-medium text-[#e5e7eb] transition-colors hover:bg-[#2d3748]"
+              className="btn-secondary flex flex-1 items-center justify-center gap-2"
             >
               <Edit className="h-4 w-4" />
               Edit
@@ -429,8 +429,8 @@ export function FilterInspector({
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50",
                 filter.isActive !== false
-                  ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                  : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                  ? "bg-error-muted text-error hover:bg-error/20"
+                  : "bg-success-muted text-success hover:bg-success/20"
               )}
             >
               {isToggling ? (

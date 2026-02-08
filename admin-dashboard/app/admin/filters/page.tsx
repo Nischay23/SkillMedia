@@ -78,26 +78,26 @@ export default function FiltersPage() {
   return (
     <div className="flex h-[calc(100vh-7rem)] gap-6">
       {/* Left Panel - Tree View */}
-      <div className="flex w-96 flex-col rounded-xl border border-[#2d3748] bg-[#111827]">
+      <div className="flex w-96 flex-col rounded-xl border border-border bg-surface">
         {/* Header */}
-        <div className="border-b border-[#2d3748] p-4">
+        <div className="border-b border-border p-4">
           <div className="flex items-center gap-2">
-            <ListTree className="h-5 w-5 text-[#10b981]" />
-            <h1 className="text-lg font-semibold text-[#e5e7eb]">Filters</h1>
+            <ListTree className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold text-foreground">Filters</h1>
           </div>
-          <p className="mt-1 text-sm text-[#9ca3af]">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage career path hierarchy
           </p>
 
           {/* Search */}
           <div className="relative mt-3">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search filters..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-[#2d3748] bg-[#0b0f19] py-2 pl-9 pr-4 text-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:border-[#10b981] focus:outline-none"
+              className="input-field pl-9"
             />
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function FiltersPage() {
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#10b981]" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : filteredFilters && filteredFilters.length > 0 ? (
             <FilterTree
@@ -118,16 +118,16 @@ export default function FiltersPage() {
             />
           ) : searchQuery ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-[#9ca3af]">
+              <p className="text-sm text-muted-foreground">
                 No filters match "{searchQuery}"
               </p>
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="text-sm text-[#9ca3af]">No filters yet.</p>
+              <p className="text-sm text-muted-foreground">No filters yet.</p>
               <button
                 onClick={handleAddRoot}
-                className="mt-2 text-sm text-[#10b981] hover:underline"
+                className="mt-2 text-sm text-primary hover:underline"
               >
                 Create your first qualification
               </button>
@@ -137,19 +137,19 @@ export default function FiltersPage() {
 
         {/* Stats Footer */}
         {stats && (
-          <div className="border-t border-[#2d3748] p-4">
+          <div className="border-t border-border p-4">
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <div>
-                <p className="font-semibold text-[#e5e7eb]">{stats.total}</p>
-                <p className="text-[#9ca3af]">Total</p>
+                <p className="font-semibold text-foreground">{stats.total}</p>
+                <p className="text-muted-foreground">Total</p>
               </div>
               <div>
-                <p className="font-semibold text-emerald-400">{stats.active}</p>
-                <p className="text-[#9ca3af]">Active</p>
+                <p className="font-semibold text-success">{stats.active}</p>
+                <p className="text-muted-foreground">Active</p>
               </div>
               <div>
-                <p className="font-semibold text-amber-400">{stats.roles}</p>
-                <p className="text-[#9ca3af]">Roles</p>
+                <p className="font-semibold text-warning">{stats.roles}</p>
+                <p className="text-muted-foreground">Roles</p>
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function FiltersPage() {
       </div>
 
       {/* Right Panel - Inspector */}
-      <div className="flex-1 rounded-xl border border-[#2d3748] bg-[#111827]">
+      <div className="flex-1 rounded-xl border border-border bg-surface">
         <FilterInspector
           filter={selectedFilter}
           onClose={() => setSelectedFilter(null)}
