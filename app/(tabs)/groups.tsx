@@ -4,7 +4,6 @@ import BottomSheet, {
   BottomSheetFlatList,
   BottomSheetScrollView,
   BottomSheetTextInput,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import React, {
@@ -15,9 +14,8 @@ import React, {
 } from "react";
 import {
   FlatList,
+  Platform,
   Pressable,
-  SafeAreaView,
-  StatusBar,
   TextInput,
   View,
 } from "react-native";
@@ -32,7 +30,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -50,7 +47,7 @@ function SkeletonCard({ index }: { index: number }) {
 
   React.useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(0.7, { duration: 800 }),
+      withTiming(0.25, { duration: 700 }),
       -1,
       true,
     );
@@ -62,11 +59,11 @@ function SkeletonCard({ index }: { index: number }) {
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(300).delay(index * 100)}
+      entering={FadeInDown.duration(350).delay(index * 60)}
       style={[
         {
-          height: 80,
-          borderRadius: 16,
+          height: 100,
+          borderRadius: 20,
           backgroundColor: theme.colors.surface,
           marginHorizontal: 16,
           marginBottom: 10,
@@ -89,108 +86,164 @@ function GroupCard({
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+
   const scaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const styles = useThemedStyles((t) => ({
-    card: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      backgroundColor: t.colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: t.colors.border,
-      marginHorizontal: 16,
-    },
-    avatarContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 999,
-      overflow: "hidden" as const,
-    },
-    avatarGradient: {
-      width: 48,
-      height: 48,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-    },
-    avatarLetter: {
-      fontSize: 20,
-      fontWeight: "700" as const,
-      color: "#FFFFFF",
-    },
-    content: {
-      flex: 1,
-      marginLeft: 14,
-      gap: 4,
-    },
-    chip: {
-      alignSelf: "flex-start" as const,
-      backgroundColor: t.colors.primary + "26",
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 20,
-    },
-    memberRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 4,
-    },
-  }));
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.97, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }, [scale]);
 
   return (
-    <AnimatedCard
-      variant="transparent"
-      delay={Math.min(index * 70, 350)}
-      useEnteringAnimation
+    <Animated.View
+      entering={FadeInDown.duration(350).delay(index * 60)}
     >
       <Pressable
-        onPressIn={() => {
-          scale.value = withSpring(0.98);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={onPress}
       >
-        <Animated.View style={[styles.card, scaleStyle]}>
-          <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={["#6C5DD3", "#8676FF"]}
-              style={styles.avatarGradient}
+        <Animated.View
+          style={[
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: theme.colors.surface,
+              borderRadius: 20,
+              padding: 16,
+              marginHorizontal: 16,
+              marginBottom: 10,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              ...Platform.select({
+                ios: {
+                  shadowColor: "#000",
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                },
+                android: {
+                  elevation: 2,
+                },
+              }),
+            },
+            scaleStyle,
+          ]}
+        >
+          {/* Avatar with active dot */}
+          <View style={{ position: "relative" }}>
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 999,
+                overflow: "hidden",
+              }}
             >
-              <Typography
-                variant="h3"
-                weight="bold"
-                style={{ color: "#FFFFFF" }}
+              <LinearGradient
+                colors={["#6C5DD3", "#8676FF"]}
+                style={{
+                  width: 52,
+                  height: 52,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                {(group.name || "G")[0].toUpperCase()}
-              </Typography>
-            </LinearGradient>
+                <Typography
+                  variant="h3"
+                  weight="bold"
+                  style={{ color: "#FFFFFF", fontSize: 20 }}
+                >
+                  {(group.name || "G")[0].toUpperCase()}
+                </Typography>
+              </LinearGradient>
+            </View>
+            {/* Active dot */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: "#22C55E",
+                borderWidth: 2,
+                borderColor: theme.colors.surface,
+              }}
+            />
           </View>
 
-          <View style={styles.content}>
-            <Typography
-              variant="body"
-              weight="semibold"
-              numberOfLines={1}
+          {/* Content */}
+          <View style={{ flex: 1, marginLeft: 14 }}>
+            {/* Row 1: Name + Timestamp */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
             >
-              {group.name}
-            </Typography>
+              <Typography
+                variant="body"
+                weight="semibold"
+                color="text"
+                numberOfLines={1}
+                style={{ flex: 1, fontSize: 15 }}
+              >
+                {group.name}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ fontSize: 11, marginLeft: 8 }}
+              >
+                Active
+              </Typography>
+            </View>
 
-            <View style={styles.chip}>
+            {/* Row 2: Career path chip */}
+            <View
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor:
+                  theme.colors.primary + "18",
+                borderRadius: 20,
+                paddingHorizontal: 10,
+                paddingVertical: 3,
+                marginTop: 6,
+              }}
+            >
               <Typography
                 variant="caption"
                 color="primary"
-                weight="medium"
+                weight="semibold"
+                style={{ fontSize: 11 }}
               >
                 {group.filterOptionName}
               </Typography>
             </View>
 
-            <View style={styles.memberRow}>
+            {/* Row 3: Member count */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 6,
+              }}
+            >
               <Ionicons
                 name="people-outline"
                 size={12}
@@ -199,12 +252,14 @@ function GroupCard({
               <Typography
                 variant="caption"
                 color="textMuted"
+                style={{ fontSize: 12 }}
               >
                 {group.memberCount.toLocaleString()} members
               </Typography>
             </View>
           </View>
 
+          {/* Chevron */}
           <Ionicons
             name="chevron-forward"
             size={18}
@@ -212,17 +267,20 @@ function GroupCard({
           />
         </Animated.View>
       </Pressable>
-    </AnimatedCard>
+    </Animated.View>
   );
 }
 
 // ── Main Screen ────────────────────────────────────────
 export default function GroupsScreen() {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const currentUser = useQuery(api.users.getCurrentUser);
   const myGroups = useQuery(api.groups.getMyGroups);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Create group sheet
   const sheetRef = useRef<BottomSheet>(null);
@@ -234,6 +292,12 @@ export default function GroupsScreen() {
   const [filterSearch, setFilterSearch] = useState("");
   const [selectingFilter, setSelectingFilter] =
     useState(false);
+
+  // Add button animation
+  const addScale = useSharedValue(1);
+  const addScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: addScale.value }],
+  }));
 
   const allFilters = useQuery(
     api.filter.getAllFilterOptions,
@@ -263,6 +327,16 @@ export default function GroupsScreen() {
     );
     return f?.name ?? "";
   }, [selectedFilterId, allFilters]);
+
+  // Filter groups by search
+  const filteredGroups = useMemo(() => {
+    if (!myGroups) return [];
+    if (!searchQuery.trim()) return myGroups;
+    const q = searchQuery.toLowerCase();
+    return myGroups.filter((g: any) =>
+      g.name.toLowerCase().includes(q),
+    );
+  }, [myGroups, searchQuery]);
 
   const handleOpenSheet = useCallback(() => {
     setSheetOpen(true);
@@ -324,27 +398,37 @@ export default function GroupsScreen() {
       flex: 1,
       backgroundColor: t.colors.background,
     },
-    header: {
+    headerContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 20,
+    },
+    headerRow: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+    },
+    searchContainer: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
+      marginHorizontal: 16,
+      marginTop: 12,
+      marginBottom: 4,
+      height: 44,
+      borderRadius: 24,
+      backgroundColor: t.colors.surface,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      paddingHorizontal: 14,
     },
-    addButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: t.colors.primary + "18",
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: t.colors.text,
+      marginLeft: 8,
     },
     listContent: {
       paddingTop: 12,
-      paddingBottom: 90,
-      gap: 10,
+      paddingBottom: insets.bottom + 90,
     },
     emptyContainer: {
       flex: 1,
@@ -356,37 +440,23 @@ export default function GroupsScreen() {
       width: 100,
       height: 100,
       borderRadius: 50,
-      backgroundColor: t.colors.primary + "1F",
+      backgroundColor: t.colors.surface,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    emptyButton: {
-      borderWidth: 1.5,
-      borderColor: t.colors.primary,
-      borderRadius: 12,
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-    },
     // Sheet styles
     sheetBg: {
-      backgroundColor: t.colors.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
+      backgroundColor: "#1E1E1E",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     },
     sheetHandle: {
-      backgroundColor: t.colors.textMuted,
-      width: 36,
+      backgroundColor: "#555",
+      width: 40,
       height: 4,
     },
-    sheetContent: {
-      paddingHorizontal: 20,
-      gap: 16,
-    },
-    sheetLabel: {
-      marginBottom: 6,
-    },
     sheetInput: {
-      backgroundColor: t.colors.background,
+      backgroundColor: "rgba(255,255,255,0.06)",
       borderRadius: 12,
       borderWidth: 1,
       borderColor: t.colors.border,
@@ -399,7 +469,7 @@ export default function GroupsScreen() {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "space-between" as const,
-      backgroundColor: t.colors.background,
+      backgroundColor: "rgba(255,255,255,0.06)",
       borderRadius: 12,
       borderWidth: 1,
       borderColor: t.colors.border,
@@ -407,27 +477,29 @@ export default function GroupsScreen() {
       paddingVertical: 12,
     },
     createButton: {
-      height: 48,
-      borderRadius: 12,
+      height: 50,
+      borderRadius: 16,
       overflow: "hidden" as const,
     },
     createGradient: {
       flex: 1,
+      flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "center" as const,
+      gap: 8,
     },
     filterItem: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "space-between" as const,
-      paddingHorizontal: 16,
+      paddingHorizontal: 20,
       paddingVertical: 14,
       borderBottomWidth: 1,
       borderBottomColor: t.colors.border,
     },
     filterSearchInput: {
       flex: 1,
-      backgroundColor: t.colors.surface,
+      backgroundColor: "rgba(255,255,255,0.06)",
       borderRadius: 12,
       borderWidth: 1,
       borderColor: t.colors.border,
@@ -453,7 +525,7 @@ export default function GroupsScreen() {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       gap: 12,
-      paddingHorizontal: 16,
+      paddingHorizontal: 20,
       paddingBottom: 12,
     },
   }));
@@ -461,56 +533,118 @@ export default function GroupsScreen() {
   // Loading
   if (myGroups === undefined) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar
-          translucent
-          backgroundColor="transparent"
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-        />
-        <View style={styles.header}>
-          <Typography
-            variant="h2"
-            weight="bold"
-            color="text"
-          >
-            My Groups
-          </Typography>
-          <View style={{ width: 36 }} />
+      <View style={styles.container}>
+        <Animated.View
+          entering={FadeInDown.duration(300).delay(50)}
+          style={styles.headerContainer}
+        >
+          <View style={styles.headerRow}>
+            <View>
+              <Typography
+                variant="h1"
+                weight="bold"
+                color="text"
+                style={{ fontSize: 28 }}
+              >
+                My Groups
+              </Typography>
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ marginTop: 4 }}
+              >
+                Your career communities
+              </Typography>
+            </View>
+          </View>
+        </Animated.View>
+        <View style={{ marginTop: 20 }}>
+          {[0, 1, 2].map((i) => (
+            <SkeletonCard key={i} index={i} />
+          ))}
         </View>
-        {[0, 1, 2].map((i) => (
-          <SkeletonCard key={i} index={i} />
-        ))}
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle={isDark ? "light-content" : "dark-content"}
-      />
-
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Typography variant="h2" weight="bold" color="text">
-          My Groups
-        </Typography>
-        {currentUser?.isAdmin && (
-          <Pressable
-            onPress={handleOpenSheet}
-            style={styles.addButton}
-          >
-            <Ionicons
-              name="add"
-              size={22}
-              color={theme.colors.primary}
-            />
-          </Pressable>
-        )}
+      <Animated.View
+        entering={FadeInDown.duration(300).delay(50)}
+        style={styles.headerContainer}
+      >
+        <View style={styles.headerRow}>
+          <View>
+            <Typography
+              variant="h1"
+              weight="bold"
+              color="text"
+              style={{ fontSize: 28 }}
+            >
+              My Groups
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 4 }}
+            >
+              Your career communities
+            </Typography>
+          </View>
+
+          {/* Add button (admin only) */}
+          {currentUser?.isAdmin && (
+            <Pressable
+              onPressIn={() => {
+                addScale.value = withSpring(0.92, {
+                  damping: 15,
+                });
+              }}
+              onPressOut={() => {
+                addScale.value = withSpring(1, {
+                  damping: 15,
+                });
+              }}
+              onPress={handleOpenSheet}
+            >
+              <Animated.View style={addScaleStyle}>
+                <LinearGradient
+                  colors={["#6C5DD3", "#8676FF"]}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="add"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                </LinearGradient>
+              </Animated.View>
+            </Pressable>
+          )}
+        </View>
+      </Animated.View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search-outline"
+          size={16}
+          color={theme.colors.textMuted}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search groups..."
+          placeholderTextColor={theme.colors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
       </View>
 
       {/* Group List or Empty State */}
@@ -522,48 +656,59 @@ export default function GroupsScreen() {
           <View style={styles.emptyIconCircle}>
             <Ionicons
               name="people-outline"
-              size={64}
+              size={48}
               color={theme.colors.primary}
             />
           </View>
-          <View style={{ height: 16 }} />
           <Typography
             variant="h3"
             weight="bold"
             color="text"
             align="center"
+            style={{ marginTop: 20, fontSize: 20 }}
           >
             No Groups Yet
           </Typography>
-          <View style={{ height: 8 }} />
           <Typography
             variant="body"
             color="textMuted"
             align="center"
-            style={{ maxWidth: 260 }}
+            style={{
+              marginTop: 8,
+              maxWidth: 240,
+              fontSize: 14,
+            }}
           >
             Join career communities to connect with others
             on the same path
           </Typography>
-          <View style={{ height: 16 }} />
           <Pressable
             onPress={() =>
               router.replace("/(tabs)/" as any)
             }
-            style={styles.emptyButton}
+            style={{ marginTop: 24 }}
           >
-            <Typography
-              variant="body"
-              weight="semibold"
-              color="primary"
+            <LinearGradient
+              colors={["#6C5DD3", "#8676FF"]}
+              style={{
+                borderRadius: 24,
+                paddingHorizontal: 32,
+                paddingVertical: 14,
+              }}
             >
-              Explore Careers
-            </Typography>
+              <Typography
+                variant="body"
+                weight="bold"
+                style={{ color: "#FFFFFF" }}
+              >
+                Explore Careers
+              </Typography>
+            </LinearGradient>
           </Pressable>
         </Animated.View>
       ) : (
         <FlatList
-          data={myGroups}
+          data={filteredGroups}
           keyExtractor={(item: any) => item._id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -629,7 +774,9 @@ export default function GroupsScreen() {
                 <BottomSheetTextInput
                   style={styles.filterSearchInput}
                   placeholder="Search career paths..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={
+                    theme.colors.textMuted
+                  }
                   value={filterSearch}
                   onChangeText={setFilterSearch}
                 />
@@ -642,7 +789,10 @@ export default function GroupsScreen() {
                 renderItem={({ item }: { item: any }) => (
                   <Pressable
                     onPress={() =>
-                      handleSelectFilter(item._id, item.name)
+                      handleSelectFilter(
+                        item._id,
+                        item.name,
+                      )
                     }
                     style={styles.filterItem}
                   >
@@ -681,8 +831,8 @@ export default function GroupsScreen() {
                 <Typography
                   variant="caption"
                   weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
+                  color="textMuted"
+                  style={{ marginBottom: 6 }}
                 >
                   Career Path
                 </Typography>
@@ -693,12 +843,15 @@ export default function GroupsScreen() {
                   <Typography
                     variant="body"
                     color={
-                      selectedFilterId ? "text" : "textMuted"
+                      selectedFilterId
+                        ? "text"
+                        : "textMuted"
                     }
                     numberOfLines={1}
                     style={{ flex: 1 }}
                   >
-                    {selectedFilterName || "Select a career path"}
+                    {selectedFilterName ||
+                      "Select a career path"}
                   </Typography>
                   <Ionicons
                     name="chevron-forward"
@@ -713,8 +866,8 @@ export default function GroupsScreen() {
                 <Typography
                   variant="caption"
                   weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
+                  color="textMuted"
+                  style={{ marginBottom: 6 }}
                 >
                   Group Name
                 </Typography>
@@ -723,7 +876,9 @@ export default function GroupsScreen() {
                   value={groupName}
                   onChangeText={setGroupName}
                   placeholder="Enter group name"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={
+                    theme.colors.textMuted
+                  }
                 />
               </View>
 
@@ -732,8 +887,8 @@ export default function GroupsScreen() {
                 <Typography
                   variant="caption"
                   weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
+                  color="textMuted"
+                  style={{ marginBottom: 6 }}
                 >
                   Description (optional)
                 </Typography>
@@ -748,7 +903,9 @@ export default function GroupsScreen() {
                   value={groupDesc}
                   onChangeText={setGroupDesc}
                   placeholder="Describe this group..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={
+                    theme.colors.textMuted
+                  }
                   multiline
                 />
               </View>
@@ -783,6 +940,6 @@ export default function GroupsScreen() {
           )}
         </BottomSheet>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

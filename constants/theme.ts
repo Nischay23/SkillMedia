@@ -11,7 +11,6 @@ import {
   LetterSpacing,
 } from "./Typography";
 import {
-  Spacing as SpacingSystem,
   SpacingValues,
   ScreenPadding,
   CardSpacing,
@@ -88,14 +87,9 @@ const spacing = {
 // Border radius system
 const borderRadius = {
   none: 0,
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
   "2xl": 20,
   "3xl": 24,
-  full: 9999,
-  // Alias to new spacing border radius
+  // From SpacingBorderRadius (xs, sm, md, lg, xl, full)
   ...SpacingBorderRadius,
 };
 
@@ -162,7 +156,7 @@ export const createTheme = (
     colors: {
       primary: colors.primary,
       secondary: colors.secondary,
-      accent: colors.accentGradientEnd || colors.secondary,
+      accent: colorScheme === "dark" ? (colors as typeof Colors.dark).accentGradientEnd : colors.secondary,
       background: colors.background,
       surface: colors.surface,
       surfaceLight: colors.surfaceLight,

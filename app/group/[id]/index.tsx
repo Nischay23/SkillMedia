@@ -15,10 +15,13 @@ import React, {
 } from "react";
 import {
   Alert,
+  Dimensions,
+  DimensionValue,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StatusBar,
   TextInput,
   View,
 } from "react-native";
@@ -41,7 +44,20 @@ import {
   useThemedStyles,
 } from "@/providers/ThemeProvider";
 import { useMutation, useQuery } from "convex/react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SKELETON_WIDTHS = [
+  "60%",
+  "45%",
+  "70%",
+  "40%",
+  "65%",
+  "50%",
+];
 
 // ─────────────────────────────────────────────────────────────
 // TYPES
@@ -67,15 +83,21 @@ type Message = {
 // ─────────────────────────────────────────────────────────────
 // SKELETON MESSAGE
 // ─────────────────────────────────────────────────────────────
-function SkeletonMessage({ isRight, index }: { isRight: boolean; index: number }) {
+function SkeletonMessage({
+  isRight,
+  index,
+}: {
+  isRight: boolean;
+  index: number;
+}) {
   const { theme } = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(0.7, { duration: 800 }),
+      withTiming(0.25, { duration: 700 }),
       -1,
-      true
+      true,
     );
   }, [opacity]);
 
@@ -85,24 +107,22 @@ function SkeletonMessage({ isRight, index }: { isRight: boolean; index: number }
 
   return (
     <Animated.View
-      entering={FadeIn.duration(200).delay(index * 50)}
-      style={[
-        {
-          alignSelf: isRight ? "flex-end" : "flex-start",
-          flexDirection: "row",
-          alignItems: "flex-end",
-          marginBottom: 8,
-          paddingHorizontal: 12,
-        },
-      ]}
+      entering={FadeIn.duration(180).delay(index * 60)}
+      style={{
+        alignSelf: isRight ? "flex-end" : "flex-start",
+        flexDirection: "row",
+        alignItems: "flex-end",
+        marginBottom: 8,
+        paddingHorizontal: 12,
+      }}
     >
       {!isRight && (
         <Animated.View
           style={[
             {
-              width: 32,
-              height: 32,
-              borderRadius: 16,
+              width: 34,
+              height: 34,
+              borderRadius: 17,
               backgroundColor: theme.colors.surface,
               marginRight: 8,
             },
@@ -113,9 +133,12 @@ function SkeletonMessage({ isRight, index }: { isRight: boolean; index: number }
       <Animated.View
         style={[
           {
-            width: isRight ? 180 : 150,
+            width:
+              SKELETON_WIDTHS[
+                index % SKELETON_WIDTHS.length
+              ] as DimensionValue,
             height: 44,
-            borderRadius: 16,
+            borderRadius: 18,
             backgroundColor: theme.colors.surface,
           },
           pulseStyle,
@@ -171,10 +194,11 @@ function DateSeparator({ date }: { date: string }) {
 function MessageBubble({
   message,
   isOwn,
-  showAvatar,
+  showAvatar: _showAvatar,
   showName,
   showTimestamp,
   isFirstInGroup,
+  isLastInGroup,
   onLongPress,
 }: {
   message: Message;
@@ -183,6 +207,7 @@ function MessageBubble({
   showName: boolean;
   showTimestamp: boolean;
   isFirstInGroup: boolean;
+  isLastInGroup: boolean;
   onLongPress: () => void;
 }) {
   const { theme } = useTheme();
@@ -195,7 +220,7 @@ function MessageBubble({
           alignSelf: isOwn ? "flex-end" : "flex-start",
           paddingHorizontal: 12,
           marginBottom: showTimestamp ? 4 : 2,
-          marginLeft: !isOwn && !showAvatar ? 40 : 0,
+          marginLeft: !isOwn ? 42 : 0,
         }}
       >
         <Typography
@@ -203,7 +228,7 @@ function MessageBubble({
           style={{
             color: theme.colors.textMuted,
             fontStyle: "italic",
-            fontSize: 14,
+            fontSize: 13,
           }}
         >
           [Message deleted]
@@ -216,15 +241,16 @@ function MessageBubble({
   if (message.type === "announcement") {
     return (
       <Animated.View
-        entering={FadeIn.duration(200)}
+        entering={FadeIn.duration(180)}
         style={{
-          marginHorizontal: 8,
-          marginBottom: showTimestamp ? 8 : 4,
-          backgroundColor: "rgba(245, 158, 11, 0.12)",
+          marginHorizontal: 12,
+          marginVertical: 6,
+          backgroundColor: "rgba(245, 158, 11, 0.08)",
           borderLeftWidth: 3,
           borderLeftColor: "#F59E0B",
           borderRadius: 12,
-          padding: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
         }}
       >
         <View
@@ -235,7 +261,11 @@ function MessageBubble({
             marginBottom: 6,
           }}
         >
-          <Ionicons name="megaphone-outline" size={14} color="#F59E0B" />
+          <Ionicons
+            name="megaphone-outline"
+            size={13}
+            color="#F59E0B"
+          />
           <Typography
             variant="caption"
             weight="semibold"
@@ -244,14 +274,18 @@ function MessageBubble({
             Announcement
           </Typography>
         </View>
-        <Typography variant="body" color="text" style={{ fontSize: 15 }}>
+        <Typography
+          variant="body"
+          color="text"
+          style={{ fontSize: 15, lineHeight: 22 }}
+        >
           {message.content}
         </Typography>
         {showTimestamp && (
           <Typography
             variant="caption"
             color="textMuted"
-            style={{ fontSize: 11, marginTop: 6 }}
+            style={{ fontSize: 10, marginTop: 6 }}
           >
             {formatTime(message.createdAt)}
           </Typography>
@@ -262,72 +296,71 @@ function MessageBubble({
 
   // Regular text message
   return (
-    <Pressable onLongPress={onLongPress} delayLongPress={400}>
+    <Pressable
+      onLongPress={onLongPress}
+      delayLongPress={400}
+    >
       <Animated.View
-        entering={FadeIn.duration(200)}
+        entering={FadeIn.duration(180)}
         style={{
           alignSelf: isOwn ? "flex-end" : "flex-start",
           flexDirection: "row",
           alignItems: "flex-end",
-          marginBottom: showTimestamp ? 8 : 2,
+          gap: 8,
+          marginBottom: showTimestamp ? 4 : 2,
           paddingHorizontal: 12,
-          maxWidth: "80%",
         }}
       >
-        {/* Avatar for other users */}
-        {!isOwn && showAvatar && message.sender && (
-          message.sender.profileImage ? (
-            <Image
-              source={{ uri: message.sender.profileImage }}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                marginRight: 8,
-              }}
-              contentFit="cover"
-            />
-          ) : (
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                marginRight: 8,
-                backgroundColor: theme.colors.primary + "20",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography
-                variant="caption"
-                weight="bold"
-                style={{ color: theme.colors.primary }}
-              >
-                {message.sender.fullname[0]?.toUpperCase() ?? "?"}
-              </Typography>
-            </View>
-          )
+        {/* Avatar area for other users */}
+        {!isOwn && (
+          <View style={{ width: 34 }}>
+            {isLastInGroup &&
+              message.sender &&
+              (message.sender.profileImage ? (
+                <Image
+                  source={{
+                    uri: message.sender.profileImage,
+                  }}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                  }}
+                  contentFit="cover"
+                />
+              ) : (
+                <LinearGradient
+                  colors={["#6C5DD3", "#8676FF"]}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    weight="bold"
+                    style={{ color: "#FFFFFF" }}
+                  >
+                    {message.sender.fullname[0]?.toUpperCase() ??
+                      "?"}
+                  </Typography>
+                </LinearGradient>
+              ))}
+          </View>
         )}
 
-        {/* Spacer when no avatar but not own message */}
-        {!isOwn && !showAvatar && <View style={{ width: 40 }} />}
-
-        <View style={{ flex: 1 }}>
-          {/* Sender name (only for first in group, other users) */}
+        <View style={{ maxWidth: SCREEN_WIDTH * 0.72 }}>
+          {/* Sender name */}
           {!isOwn && showName && message.sender && (
             <Typography
               variant="caption"
-              style={{
-                color: message.sender.isAdmin
-                  ? theme.colors.primary
-                  : theme.colors.textMuted,
-                marginBottom: 2,
-                marginLeft: 4,
-              }}
+              color="textMuted"
+              style={{ marginBottom: 2, marginLeft: 0 }}
             >
               {message.sender.fullname}
-              {message.sender.isAdmin && " · Admin"}
             </Typography>
           )}
 
@@ -336,18 +369,23 @@ function MessageBubble({
             <LinearGradient
               colors={["#6C5DD3", "#8676FF"]}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                borderRadius: 16,
-                borderTopRightRadius: isFirstInGroup ? 4 : 16,
+                borderRadius: 18,
+                borderTopRightRadius: isFirstInGroup
+                  ? 4
+                  : 18,
                 paddingHorizontal: 14,
                 paddingVertical: 10,
-                alignSelf: "flex-end",
               }}
             >
               <Typography
                 variant="body"
-                style={{ color: "#FFFFFF", fontSize: 15 }}
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 15,
+                  lineHeight: 22,
+                }}
               >
                 {message.content}
               </Typography>
@@ -356,17 +394,20 @@ function MessageBubble({
             <View
               style={{
                 backgroundColor: theme.colors.surface,
-                borderRadius: 16,
-                borderTopLeftRadius: isFirstInGroup ? 4 : 16,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                borderRadius: 18,
+                borderTopLeftRadius: isFirstInGroup
+                  ? 4
+                  : 18,
                 paddingHorizontal: 14,
                 paddingVertical: 10,
-                alignSelf: "flex-start",
               }}
             >
               <Typography
                 variant="body"
                 color="text"
-                style={{ fontSize: 15 }}
+                style={{ fontSize: 15, lineHeight: 22 }}
               >
                 {message.content}
               </Typography>
@@ -379,10 +420,12 @@ function MessageBubble({
               variant="caption"
               color="textMuted"
               style={{
-                fontSize: 11,
+                fontSize: 10,
                 marginTop: 4,
-                alignSelf: isOwn ? "flex-end" : "flex-start",
-                marginHorizontal: 4,
+                alignSelf: isOwn
+                  ? "flex-end"
+                  : "flex-start",
+                marginLeft: isOwn ? 0 : 42,
               }}
             >
               {formatTime(message.createdAt)}
@@ -399,7 +442,10 @@ function MessageBubble({
 // ─────────────────────────────────────────────────────────────
 function formatTime(timestamp: number): string {
   const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function formatDateLabel(timestamp: number): string {
@@ -408,13 +454,14 @@ function formatDateLabel(timestamp: number): string {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) {
+  if (date.toDateString() === today.toDateString())
     return "Today";
-  }
-  if (date.toDateString() === yesterday.toDateString()) {
+  if (date.toDateString() === yesterday.toDateString())
     return "Yesterday";
-  }
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function isSameDay(ts1: number, ts2: number): boolean {
@@ -423,11 +470,19 @@ function isSameDay(ts1: number, ts2: number): boolean {
   return d1.toDateString() === d2.toDateString();
 }
 
-function shouldGroupMessages(msg1: Message, msg2: Message): boolean {
-  // Same sender and within 5 minutes
+function shouldGroupMessages(
+  msg1: Message,
+  msg2: Message,
+): boolean {
   if (msg1.userId !== msg2.userId) return false;
-  if (msg1.type === "announcement" || msg2.type === "announcement") return false;
-  const timeDiff = Math.abs(msg1.createdAt - msg2.createdAt);
+  if (
+    msg1.type === "announcement" ||
+    msg2.type === "announcement"
+  )
+    return false;
+  const timeDiff = Math.abs(
+    msg1.createdAt - msg2.createdAt,
+  );
   return timeDiff < 5 * 60 * 1000;
 }
 
@@ -437,30 +492,49 @@ function shouldGroupMessages(msg1: Message, msg2: Message): boolean {
 export default function GroupChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const groupId = id as Id<"groups">;
 
   // Queries
   const currentUser = useQuery(api.users.getCurrentUser);
-  const group = useQuery(api.groups.getGroupById, { groupId });
-  const messages = useQuery(api.messages.getMessages, { groupId });
-  const pinnedMessage = useQuery(api.messages.getPinnedMessage, { groupId });
+  const group = useQuery(api.groups.getGroupById, {
+    groupId,
+  });
+  const messages = useQuery(api.messages.getMessages, {
+    groupId,
+  });
+  const pinnedMessage = useQuery(
+    api.messages.getPinnedMessage,
+    { groupId },
+  );
 
   // Mutations
-  const sendMessageMutation = useMutation(api.messages.sendMessage);
-  const deleteMessageMutation = useMutation(api.messages.deleteMessage);
-  const pinMessageMutation = useMutation(api.messages.pinMessage);
-  const leaveGroupMutation = useMutation(api.groups.leaveGroup);
+  const sendMessageMutation = useMutation(
+    api.messages.sendMessage,
+  );
+  const deleteMessageMutation = useMutation(
+    api.messages.deleteMessage,
+  );
+  const pinMessageMutation = useMutation(
+    api.messages.pinMessage,
+  );
+  const leaveGroupMutation = useMutation(
+    api.groups.leaveGroup,
+  );
 
   // State
   const [inputText, setInputText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [actionMessageId, setActionMessageId] = useState<Id<"messages"> | null>(null);
-  const [announcementOpen, setAnnouncementOpen] = useState(false);
-  const [announcementText, setAnnouncementText] = useState("");
-  const [pinnedExpanded, setPinnedExpanded] = useState(false);
+  const [actionMessageId, setActionMessageId] =
+    useState<Id<"messages"> | null>(null);
+  const [announcementOpen, setAnnouncementOpen] =
+    useState(false);
+  const [announcementText, setAnnouncementText] =
+    useState("");
+  const [pinnedExpanded, setPinnedExpanded] =
+    useState(false);
 
   // Refs
   const flatListRef = useRef<FlatList>(null);
@@ -472,49 +546,81 @@ export default function GroupChatScreen() {
 
   // Animation values
   const sendScale = useSharedValue(1);
+  const backScale = useSharedValue(1);
+  const menuScale = useSharedValue(1);
+  const announceBtnScale = useSharedValue(1);
 
   // Derived
-  const isAdmin = currentUser?.isAdmin || group?.currentUserRole === "admin";
+  const isAdmin =
+    currentUser?.isAdmin ||
+    group?.currentUserRole === "admin";
   const canSend = inputText.trim().length > 0;
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (messages && messages.length > prevMessageCount.current) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+    if (
+      messages &&
+      messages.length > prevMessageCount.current
+    ) {
+      setTimeout(
+        () =>
+          flatListRef.current?.scrollToEnd({
+            animated: true,
+          }),
+        100,
+      );
     }
-    if (messages) {
+    if (messages)
       prevMessageCount.current = messages.length;
-    }
-  }, [messages?.length]);
+  }, [messages]);
 
   // Initial scroll to bottom
+  const messagesLoaded = messages !== undefined;
   useEffect(() => {
     if (messages && messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 300);
+      setTimeout(
+        () =>
+          flatListRef.current?.scrollToEnd({
+            animated: false,
+          }),
+        300,
+      );
     }
-  }, [messages !== undefined]);
+  }, [messagesLoaded, messages]);
 
   // Handlers
   const handleSend = useCallback(async () => {
     if (!canSend) return;
     const text = inputText.trim();
     setInputText("");
-    sendScale.value = withSpring(0.88, { damping: 10, stiffness: 300 });
+    sendScale.value = withSpring(0.85, {
+      damping: 12,
+      stiffness: 300,
+    });
     setTimeout(() => {
-      sendScale.value = withSpring(1, { damping: 10, stiffness: 300 });
+      sendScale.value = withSpring(1, {
+        damping: 12,
+        stiffness: 300,
+      });
     }, 100);
 
     try {
-      await sendMessageMutation({ groupId, content: text, type: "text" });
-    } catch (error) {
+      await sendMessageMutation({
+        groupId,
+        content: text,
+        type: "text",
+      });
+    } catch {
       Alert.alert("Error", "Failed to send message");
       setInputText(text);
     }
-  }, [inputText, canSend, groupId, sendMessageMutation, sendScale]);
+  }, [
+    inputText,
+    canSend,
+    groupId,
+    sendMessageMutation,
+    sendScale,
+  ]);
 
   const handleSendAnnouncement = useCallback(async () => {
     if (!announcementText.trim()) return;
@@ -523,8 +629,12 @@ export default function GroupChatScreen() {
     announcementRef.current?.close();
 
     try {
-      await sendMessageMutation({ groupId, content: text, type: "announcement" });
-    } catch (error) {
+      await sendMessageMutation({
+        groupId,
+        content: text,
+        type: "announcement",
+      });
+    } catch {
       Alert.alert("Error", "Failed to send announcement");
     }
   }, [announcementText, groupId, sendMessageMutation]);
@@ -533,8 +643,10 @@ export default function GroupChatScreen() {
     if (!actionMessageId) return;
     actionRef.current?.close();
     try {
-      await deleteMessageMutation({ messageId: actionMessageId });
-    } catch (error) {
+      await deleteMessageMutation({
+        messageId: actionMessageId,
+      });
+    } catch {
       Alert.alert("Error", "Failed to delete message");
     }
     setActionMessageId(null);
@@ -544,8 +656,10 @@ export default function GroupChatScreen() {
     if (!actionMessageId) return;
     actionRef.current?.close();
     try {
-      await pinMessageMutation({ messageId: actionMessageId });
-    } catch (error) {
+      await pinMessageMutation({
+        messageId: actionMessageId,
+      });
+    } catch {
       Alert.alert("Error", "Failed to pin message");
     }
     setActionMessageId(null);
@@ -566,16 +680,19 @@ export default function GroupChatScreen() {
             router.back();
           },
         },
-      ]
+      ],
     );
   }, [groupId, leaveGroupMutation, router]);
 
   const handleMessageLongPress = useCallback(
     (message: Message) => {
       setActionMessageId(message._id);
-      setTimeout(() => actionRef.current?.snapToIndex(0), 100);
+      setTimeout(
+        () => actionRef.current?.snapToIndex(0),
+        100,
+      );
     },
-    []
+    [],
   );
 
   const renderBackdrop = useCallback(
@@ -584,16 +701,25 @@ export default function GroupChatScreen() {
         {...props}
         disappearsOnIndex={-1}
         appearsOnIndex={0}
-        opacity={0.4}
+        opacity={0.5}
         pressBehavior="close"
       />
     ),
-    []
+    [],
   );
 
   // Animated styles
   const sendButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: sendScale.value }],
+  }));
+  const backButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: backScale.value }],
+  }));
+  const menuButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: menuScale.value }],
+  }));
+  const announceBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: announceBtnScale.value }],
   }));
 
   // Styles
@@ -605,114 +731,110 @@ export default function GroupChatScreen() {
     header: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
+      backgroundColor: t.colors.surface,
       paddingHorizontal: 12,
       paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
-      gap: 10,
-    },
-    headerAccent: {
-      height: 2,
-      backgroundColor: t.colors.primary,
-    },
-    headerCenter: {
-      flex: 1,
-      alignItems: "center" as const,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+        },
+        android: { elevation: 3 },
+      }),
     },
     headerButton: {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: t.colors.surface,
+      backgroundColor: "rgba(255,255,255,0.08)",
       alignItems: "center" as const,
       justifyContent: "center" as const,
+    },
+    headerCenter: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginHorizontal: 10,
+      gap: 10,
+    },
+    headerAccent: {
+      height: 1.5,
     },
     pinnedBanner: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       marginHorizontal: 12,
       marginTop: 8,
-      padding: 10,
-      backgroundColor: t.colors.primary + "1A",
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      backgroundColor: "rgba(160, 166, 255, 0.08)",
       borderLeftWidth: 3,
       borderLeftColor: t.colors.primary,
-      borderRadius: 8,
-      gap: 8,
+      borderRadius: 12,
+      gap: 6,
     },
     messagesList: {
       flex: 1,
+      backgroundColor: t.colors.background,
     },
     emptyContainer: {
       flex: 1,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      gap: 12,
       paddingBottom: 100,
     },
     inputContainer: {
       flexDirection: "row" as const,
       alignItems: "flex-end" as const,
+      backgroundColor: t.colors.surface,
       paddingHorizontal: 12,
-      paddingTop: 8,
-      paddingBottom: Math.max(insets.bottom, 8) + 70,
-      backgroundColor: t.colors.background,
+      paddingVertical: 8,
+      paddingBottom: insets.bottom + 8,
       borderTopWidth: 1,
       borderTopColor: t.colors.border,
       gap: 8,
     },
-    inputAvatar: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      marginBottom: 5,
-    },
-    inputAvatarFallback: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: t.colors.primary + "20",
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      marginBottom: 5,
-    },
-    textInput: {
+    textInputWrapper: {
       flex: 1,
-      backgroundColor: t.colors.surface,
       borderRadius: 24,
+      backgroundColor: "rgba(255,255,255,0.06)",
       borderWidth: 1,
       borderColor: t.colors.border,
       paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingVertical: 8,
+      minHeight: 40,
+    },
+    textInput: {
       fontSize: 15,
       color: t.colors.text,
       maxHeight: 100,
+      lineHeight: 20,
     },
     sendButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      marginBottom: 1,
     },
     announcementButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: t.colors.surface,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.06)",
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      marginBottom: 1,
     },
-    // Bottom sheet styles
     sheetBg: {
-      backgroundColor: t.colors.surface,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
+      backgroundColor: "#1E1E1E",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     },
     sheetHandle: {
-      backgroundColor: t.colors.textMuted,
-      width: 36,
+      backgroundColor: "#555",
+      width: 40,
       height: 4,
     },
     menuItem: {
@@ -725,35 +847,37 @@ export default function GroupChatScreen() {
       borderBottomColor: t.colors.border,
     },
     announcementInput: {
-      backgroundColor: t.colors.background,
-      borderRadius: 12,
+      backgroundColor: "rgba(255,255,255,0.06)",
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: t.colors.border,
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: 14,
       fontSize: 15,
       color: t.colors.text,
-      minHeight: 80,
+      minHeight: 100,
       textAlignVertical: "top" as const,
     },
-    announcementButton2: {
-      height: 48,
-      borderRadius: 12,
+    announcementSubmit: {
+      height: 50,
+      borderRadius: 16,
       overflow: "hidden" as const,
-      marginTop: 12,
+      marginTop: 16,
     },
     announcementGradient: {
       flex: 1,
+      flexDirection: "row" as const,
       alignItems: "center" as const,
       justifyContent: "center" as const,
+      gap: 8,
     },
   }));
 
-  // Process messages for rendering with date separators and grouping
+  // Process messages for rendering
   const processedMessages = useMemo(() => {
     if (!messages || !currentUser) return [];
 
-    const result: Array<
+    const result: (
       | { type: "date"; date: string; key: string }
       | {
           type: "message";
@@ -763,18 +887,19 @@ export default function GroupChatScreen() {
           showName: boolean;
           showTimestamp: boolean;
           isFirstInGroup: boolean;
+          isLastInGroup: boolean;
           key: string;
         }
-    > = [];
+    )[] = [];
 
     let lastDate: string | null = null;
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
       const prevMsg = i > 0 ? messages[i - 1] : null;
-      const nextMsg = i < messages.length - 1 ? messages[i + 1] : null;
+      const nextMsg =
+        i < messages.length - 1 ? messages[i + 1] : null;
 
-      // Add date separator if needed
       const dateLabel = formatDateLabel(msg.createdAt);
       if (dateLabel !== lastDate) {
         result.push({
@@ -799,10 +924,11 @@ export default function GroupChatScreen() {
         type: "message",
         message: msg,
         isOwn,
-        showAvatar: !isOwn && isFirstInGroup,
+        showAvatar: !isOwn && isLastInGroup,
         showName: !isOwn && isFirstInGroup,
         showTimestamp: isLastInGroup,
         isFirstInGroup,
+        isLastInGroup,
         key: msg._id,
       });
     }
@@ -815,86 +941,240 @@ export default function GroupChatScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.headerButton}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color={theme.colors.text}
+            />
           </Pressable>
           <View style={styles.headerCenter}>
             <View
               style={{
-                width: 120,
-                height: 16,
-                backgroundColor: theme.colors.surface,
-                borderRadius: 8,
+                width: 100,
+                height: 14,
+                backgroundColor: theme.colors.border,
+                borderRadius: 7,
               }}
             />
           </View>
           <View style={{ width: 36 }} />
         </View>
-        <View style={styles.headerAccent} />
+        <LinearGradient
+          colors={["#6C5DD3", "#8676FF", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerAccent}
+        />
         <View style={{ flex: 1, paddingTop: 20 }}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <SkeletonMessage key={i} isRight={i % 2 === 0} index={i} />
+            <SkeletonMessage
+              key={i}
+              isRight={i % 2 === 0}
+              index={i}
+            />
           ))}
         </View>
       </View>
     );
   }
 
-  // Empty state
+  // Empty state renderer
   const renderEmpty = () => (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
+    <Animated.View
+      entering={FadeIn.duration(400)}
+      style={styles.emptyContainer}
+    >
       <Ionicons
         name="chatbubbles-outline"
         size={56}
         color={theme.colors.primary + "66"}
       />
-      <Typography variant="h4" weight="bold" color="text">
+      <Typography
+        variant="h4"
+        weight="bold"
+        color="text"
+        style={{ marginTop: 16, fontSize: 18 }}
+      >
         No messages yet
       </Typography>
-      <Typography variant="body" color="textMuted" align="center">
+      <Typography
+        variant="body"
+        color="textMuted"
+        align="center"
+        style={{ marginTop: 6, fontSize: 14 }}
+      >
         Be the first to say something!
       </Typography>
     </Animated.View>
   );
 
-  // Selected message for action sheet
   const selectedMessage = actionMessageId
     ? messages?.find((m) => m._id === actionMessageId)
     : null;
-  const isSelectedOwn = selectedMessage?.userId === currentUser._id;
+  const isSelectedOwn =
+    selectedMessage?.userId === currentUser._id;
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={
+        Platform.OS === "ios" ? "padding" : "height"
+      }
       keyboardVerticalOffset={0}
     >
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
+        <Pressable
+          onPressIn={() => {
+            backScale.value = withSpring(0.9, {
+              damping: 15,
+            });
+          }}
+          onPressOut={() => {
+            backScale.value = withSpring(1, {
+              damping: 15,
+            });
+          }}
+          onPress={() => router.back()}
+        >
+          <Animated.View
+            style={[styles.headerButton, backButtonStyle]}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color={theme.colors.text}
+            />
+          </Animated.View>
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Typography variant="body" weight="bold" color="text" numberOfLines={1}>
-            {group.name}
-          </Typography>
-          <Typography variant="caption" color="textMuted">
-            {group.memberCount.toLocaleString()} members
-          </Typography>
+          <LinearGradient
+            colors={["#6C5DD3", "#8676FF"]}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              variant="body"
+              weight="bold"
+              style={{ color: "#FFFFFF" }}
+            >
+              {(group.name || "G")[0].toUpperCase()}
+            </Typography>
+          </LinearGradient>
+          <View>
+            <Typography
+              variant="body"
+              weight="bold"
+              color="text"
+              numberOfLines={1}
+              style={{ fontSize: 15 }}
+            >
+              {group.name}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ fontSize: 12 }}
+            >
+              {group.memberCount.toLocaleString()} members
+            </Typography>
+          </View>
         </View>
 
         <Pressable
-          onPress={() => {
-            setMenuOpen(true);
-            setTimeout(() => menuRef.current?.snapToIndex(0), 100);
+          onPressIn={() => {
+            menuScale.value = withSpring(0.9, {
+              damping: 15,
+            });
           }}
-          style={styles.headerButton}
+          onPressOut={() => {
+            menuScale.value = withSpring(1, {
+              damping: 15,
+            });
+          }}
+          onPress={() => {
+            if (Platform.OS === "android") {
+              Alert.alert(group.name, undefined, [
+                {
+                  text: "View Members",
+                  onPress: () =>
+                    router.push(
+                      `/group/${id}/members` as any,
+                    ),
+                },
+                {
+                  text: "Group Info",
+                  onPress: () =>
+                    router.push(`/group/${id}/info` as any),
+                },
+                {
+                  text: "Leave Group",
+                  style: "destructive",
+                  onPress: () => {
+                    Alert.alert(
+                      "Leave Group",
+                      "Are you sure you want to leave this group?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Leave",
+                          style: "destructive",
+                          onPress: async () => {
+                            await leaveGroupMutation({
+                              groupId,
+                            });
+                            router.back();
+                          },
+                        },
+                      ],
+                    );
+                  },
+                },
+                { text: "Cancel", style: "cancel" },
+              ]);
+            } else {
+              setMenuOpen(true);
+              setTimeout(
+                () => menuRef.current?.snapToIndex(0),
+                100,
+              );
+            }
+          }}
         >
-          <Ionicons name="ellipsis-vertical" size={18} color={theme.colors.text} />
+          <Animated.View
+            style={[styles.headerButton, menuButtonStyle]}
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={18}
+              color={theme.colors.text}
+            />
+          </Animated.View>
         </Pressable>
       </View>
-      <View style={styles.headerAccent} />
+
+      {/* Header accent line */}
+      <LinearGradient
+        colors={["#6C5DD3", "#8676FF", "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerAccent}
+      />
 
       {/* Pinned Banner */}
       {pinnedMessage && (
@@ -902,27 +1182,38 @@ export default function GroupChatScreen() {
           <Pressable
             onPress={() => {
               setPinnedExpanded(true);
-              setTimeout(() => pinnedRef.current?.snapToIndex(0), 100);
+              setTimeout(
+                () => pinnedRef.current?.snapToIndex(0),
+                100,
+              );
             }}
             style={styles.pinnedBanner}
           >
-            <Ionicons name="pin" size={14} color={theme.colors.primary} />
+            <Ionicons
+              name="pin"
+              size={12}
+              color={theme.colors.primary}
+            />
             <Typography
               variant="caption"
               weight="semibold"
-              style={{ color: theme.colors.primary }}
+              color="primary"
             >
               Pinned
             </Typography>
             <Typography
               variant="body"
-              color="text"
+              color="textMuted"
               numberOfLines={1}
               style={{ flex: 1, fontSize: 13 }}
             >
               {pinnedMessage.content}
             </Typography>
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+            <Ionicons
+              name="chevron-forward"
+              size={14}
+              color={theme.colors.textMuted}
+            />
           </Pressable>
         </Animated.View>
       )}
@@ -934,15 +1225,18 @@ export default function GroupChatScreen() {
         keyExtractor={(item) => item.key}
         style={styles.messagesList}
         contentContainerStyle={{
+          paddingHorizontal: 0,
           paddingTop: 12,
           paddingBottom: 20,
           flexGrow: 1,
         }}
-        ListEmptyComponent={messages?.length === 0 ? renderEmpty : null}
+        ListEmptyComponent={
+          messages?.length === 0 ? renderEmpty : null
+        }
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
-          if (item.type === "date") {
+          if (item.type === "date")
             return <DateSeparator date={item.date} />;
-          }
           return (
             <MessageBubble
               message={item.message}
@@ -951,12 +1245,12 @@ export default function GroupChatScreen() {
               showName={item.showName}
               showTimestamp={item.showTimestamp}
               isFirstInGroup={item.isFirstInGroup}
-              onLongPress={() => handleMessageLongPress(item.message)}
+              isLastInGroup={item.isLastInGroup}
+              onLongPress={() =>
+                handleMessageLongPress(item.message)
+              }
             />
           );
-        }}
-        onContentSizeChange={() => {
-          // Scroll to end when content size changes
         }}
       />
 
@@ -965,43 +1259,52 @@ export default function GroupChatScreen() {
         {/* Admin announcement button */}
         {isAdmin && (
           <Pressable
+            onPressIn={() => {
+              announceBtnScale.value = withSpring(0.9, {
+                damping: 15,
+              });
+            }}
+            onPressOut={() => {
+              announceBtnScale.value = withSpring(1, {
+                damping: 15,
+              });
+            }}
             onPress={() => {
               setAnnouncementOpen(true);
-              setTimeout(() => announcementRef.current?.snapToIndex(0), 100);
+              setTimeout(
+                () =>
+                  announcementRef.current?.snapToIndex(0),
+                100,
+              );
             }}
-            style={styles.announcementButton}
           >
-            <Ionicons
-              name="megaphone-outline"
-              size={20}
-              color={theme.colors.textMuted}
-            />
+            <Animated.View
+              style={[
+                styles.announcementButton,
+                announceBtnStyle,
+              ]}
+            >
+              <Ionicons
+                name="megaphone-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+            </Animated.View>
           </Pressable>
         )}
 
-        {/* User avatar */}
-        {currentUser.profileImage ? (
-          <Image
-            source={{ uri: currentUser.profileImage }}
-            style={styles.inputAvatar}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={styles.inputAvatarFallback}>
-            <Ionicons name="person" size={14} color={theme.colors.primary} />
-          </View>
-        )}
-
         {/* Text input */}
-        <TextInput
-          style={styles.textInput}
-          placeholder="Message..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={inputText}
-          onChangeText={setInputText}
-          multiline
-          maxLength={2000}
-        />
+        <View style={styles.textInputWrapper}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Message..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={2000}
+          />
+        </View>
 
         {/* Send button */}
         <Animated.View style={sendButtonStyle}>
@@ -1014,40 +1317,55 @@ export default function GroupChatScreen() {
               <LinearGradient
                 colors={["#6C5DD3", "#8676FF"]}
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 19,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
                   alignItems: "center",
                   justifyContent: "center",
+                  ...Platform.select({
+                    ios: {
+                      shadowColor: "#6C5DD3",
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 2 },
+                    },
+                  }),
                 }}
               >
-                <Ionicons name="send" size={16} color="#FFFFFF" />
+                <Ionicons
+                  name="send"
+                  size={17}
+                  color="#FFFFFF"
+                />
               </LinearGradient>
             ) : (
               <View
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 19,
-                  backgroundColor: theme.colors.surface,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(255,255,255,0.08)",
                   alignItems: "center",
                   justifyContent: "center",
-                  opacity: 0.4,
                 }}
               >
-                <Ionicons name="send" size={16} color={theme.colors.textMuted} />
+                <Ionicons
+                  name="send"
+                  size={17}
+                  color={theme.colors.textMuted}
+                />
               </View>
             )}
           </Pressable>
         </Animated.View>
       </View>
 
-      {/* Menu Bottom Sheet */}
-      {menuOpen && (
+      {/* Menu Bottom Sheet (iOS only) */}
+      {menuOpen && Platform.OS === "ios" && (
         <BottomSheet
           ref={menuRef}
           index={0}
-          snapPoints={["30%"]}
+          snapPoints={["28%"]}
           enablePanDownToClose
           enableDynamicSizing={false}
           onChange={(i) => {
@@ -1065,7 +1383,11 @@ export default function GroupChatScreen() {
               }}
               style={styles.menuItem}
             >
-              <Ionicons name="people-outline" size={20} color={theme.colors.text} />
+              <Ionicons
+                name="people-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
               <Typography variant="body" color="text">
                 View Members
               </Typography>
@@ -1080,15 +1402,25 @@ export default function GroupChatScreen() {
               <Ionicons
                 name="information-circle-outline"
                 size={20}
-                color={theme.colors.text}
+                color={theme.colors.primary}
               />
               <Typography variant="body" color="text">
                 Group Info
               </Typography>
             </Pressable>
-            <Pressable onPress={handleLeave} style={styles.menuItem}>
-              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-              <Typography variant="body" style={{ color: "#EF4444" }}>
+            <Pressable
+              onPress={handleLeave}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="exit-outline"
+                size={20}
+                color="#EF4444"
+              />
+              <Typography
+                variant="body"
+                style={{ color: "#EF4444" }}
+              >
                 Leave Group
               </Typography>
             </Pressable>
@@ -1101,7 +1433,7 @@ export default function GroupChatScreen() {
         <BottomSheet
           ref={actionRef}
           index={0}
-          snapPoints={["25%"]}
+          snapPoints={["22%"]}
           enablePanDownToClose
           enableDynamicSizing={false}
           onChange={(i) => {
@@ -1112,35 +1444,59 @@ export default function GroupChatScreen() {
           handleIndicatorStyle={styles.sheetHandle}
         >
           <BottomSheetView>
-            {/* Delete option (own message or admin) */}
             {(isSelectedOwn || isAdmin) && (
-              <Pressable onPress={handleDeleteMessage} style={styles.menuItem}>
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                <Typography variant="body" style={{ color: "#EF4444" }}>
+              <Pressable
+                onPress={handleDeleteMessage}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="#EF4444"
+                />
+                <Typography
+                  variant="body"
+                  style={{ color: "#EF4444" }}
+                >
                   Delete Message
                 </Typography>
               </Pressable>
             )}
-            {/* Pin option (admin only) */}
             {isAdmin && !isSelectedOwn && (
-              <Pressable onPress={handlePinMessage} style={styles.menuItem}>
-                <Ionicons name="pin-outline" size={20} color={theme.colors.primary} />
+              <Pressable
+                onPress={handlePinMessage}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="pin-outline"
+                  size={20}
+                  color={theme.colors.primary}
+                />
                 <Typography variant="body" color="primary">
                   Pin Message
                 </Typography>
               </Pressable>
             )}
-            {/* Report option (others' messages) */}
             {!isSelectedOwn && !isAdmin && (
               <Pressable
                 onPress={() => {
                   actionRef.current?.close();
-                  Alert.alert("Coming Soon", "Report feature coming soon!");
+                  Alert.alert(
+                    "Coming Soon",
+                    "Report feature coming soon!",
+                  );
                 }}
                 style={styles.menuItem}
               >
-                <Ionicons name="flag-outline" size={20} color={theme.colors.text} />
-                <Typography variant="body" color="text">
+                <Ionicons
+                  name="flag-outline"
+                  size={20}
+                  color={theme.colors.textMuted}
+                />
+                <Typography
+                  variant="body"
+                  color="textMuted"
+                >
                   Report
                 </Typography>
               </Pressable>
@@ -1166,20 +1522,24 @@ export default function GroupChatScreen() {
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
         >
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 8 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
-              }}
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
+            <Typography
+              variant="body"
+              weight="bold"
+              color="text"
+              style={{ fontSize: 16 }}
             >
-              <Ionicons name="megaphone-outline" size={20} color="#F59E0B" />
-              <Typography variant="h4" weight="bold" color="text">
-                Send Announcement
-              </Typography>
-            </View>
+              Send Announcement
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginBottom: 16 }}
+            >
+              Pinned and visible to all members
+            </Typography>
             <BottomSheetTextInput
               style={styles.announcementInput}
               placeholder="Write your announcement..."
@@ -1192,17 +1552,28 @@ export default function GroupChatScreen() {
               onPress={handleSendAnnouncement}
               disabled={!announcementText.trim()}
               style={[
-                styles.announcementButton2,
-                !announcementText.trim() && { opacity: 0.5 },
+                styles.announcementSubmit,
+                !announcementText.trim() && {
+                  opacity: 0.5,
+                },
               ]}
             >
               <LinearGradient
-                colors={["#F59E0B", "#FBBF24"]}
+                colors={["#6C5DD3", "#8676FF"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.announcementGradient}
               >
-                <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
+                <Ionicons
+                  name="megaphone-outline"
+                  size={16}
+                  color="#FFFFFF"
+                />
+                <Typography
+                  variant="body"
+                  weight="bold"
+                  style={{ color: "#FFFFFF" }}
+                >
                   Send Announcement
                 </Typography>
               </LinearGradient>
@@ -1211,7 +1582,7 @@ export default function GroupChatScreen() {
         </BottomSheet>
       )}
 
-      {/* Pinned Message Expanded Bottom Sheet */}
+      {/* Pinned Message Expanded */}
       {pinnedExpanded && pinnedMessage && (
         <BottomSheet
           ref={pinnedRef}
@@ -1226,7 +1597,9 @@ export default function GroupChatScreen() {
           backgroundStyle={styles.sheetBg}
           handleIndicatorStyle={styles.sheetHandle}
         >
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
             <View
               style={{
                 flexDirection: "row",
@@ -1235,8 +1608,17 @@ export default function GroupChatScreen() {
                 marginBottom: 12,
               }}
             >
-              <Ionicons name="pin" size={18} color={theme.colors.primary} />
-              <Typography variant="h4" weight="bold" color="text">
+              <Ionicons
+                name="pin"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Typography
+                variant="body"
+                weight="bold"
+                color="text"
+                style={{ fontSize: 16 }}
+              >
                 Pinned Message
               </Typography>
             </View>
@@ -1251,30 +1633,49 @@ export default function GroupChatScreen() {
               >
                 {pinnedMessage.sender.profileImage ? (
                   <Image
-                    source={{ uri: pinnedMessage.sender.profileImage }}
-                    style={{ width: 24, height: 24, borderRadius: 12 }}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View
+                    source={{
+                      uri: pinnedMessage.sender
+                        .profileImage,
+                    }}
                     style={{
                       width: 24,
                       height: 24,
                       borderRadius: 12,
-                      backgroundColor: theme.colors.primary + "20",
+                    }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={["#6C5DD3", "#8676FF"]}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="person" size={12} color={theme.colors.primary} />
-                  </View>
+                    <Ionicons
+                      name="person"
+                      size={10}
+                      color="#FFFFFF"
+                    />
+                  </LinearGradient>
                 )}
-                <Typography variant="caption" color="textMuted">
-                  {pinnedMessage.sender.fullname} • {formatTime(pinnedMessage.createdAt)}
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
+                  {pinnedMessage.sender.fullname} •{" "}
+                  {formatTime(pinnedMessage.createdAt)}
                 </Typography>
               </View>
             )}
-            <Typography variant="body" color="text" style={{ lineHeight: 22 }}>
+            <Typography
+              variant="body"
+              color="text"
+              style={{ lineHeight: 22 }}
+            >
               {pinnedMessage.content}
             </Typography>
           </BottomSheetView>
