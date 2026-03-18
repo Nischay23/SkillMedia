@@ -8,15 +8,53 @@ import {
 } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
 
+// Helper: Enrich a post with resolved image URL and filter option names
+async function enrichPost(ctx: QueryCtx, post: any) {
+  const user = await ctx.db.get(
+    post.userId as Id<"users">,
+  );
+
+  // Resolve storageId to URL if imageUrl is not set
+  let imageUrl = post.imageUrl;
+  if (!imageUrl && post.storageId) {
+    imageUrl = await ctx.storage.getUrl(post.storageId);
+  }
+
+  // Populate linkedFilterOptionNames
+  const linkedFilterOptionNames = await Promise.all(
+    (post.linkedFilterOptionIds || []).map(
+      async (id: Id<"FilterOption">) => {
+        const filterOption = await ctx.db.get(id);
+        return filterOption?.name ?? "Unknown";
+      },
+    ),
+  );
+
+  return {
+    ...post,
+    imageUrl,
+    linkedFilterOptionNames,
+    user: user
+      ? {
+          _id: user._id,
+          username: user.username,
+          fullname: user.fullname,
+          profileImage: user.profileImage,
+          isAdmin: user.isAdmin === true,
+        }
+      : null,
+  };
+}
+
 // Helper: Recursively get all descendant filter IDs
 async function getAllDescendantFilterIds(
   ctx: QueryCtx,
-  parentId: Id<"FilterOption">
+  parentId: Id<"FilterOption">,
 ): Promise<Id<"FilterOption">[]> {
   const children = await ctx.db
     .query("FilterOption")
     .withIndex("by_parentId", (q) =>
-      q.eq("parentId", parentId)
+      q.eq("parentId", parentId),
     )
     .filter((q) => q.eq(q.field("isActive"), true))
     .collect();
@@ -28,8 +66,8 @@ async function getAllDescendantFilterIds(
   // Recursive call for each child
   const nestedDescendants = await Promise.all(
     children.map((child) =>
-      getAllDescendantFilterIds(ctx, child._id)
-    )
+      getAllDescendantFilterIds(ctx, child._id),
+    ),
   );
 
   return [...childIds, ...nestedDescendants.flat()];
@@ -43,8 +81,8 @@ export const getCommunityPostsByFilterHierarchy = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
     limit: v.optional(v.number()),
   },
@@ -54,7 +92,7 @@ export const getCommunityPostsByFilterHierarchy = query({
     // 1. Recursively get all descendant filter IDs
     const descendantIds = await getAllDescendantFilterIds(
       ctx,
-      args.filterOptionId
+      args.filterOptionId,
     );
 
     // 2. Include parent + all descendants
@@ -72,8 +110,8 @@ export const getCommunityPostsByFilterHierarchy = query({
     // 4. Filter posts where linkedFilterOptionIds intersects with relevant IDs
     let filteredPosts = allPosts.filter((post) =>
       post.linkedFilterOptionIds.some((id) =>
-        allRelevantFilterIds.includes(id)
-      )
+        allRelevantFilterIds.includes(id),
+      ),
     );
 
     // 5. Apply status filter
@@ -81,12 +119,12 @@ export const getCommunityPostsByFilterHierarchy = query({
     if (!currentUser?.isAdmin) {
       // Regular users only see published posts
       filteredPosts = filteredPosts.filter(
-        (p) => p.status === "published"
+        (p) => p.status === "published",
       );
     } else if (statusFilter !== "all") {
       // Admins can filter by status
       filteredPosts = filteredPosts.filter(
-        (p) => p.status === statusFilter
+        (p) => p.status === statusFilter,
       );
     }
 
@@ -97,22 +135,9 @@ export const getCommunityPostsByFilterHierarchy = query({
     const limit = args.limit || 20;
     filteredPosts = filteredPosts.slice(0, limit);
 
-    // 8. Enrich with user data
+    // 8. Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      filteredPosts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-              }
-            : null,
-        };
-      })
+      filteredPosts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -125,8 +150,8 @@ export const getCommunityPosts = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
   },
   handler: async (ctx, args) => {
@@ -147,28 +172,15 @@ export const getCommunityPosts = query({
     ) {
       // Admins can filter by status
       posts = posts.filter(
-        (p) => p.status === args.statusFilter
+        (p) => p.status === args.statusFilter,
       );
     }
 
     posts = posts.slice(0, 20);
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      posts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-              }
-            : null,
-        };
-      })
+      posts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -191,27 +203,14 @@ export const getCommunityPostsByFilterOption = query({
     const filteredPosts = allPosts
       .filter((post) =>
         post.linkedFilterOptionIds.includes(
-          args.filterOptionId
-        )
+          args.filterOptionId,
+        ),
       )
       .slice(0, 20); // Take only first 20
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      filteredPosts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-              }
-            : null,
-        };
-      })
+      filteredPosts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -224,10 +223,10 @@ export const createCommunityPost = mutation({
     content: v.string(),
     imageUrl: v.optional(v.string()),
     linkedFilterOptionIds: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"))
+      v.union(v.literal("draft"), v.literal("published")),
     ),
   },
   handler: async (ctx, args) => {
@@ -276,7 +275,7 @@ export const deleteCommunityPost = mutation({
     const comments = await ctx.db
       .query("comments")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -287,7 +286,7 @@ export const deleteCommunityPost = mutation({
     const likes = await ctx.db
       .query("likes")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -298,7 +297,7 @@ export const deleteCommunityPost = mutation({
     const savedContent = await ctx.db
       .query("savedContent")
       .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
+        q.eq(q.field("communityPostId"), args.postId),
       )
       .collect();
 
@@ -319,19 +318,7 @@ export const getCommunityPostById = query({
     const post = await ctx.db.get(args.postId);
     if (!post) return null;
 
-    const user = await ctx.db.get(post.userId);
-
-    return {
-      ...post,
-      user: user
-        ? {
-            _id: user._id,
-            username: user.username,
-            fullname: user.fullname,
-            profileImage: user.profileImage,
-          }
-        : null,
-    };
+    return enrichPost(ctx, post);
   },
 });
 
@@ -352,20 +339,10 @@ export const getCommunityPostsByUser = query({
         ? posts.filter((p) => p.status === "published")
         : posts;
 
-    const user = await ctx.db.get(args.userId);
-
-    // Enrich with user data
-    const postsWithUsers = filteredPosts.map((post) => ({
-      ...post,
-      user: user
-        ? {
-            _id: user._id,
-            username: user.username,
-            fullname: user.fullname,
-            profileImage: user.profileImage,
-          }
-        : null,
-    }));
+    // Enrich with user data, resolved images, and filter names
+    const postsWithUsers = await Promise.all(
+      filteredPosts.map((post) => enrichPost(ctx, post)),
+    );
 
     return postsWithUsers;
   },
@@ -379,10 +356,10 @@ export const updateCommunityPost = mutation({
     content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     linkedFilterOptionIds: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"))
+      v.union(v.literal("draft"), v.literal("published")),
     ),
   },
   handler: async (ctx, args) => {
@@ -430,8 +407,8 @@ export const searchCommunityPosts = query({
       v.union(
         v.literal("all"),
         v.literal("published"),
-        v.literal("draft")
-      )
+        v.literal("draft"),
+      ),
     ),
     filterOptionId: v.optional(v.id("FilterOption")),
   },
@@ -450,14 +427,14 @@ export const searchCommunityPosts = query({
       posts = posts.filter(
         (post) =>
           post.title.toLowerCase().includes(query) ||
-          post.content.toLowerCase().includes(query)
+          post.content.toLowerCase().includes(query),
       );
     }
 
     // Status filter
     if (args.statusFilter && args.statusFilter !== "all") {
       posts = posts.filter(
-        (post) => post.status === args.statusFilter
+        (post) => post.status === args.statusFilter,
       );
     }
 
@@ -465,30 +442,17 @@ export const searchCommunityPosts = query({
     if (args.filterOptionId) {
       posts = posts.filter((post) =>
         post.linkedFilterOptionIds.includes(
-          args.filterOptionId!
-        )
+          args.filterOptionId!,
+        ),
       );
     }
 
     // Sort by creation time (newest first)
     posts.sort((a, b) => b.createdAt - a.createdAt);
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      posts.slice(0, 50).map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-              }
-            : null,
-        };
-      })
+      posts.slice(0, 50).map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -510,17 +474,17 @@ export const getPostStats = query({
     return {
       total: allPosts.length,
       published: allPosts.filter(
-        (p) => p.status === "published"
+        (p) => p.status === "published",
       ).length,
       drafts: allPosts.filter((p) => p.status === "draft")
         .length,
       totalLikes: allPosts.reduce(
         (sum, p) => sum + p.likes,
-        0
+        0,
       ),
       totalComments: allPosts.reduce(
         (sum, p) => sum + p.comments,
-        0
+        0,
       ),
     };
   },
@@ -542,7 +506,7 @@ export const bulkDeletePosts = mutation({
       const comments = await ctx.db
         .query("comments")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const comment of comments) {
@@ -553,7 +517,7 @@ export const bulkDeletePosts = mutation({
       const likes = await ctx.db
         .query("likes")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const like of likes) {
@@ -564,7 +528,7 @@ export const bulkDeletePosts = mutation({
       const savedContent = await ctx.db
         .query("savedContent")
         .filter((q) =>
-          q.eq(q.field("communityPostId"), postId)
+          q.eq(q.field("communityPostId"), postId),
         )
         .collect();
       for (const saved of savedContent) {
@@ -585,7 +549,7 @@ export const bulkUpdateStatus = mutation({
     postIds: v.array(v.id("communityPosts")),
     status: v.union(
       v.literal("draft"),
-      v.literal("published")
+      v.literal("published"),
     ),
   },
   handler: async (ctx, args) => {
@@ -616,10 +580,10 @@ export const bulkUpdateFilters = mutation({
   args: {
     postIds: v.array(v.id("communityPosts")),
     filterIdsToAdd: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
     filterIdsToRemove: v.optional(
-      v.array(v.id("FilterOption"))
+      v.array(v.id("FilterOption")),
     ),
   },
   handler: async (ctx, args) => {
@@ -637,14 +601,14 @@ export const bulkUpdateFilters = mutation({
         newFilterIds = [
           ...newFilterIds,
           ...args.filterIdsToAdd.filter(
-            (id) => !newFilterIds.includes(id)
+            (id) => !newFilterIds.includes(id),
           ),
         ];
       }
 
       if (args.filterIdsToRemove) {
         newFilterIds = newFilterIds.filter(
-          (id) => !args.filterIdsToRemove!.includes(id)
+          (id) => !args.filterIdsToRemove!.includes(id),
         );
       }
 
@@ -655,61 +619,5 @@ export const bulkUpdateFilters = mutation({
     }
 
     return { updated: args.postIds.length };
-  },
-});
-
-// NEW: Admin delete post (bypasses ownership check)
-export const adminDeleteCommunityPost = mutation({
-  args: {
-    postId: v.id("communityPosts"),
-  },
-  handler: async (ctx, args) => {
-    const currentUser = await getAuthenticatedUser(ctx);
-    if (!currentUser?.isAdmin)
-      throw new Error("Admin only");
-
-    const post = await ctx.db.get(args.postId);
-    if (!post) throw new Error("Post not found");
-
-    // Delete associated comments
-    const comments = await ctx.db
-      .query("comments")
-      .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
-      )
-      .collect();
-
-    for (const comment of comments) {
-      await ctx.db.delete(comment._id);
-    }
-
-    // Delete associated likes
-    const likes = await ctx.db
-      .query("likes")
-      .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
-      )
-      .collect();
-
-    for (const like of likes) {
-      await ctx.db.delete(like._id);
-    }
-
-    // Delete saved content references
-    const savedContent = await ctx.db
-      .query("savedContent")
-      .filter((q) =>
-        q.eq(q.field("communityPostId"), args.postId)
-      )
-      .collect();
-
-    for (const saved of savedContent) {
-      await ctx.db.delete(saved._id);
-    }
-
-    // Delete the post
-    await ctx.db.delete(args.postId);
-
-    return { success: true };
   },
 });

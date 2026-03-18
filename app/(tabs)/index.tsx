@@ -27,11 +27,9 @@ import Animated, {
 } from "react-native-reanimated";
 
 import CareerPathHeroCard from "@/components/cards/CareerPathHeroCard";
-import {
-  ExpertPostCard,
-  DiscussionPostCard,
-} from "@/components/cards/PostCardVariants";
 import CommunityPost from "@/components/CommunityPost";
+import PostCardWrapper from "@/components/PostCardWrapper";
+import CommentsModal from "@/components/CommentsModal";
 import FilterChipsBar from "@/components/FilterChipsBar";
 import FilterModal from "@/components/FilterModal";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -142,6 +140,10 @@ export default function FeedScreen() {
     api.savedContent.toggleSave,
   );
 
+  // State for comments modal (used by all card types)
+  const [commentsPostId, setCommentsPostId] =
+    useState<Id<"communityPosts"> | null>(null);
+
   // ─── Themed styles ─────────────────────────────────────
   const styles = useThemedStyles((t) => ({
     container: {
@@ -156,6 +158,12 @@ export default function FeedScreen() {
       backgroundColor: t.colors.background,
       borderBottomWidth: 1,
       borderBottomColor: t.colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: 2,
+      zIndex: 10,
     },
     headerTitle: {
       flex: 1,
@@ -168,7 +176,7 @@ export default function FeedScreen() {
     },
     scrollContent: {
       paddingTop: t.spacing.sm,
-      paddingBottom: t.spacing["6xl"],
+      paddingBottom: 90,
     },
     heroSection: {
       marginTop: t.spacing.lg,
@@ -187,6 +195,7 @@ export default function FeedScreen() {
       borderTopColor: t.colors.border,
     },
     emptyState: {
+      flex: 1,
       alignItems: "center" as const,
       justifyContent: "center" as const,
       paddingVertical: t.spacing["6xl"],
@@ -194,7 +203,7 @@ export default function FeedScreen() {
     },
     flatListContent: {
       paddingTop: t.spacing.sm,
-      paddingBottom: t.spacing["6xl"],
+      paddingBottom: 90,
     },
     refreshBanner: {
       flexDirection: "row" as const,
@@ -273,8 +282,11 @@ export default function FeedScreen() {
   const handleSharePath = async () => {
     const name =
       selectedFilterDetails?.name ?? "this career path";
+    const deepLink = lastSelectedFilterId
+      ? `skillmedia://career/${lastSelectedFilterId}`
+      : "";
     await Share.share({
-      message: `Check out ${name} on SkillsApp!`,
+      message: `Check out ${name} on SkillsApp!${deepLink ? `\n${deepLink}` : ""}`,
     });
   };
 
@@ -361,38 +373,12 @@ export default function FeedScreen() {
     );
   };
 
-  // ─── Shared props mapper ───────────────────────────────
-  const formatTimeAgo = (timestamp: number): string => {
-    const diffH = (Date.now() - timestamp) / 3_600_000;
-    if (diffH < 1)
-      return `${Math.max(1, Math.floor(diffH * 60))}m ago`;
-    if (diffH < 24) return `${Math.floor(diffH)}h ago`;
-    return `${Math.floor(diffH / 24)}d ago`;
-  };
-
-  const toSharedProps = (post: CommunityPostType) => ({
-    postId: post._id,
-    authorName:
-      post.user?.fullname ||
-      post.user?.username ||
-      "Unknown",
-    authorImage: post.user?.profileImage,
-    content: post.title || post.content,
-    createdAt: formatTimeAgo(post.createdAt),
-    likes: post.likes,
-    comments: post.comments,
-    saves: 0,
-    onLike: () => {},
-    onComment: () => {},
-    onSave: () => {},
-  });
-
   // ─── Item separator ────────────────────────────────────
   const ItemSeparator = () => (
     <View
       style={{
-        height: 1,
-        backgroundColor: theme.colors.border,
+        height: 8,
+        backgroundColor: theme.colors.background,
       }}
     />
   );
@@ -414,9 +400,12 @@ export default function FeedScreen() {
           delay={staggerDelay}
           useEnteringAnimation={isFirstLoad}
         >
-          <ExpertPostCard
-            {...toSharedProps(item)}
-            tags={item.linkedFilterOptionNames}
+          <PostCardWrapper
+            post={item}
+            variant="expert"
+            onOpenComments={() =>
+              setCommentsPostId(item._id)
+            }
           />
         </AnimatedCard>
       );
@@ -429,10 +418,12 @@ export default function FeedScreen() {
           delay={staggerDelay}
           useEnteringAnimation={isFirstLoad}
         >
-          <DiscussionPostCard
-            {...toSharedProps(item)}
-            answerCount={item.comments}
-            isTrending={item.likes >= 5}
+          <PostCardWrapper
+            post={item}
+            variant="discussion"
+            onOpenComments={() =>
+              setCommentsPostId(item._id)
+            }
           />
         </AnimatedCard>
       );
@@ -444,7 +435,10 @@ export default function FeedScreen() {
         delay={staggerDelay}
         useEnteringAnimation={isFirstLoad}
       >
-        <CommunityPost post={item} />
+        <CommunityPost
+          post={item}
+          onOpenComments={() => setCommentsPostId(item._id)}
+        />
       </AnimatedCard>
     );
   };
@@ -536,6 +530,9 @@ export default function FeedScreen() {
             requirements={filterOption.requirements}
             exams={filterOption.relevantExams}
             category={filterOption.type ?? "default"}
+            filterOptionId={filterOption._id}
+            ranking={filterOption.ranking}
+            annualVacancies={filterOption.annualVacancies}
             isSaved={isPathSaved === true}
             onSave={handleSavePath}
             onShare={handleSharePath}
@@ -563,27 +560,30 @@ export default function FeedScreen() {
                   (index + 1) * 100,
                   500,
                 );
+                const separator = index > 0 && (
+                  <View
+                    style={{
+                      height: 8,
+                      backgroundColor:
+                        theme.colors.background,
+                    }}
+                  />
+                );
+
                 if (isExpertPost(post)) {
                   return (
                     <React.Fragment key={post._id}>
-                      {index > 0 && (
-                        <View
-                          style={{
-                            height: 1,
-                            backgroundColor:
-                              theme.colors.border,
-                          }}
-                        />
-                      )}
+                      {separator}
                       <AnimatedCard
                         variant="transparent"
                         delay={staggerDelay}
                         useEnteringAnimation={isFirstLoad}
                       >
-                        <ExpertPostCard
-                          {...toSharedProps(post)}
-                          tags={
-                            post.linkedFilterOptionNames
+                        <PostCardWrapper
+                          post={post}
+                          variant="expert"
+                          onOpenComments={() =>
+                            setCommentsPostId(post._id)
                           }
                         />
                       </AnimatedCard>
@@ -593,24 +593,18 @@ export default function FeedScreen() {
                 if (isDiscussionPost(post)) {
                   return (
                     <React.Fragment key={post._id}>
-                      {index > 0 && (
-                        <View
-                          style={{
-                            height: 1,
-                            backgroundColor:
-                              theme.colors.border,
-                          }}
-                        />
-                      )}
+                      {separator}
                       <AnimatedCard
                         variant="transparent"
                         delay={staggerDelay}
                         useEnteringAnimation={isFirstLoad}
                       >
-                        <DiscussionPostCard
-                          {...toSharedProps(post)}
-                          answerCount={post.comments}
-                          isTrending={post.likes >= 5}
+                        <PostCardWrapper
+                          post={post}
+                          variant="discussion"
+                          onOpenComments={() =>
+                            setCommentsPostId(post._id)
+                          }
                         />
                       </AnimatedCard>
                     </React.Fragment>
@@ -618,21 +612,18 @@ export default function FeedScreen() {
                 }
                 return (
                   <React.Fragment key={post._id}>
-                    {index > 0 && (
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor:
-                            theme.colors.border,
-                        }}
-                      />
-                    )}
+                    {separator}
                     <AnimatedCard
                       variant="transparent"
                       delay={staggerDelay}
                       useEnteringAnimation={isFirstLoad}
                     >
-                      <CommunityPost post={post} />
+                      <CommunityPost
+                        post={post}
+                        onOpenComments={() =>
+                          setCommentsPostId(post._id)
+                        }
+                      />
                     </AnimatedCard>
                   </React.Fragment>
                 );
@@ -711,8 +702,6 @@ export default function FeedScreen() {
       <Animated.View
         style={[styles.header, headerAnimatedStyle]}
       >
-        
-
         <Typography
           variant="h2"
           color="text"
@@ -731,6 +720,19 @@ export default function FeedScreen() {
             size={24}
             color={theme.colors.primary}
           />
+          {isViewingSpecificPath && (
+            <View
+              style={{
+                position: "absolute" as const,
+                top: 6,
+                right: 6,
+                width: 7,
+                height: 7,
+                borderRadius: 3.5,
+                backgroundColor: theme.colors.primary,
+              }}
+            />
+          )}
         </TouchableOpacity>
       </Animated.View>
 
@@ -766,6 +768,15 @@ export default function FeedScreen() {
         onPress={() => router.push("/(tabs)/create" as any)}
         isAdmin={currentUser?.isAdmin === true}
       />
+
+      {/* Comments Modal for Expert/Discussion cards */}
+      {commentsPostId && (
+        <CommentsModal
+          communityPostId={commentsPostId}
+          visible={!!commentsPostId}
+          onClose={() => setCommentsPostId(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }

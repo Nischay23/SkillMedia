@@ -7,10 +7,21 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  FadeIn,
   FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 
+import { Typography } from "@/components/ui/Typography";
 import { useThemedStyles } from "@/providers/ThemeProvider";
+import RankingBadge from "@/components/RankingBadge";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
+import { useUser } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
 
 // ── Category gradient map ──────────────────────────────
 type CategoryKey =
@@ -21,11 +32,11 @@ type CategoryKey =
   | "default";
 
 const GRADIENTS: Record<CategoryKey, [string, string]> = {
-  tech: ["#6C5DD3", "#3B82F6"], // purple → blue
-  government: ["#10B981", "#14B8A6"], // green → teal
-  business: ["#F97316", "#EF4444"], // orange → red
-  creative: ["#EC4899", "#8B5CF6"], // pink → purple
-  default: ["#6C5DD3", "#8676FF"], // app primary gradient
+  tech: ["#6C5DD3", "#3B82F6"],
+  government: ["#10B981", "#14B8A6"],
+  business: ["#F97316", "#EF4444"],
+  creative: ["#EC4899", "#8B5CF6"],
+  default: ["#6C5DD3", "#8676FF"],
 };
 
 function resolveGradient(
@@ -43,6 +54,9 @@ interface CareerPathHeroCardProps {
   requirements?: string;
   exams?: string;
   category: string;
+  filterOptionId?: Id<"FilterOption">;
+  ranking?: number | null;
+  annualVacancies?: number | null;
   onSave: () => void;
   onShare: () => void;
   onDeepDive: () => void;
@@ -57,12 +71,45 @@ export default function CareerPathHeroCard({
   requirements,
   exams,
   category,
+  filterOptionId,
+  ranking,
+  annualVacancies,
   onSave,
   onShare,
   onDeepDive,
   isSaved,
 }: CareerPathHeroCardProps) {
+  const { user: clerkUser } = useUser();
+  const router = useRouter();
   const gradientColors = resolveGradient(category);
+
+  // Group data
+  const group = useQuery(
+    api.groups.getGroupByFilterOption,
+    filterOptionId ? { filterOptionId } : "skip",
+  );
+  const isMember = useQuery(
+    api.groups.getIsMember,
+    group ? { groupId: group._id } : "skip",
+  );
+  const joinGroupMutation = useMutation(api.groups.joinGroup);
+
+  // Join button animation
+  const joinScale = useSharedValue(1);
+  const joinScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: joinScale.value }],
+  }));
+
+  const handleJoinGroup = async () => {
+    if (!group) return;
+    await joinGroupMutation({ groupId: group._id });
+    router.push(`/group/${group._id}` as any);
+  };
+
+  const handleOpenGroup = () => {
+    if (!group) return;
+    router.push(`/group/${group._id}` as any);
+  };
 
   const styles = useThemedStyles((t) => ({
     card: {
@@ -164,6 +211,39 @@ export default function CareerPathHeroCard({
       fontSize: t.typography.size.sm,
       color: gradientColors[0],
     },
+    // Group section
+    groupSection: {
+      marginTop: t.spacing.lg,
+    },
+    joinButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: 44,
+      borderRadius: 12,
+      gap: 8,
+      overflow: "hidden" as const,
+    },
+    joinGradient: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: 44,
+      borderRadius: 12,
+      gap: 8,
+      paddingHorizontal: 20,
+      width: "100%" as const,
+    },
+    openButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: 44,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: "rgba(255,255,255,0.5)",
+      gap: 8,
+    },
   }));
 
   const infoBadges: {
@@ -181,6 +261,11 @@ export default function CareerPathHeroCard({
     infoBadges.push({
       icon: "document-text-outline",
       text: exams,
+    });
+  if (annualVacancies)
+    infoBadges.push({
+      icon: "briefcase-outline",
+      text: `~${annualVacancies.toLocaleString()} vacancies/year`,
     });
 
   return (
@@ -204,6 +289,9 @@ export default function CareerPathHeroCard({
                 {category}
               </Text>
             </View>
+            {ranking != null && ranking > 0 && (
+              <RankingBadge ranking={ranking} />
+            )}
           </View>
 
           {/* Title + description */}
@@ -279,6 +367,87 @@ export default function CareerPathHeroCard({
             />
           </Pressable>
         </View>
+
+        {/* Group Join/Open section */}
+        {group && clerkUser && (
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            style={styles.groupSection}
+          >
+            {isMember ? (
+              <Pressable
+                onPressIn={() => {
+                  joinScale.value = withSpring(0.96);
+                }}
+                onPressOut={() => {
+                  joinScale.value = withSpring(1);
+                }}
+                onPress={handleOpenGroup}
+              >
+                <Animated.View
+                  style={[styles.openButton, joinScaleStyle]}
+                >
+                  <Ionicons
+                    name="chatbubbles-outline"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    style={{ color: "#FFFFFF" }}
+                  >
+                    Open Group
+                  </Typography>
+                </Animated.View>
+              </Pressable>
+            ) : (
+              <View>
+                <Pressable
+                  onPressIn={() => {
+                    joinScale.value = withSpring(0.96);
+                  }}
+                  onPressOut={() => {
+                    joinScale.value = withSpring(1);
+                  }}
+                  onPress={handleJoinGroup}
+                >
+                  <Animated.View style={joinScaleStyle}>
+                    <LinearGradient
+                      colors={["#6C5DD3", "#8676FF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.joinGradient}
+                    >
+                      <Ionicons
+                        name="people-outline"
+                        size={16}
+                        color="#FFFFFF"
+                      />
+                      <Typography
+                        variant="body"
+                        weight="semibold"
+                        style={{ color: "#FFFFFF" }}
+                      >
+                        Join Community
+                      </Typography>
+                    </LinearGradient>
+                  </Animated.View>
+                </Pressable>
+                <Typography
+                  variant="caption"
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    textAlign: "center" as const,
+                    marginTop: 6,
+                  }}
+                >
+                  {group.memberCount.toLocaleString()} members
+                </Typography>
+              </View>
+            )}
+          </Animated.View>
+        )}
       </LinearGradient>
     </Animated.View>
   );

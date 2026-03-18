@@ -36,7 +36,7 @@ const TabIcon = ({
   });
 
   // Animate icon scale
-  iconScale.value = withSpring(focused ? 1.1 : 1, {
+  iconScale.value = withSpring(focused ? 1.15 : 1, {
     damping: 12,
     stiffness: 200,
   });
@@ -87,18 +87,21 @@ export default function TabLayout() {
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          bottom: 12,
+          left: 16,
+          right: 16,
           height: 60,
-          backgroundColor: theme.colors.background,
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.border,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 0,
+          borderRadius: 24,
           paddingTop: 8,
           paddingBottom: 8,
           paddingHorizontal: 0,
-          elevation: 0,
-          shadowOpacity: 0,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 8,
         },
       }}
     >
@@ -126,6 +129,21 @@ export default function TabLayout() {
               name={
                 focused ? "bookmark" : "bookmark-outline"
               }
+              color={color}
+              focused={focused}
+              glowColor={theme.colors.primary}
+            />
+          ),
+        }}
+        listeners={{ tabPress: handleTabPress }}
+      />
+      <Tabs.Screen
+        name="groups"
+        options={{
+          title: "Groups",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? "people" : "people-outline"}
               color={color}
               focused={focused}
               glowColor={theme.colors.primary}
@@ -175,10 +193,10 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   glowDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 3,
     // Glow effect
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,

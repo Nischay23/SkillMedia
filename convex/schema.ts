@@ -29,7 +29,7 @@ export default defineSchema({
       v.literal("sector"),
       v.literal("subSector"),
       v.literal("branch"),
-      v.literal("role")
+      v.literal("role"),
     ),
     parentId: v.optional(v.id("FilterOption")),
 
@@ -39,6 +39,10 @@ export default defineSchema({
     avgSalary: v.optional(v.string()),
     relevantExams: v.optional(v.string()),
     image: v.optional(v.string()), // An image for the path/sector
+
+    // Ranking & vacancy data
+    ranking: v.optional(v.number()), // Position by job demand (1 = highest)
+    annualVacancies: v.optional(v.number()), // Approximate openings per year
 
     // Engagement counters for the career path definition
     likes: v.optional(v.number()),
@@ -60,7 +64,7 @@ export default defineSchema({
     // Status workflow
     status: v.union(
       v.literal("draft"),
-      v.literal("published")
+      v.literal("published"),
     ),
     publishedAt: v.optional(v.number()), // When first published
 
@@ -122,7 +126,7 @@ export default defineSchema({
     type: v.union(
       v.literal("like"),
       v.literal("comment"),
-      v.literal("follow")
+      v.literal("follow"),
     ),
     communityPostId: v.optional(v.id("communityPosts")),
     filterOptionId: v.optional(v.id("FilterOption")),
@@ -148,5 +152,62 @@ export default defineSchema({
     .index("by_user_and_filter_option", [
       "userId",
       "filterOptionId",
+    ]),
+
+  // 8. adminArticles table: Admin-posted articles/tips linked to career paths
+  adminArticles: defineTable({
+    filterOptionId: v.id("FilterOption"), // Which career path this belongs to
+    title: v.string(), // Article title
+    content: v.string(), // Article body (markdown)
+    authorId: v.id("users"), // Admin who wrote it
+    order: v.optional(v.number()), // Display order
+    isPublished: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_filter_option", ["filterOptionId"]),
+
+  // 9. groups table: Community groups linked to career paths
+  groups: defineTable({
+    filterOptionId: v.id("FilterOption"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    coverImage: v.optional(v.string()),
+    memberCount: v.number(),
+    createdBy: v.id("users"),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_filter_option", ["filterOptionId"])
+    .index("by_active", ["isActive"]),
+
+  // 10. groupMembers table: Tracks group membership
+  groupMembers: defineTable({
+    groupId: v.id("groups"),
+    userId: v.id("users"),
+    role: v.union(v.literal("admin"), v.literal("member")),
+    joinedAt: v.number(),
+    lastReadAt: v.optional(v.number()),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_user", ["userId"])
+    .index("by_group_and_user", ["groupId", "userId"]),
+
+  // 11. messages table: Group chat messages
+  messages: defineTable({
+    groupId: v.id("groups"),
+    userId: v.id("users"),
+    content: v.string(),
+    type: v.union(
+      v.literal("text"),
+      v.literal("announcement"),
+    ),
+    isPinned: v.optional(v.boolean()),
+    isDeleted: v.optional(v.boolean()),
+    createdAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_group_and_created", [
+      "groupId",
+      "createdAt",
     ]),
 });

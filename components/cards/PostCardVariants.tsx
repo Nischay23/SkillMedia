@@ -21,12 +21,14 @@ interface SharedPostProps {
   postId: string;
   authorName: string;
   authorImage?: string;
+  imageUrl?: string;
   content: string;
   createdAt: string;
   likes: number;
   comments: number;
   saves: number;
   isLiked?: boolean;
+  isSaved?: boolean;
   onLike: () => void;
   onComment: () => void;
   onSave: () => void;
@@ -61,6 +63,7 @@ function EngagementBar({
   comments,
   saves,
   isLiked = false,
+  isSaved = false,
   onLike,
   onComment,
   onSave,
@@ -70,6 +73,7 @@ function EngagementBar({
   | "comments"
   | "saves"
   | "isLiked"
+  | "isSaved"
   | "onLike"
   | "onComment"
   | "onSave"
@@ -118,18 +122,48 @@ function EngagementBar({
 
       <Pressable onPress={onSave} style={styles.item}>
         <Ionicons
-          name="bookmark-outline"
+          name={isSaved ? "bookmark" : "bookmark-outline"}
           size={18}
-          color={theme.colors.textMuted}
+          color={isSaved ? theme.colors.primary : theme.colors.textMuted}
         />
         <Typography
           variant="caption"
-          color="textMuted"
+          color={isSaved ? "primary" : "textMuted"}
           weight="medium"
         >
-          {saves}
+          {isSaved ? "Saved" : "Save"}
         </Typography>
       </Pressable>
+    </View>
+  );
+}
+
+function PostImage({ uri }: { uri?: string }) {
+  const s = useThemedStyles((t) => ({
+    imageWrapper: {
+      width: "100%" as const,
+      borderRadius: 12,
+      overflow: "hidden" as const,
+      marginBottom: 10,
+    },
+    image: {
+      width: "100%" as const,
+      height: 200,
+      backgroundColor: t.colors.surfaceLight,
+    },
+  }));
+
+  if (!uri) return null;
+
+  return (
+    <View style={s.imageWrapper}>
+      <Image
+        source={{ uri }}
+        style={s.image}
+        contentFit="cover"
+        placeholder={{ blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6." }}
+        transition={300}
+      />
     </View>
   );
 }
@@ -191,12 +225,14 @@ interface ExpertPostCardProps extends SharedPostProps {
 export function ExpertPostCard({
   authorName,
   authorImage,
+  imageUrl,
   content,
   createdAt,
   likes,
   comments,
   saves,
   isLiked,
+  isSaved,
   onLike,
   onComment,
   onSave,
@@ -301,6 +337,9 @@ export function ExpertPostCard({
               </Typography>
             </View>
 
+            {/* Post Image */}
+            <PostImage uri={imageUrl} />
+
             {/* Tags */}
             {tags && tags.length > 0 && (
               <View style={styles.tagsRow}>
@@ -324,6 +363,7 @@ export function ExpertPostCard({
               comments={comments}
               saves={saves}
               isLiked={isLiked}
+              isSaved={isSaved}
               onLike={onLike}
               onComment={onComment}
               onSave={onSave}
@@ -348,12 +388,14 @@ interface DiscussionPostCardProps extends SharedPostProps {
 export function DiscussionPostCard({
   authorName,
   authorImage,
+  imageUrl,
   content,
   createdAt,
   likes,
   comments,
   saves,
   isLiked,
+  isSaved,
   onLike,
   onComment,
   onSave,
@@ -492,6 +534,9 @@ export function DiscussionPostCard({
           </Typography>
         </View>
 
+        {/* Post Image */}
+        <PostImage uri={imageUrl} />
+
         {/* Answer count row */}
         {answerCount > 0 && (
           <Pressable
@@ -528,6 +573,7 @@ export function DiscussionPostCard({
           comments={comments}
           saves={saves}
           isLiked={isLiked}
+          isSaved={isSaved}
           onLike={onLike}
           onComment={onComment}
           onSave={onSave}

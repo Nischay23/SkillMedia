@@ -117,17 +117,23 @@ export default function Profile() {
       width: 76,
       height: 76,
       borderRadius: 38,
-      borderWidth: 2,
+      borderWidth: 3,
       borderColor: theme.colors.primary,
     },
     statsContainer: {
       flex: 1,
       flexDirection: "row" as const,
       justifyContent: "space-evenly" as const,
+      alignItems: "center" as const,
       marginLeft: 20,
     },
     statItem: {
       alignItems: "center" as const,
+    },
+    statDivider: {
+      width: 1,
+      height: 28,
+      backgroundColor: theme.colors.border,
     },
     statNumber: {
       fontSize: 17,
@@ -159,17 +165,17 @@ export default function Profile() {
     editButton: {
       flex: 1,
       height: 34,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderWidth: 1.5,
+      borderColor: theme.colors.primary,
       borderRadius: 8,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: "transparent",
       justifyContent: "center" as const,
       alignItems: "center" as const,
     },
     editButtonText: {
       fontSize: 13,
       fontWeight: "600" as const,
-      color: theme.colors.text,
+      color: theme.colors.primary,
     },
     shareButton: {
       height: 34,
@@ -187,13 +193,15 @@ export default function Profile() {
       marginTop: 14,
     },
     gridContainer: {
-      paddingHorizontal: 0,
+      paddingHorizontal: 1.5,
       marginTop: 2,
+      paddingBottom: 90,
     },
     gridItem: {
       flex: 1 / 3,
       aspectRatio: 1,
-      margin: 1,
+      margin: 1.5,
+      borderRadius: 12,
       overflow: "hidden" as const,
     },
     gridImage: {
@@ -260,6 +268,7 @@ export default function Profile() {
       height: 200,
       justifyContent: "center" as const,
       alignItems: "center" as const,
+      gap: 12,
       marginTop: theme.spacing.xl,
     },
   }));
@@ -348,6 +357,7 @@ export default function Profile() {
                 </Text>
                 <Text style={styles.statLabel}>Posts</Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>
                   {currentUser.followers}
@@ -356,6 +366,7 @@ export default function Profile() {
                   Followers
                 </Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>
                   {currentUser.following}

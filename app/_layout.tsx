@@ -5,6 +5,7 @@ import {
   ThemeProvider,
   useTheme,
 } from "@/providers/ThemeProvider";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as NavigationBar from "expo-navigation-bar";
 import { SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -39,23 +40,25 @@ function ThemedApp() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ToastProvider>
-        <SafeAreaProvider>
-          <SafeAreaView
-            style={{
-              flex: 1,
-              backgroundColor: theme.colors.background,
-            }}
-          >
-            <InitialLayout />
-          </SafeAreaView>
-          <StatusBar
-            style={isDark ? "light" : "dark"}
-            translucent
-            backgroundColor="transparent"
-          />
-        </SafeAreaProvider>
-      </ToastProvider>
+      <BottomSheetModalProvider>
+        <ToastProvider>
+          <SafeAreaProvider>
+            <SafeAreaView
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.background,
+              }}
+            >
+              <InitialLayout />
+            </SafeAreaView>
+            <StatusBar
+              style={isDark ? "light" : "dark"}
+              translucent
+              backgroundColor="transparent"
+            />
+          </SafeAreaProvider>
+        </ToastProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

@@ -20,6 +20,10 @@ export type FilterOption = {
   relevantExams?: string;
   image?: string;
 
+  // Ranking & vacancy data
+  ranking?: number | null;
+  annualVacancies?: number | null;
+
   // Engagement counters
   likes?: number;
   comments?: number;

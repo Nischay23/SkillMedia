@@ -34,6 +34,8 @@ export const getAllFilters = query({
       avgSalary: f.avgSalary,
       relevantExams: f.relevantExams,
       image: f.image,
+      ranking: f.ranking ?? null,
+      annualVacancies: f.annualVacancies ?? null,
       isActive: f.isActive ?? true,
       likes: f.likes ?? 0,
       comments: f.comments ?? 0,
@@ -63,6 +65,8 @@ export const createFilterNode = mutation({
     avgSalary: v.optional(v.string()),
     relevantExams: v.optional(v.string()),
     image: v.optional(v.string()),
+    ranking: v.optional(v.number()),
+    annualVacancies: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // 1. Security check
@@ -124,6 +128,8 @@ export const createFilterNode = mutation({
       avgSalary: args.avgSalary?.trim(),
       relevantExams: args.relevantExams?.trim(),
       image: args.image?.trim(),
+      ranking: args.ranking,
+      annualVacancies: args.annualVacancies,
       likes: 0,
       comments: 0,
       isActive: true,
@@ -146,6 +152,8 @@ export const updateFilterNode = mutation({
     avgSalary: v.optional(v.string()),
     relevantExams: v.optional(v.string()),
     image: v.optional(v.string()),
+    ranking: v.optional(v.number()),
+    annualVacancies: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // 1. Security check
@@ -176,6 +184,10 @@ export const updateFilterNode = mutation({
       updates.relevantExams = args.relevantExams.trim();
     if (args.image !== undefined)
       updates.image = args.image.trim();
+    if (args.ranking !== undefined)
+      updates.ranking = args.ranking;
+    if (args.annualVacancies !== undefined)
+      updates.annualVacancies = args.annualVacancies;
 
     // 5. Check for duplicate name (if name changed)
     if (args.name && args.name !== node.name) {
@@ -299,3 +311,49 @@ function getValidChildTypes(
     | "role"
   )[];
 }
+
+/**
+ * Query: Get engagement stats across all career cards
+ * Security: Admin only
+ */
+export const getEngagementStats = query({
+  args: {},
+  handler: async (ctx) => {
+    await getAdmin(ctx);
+
+    const filters = await ctx.db.query("FilterOption").collect();
+    const likes = await ctx.db.query("likes").collect();
+    const saves = await ctx.db.query("savedContent").collect();
+    const comments = await ctx.db.query("comments").collect();
+
+    // Count likes/saves/comments on career paths (filterOptionId)
+    const filterLikes = likes.filter((l) => l.filterOptionId).length;
+    const filterSaves = saves.filter((s) => s.filterOptionId).length;
+    const filterComments = comments.filter((c) => c.filterOptionId).length;
+
+    // Find top career cards by likes
+    const filterLikeCounts: Record<string, number> = {};
+    for (const like of likes) {
+      if (like.filterOptionId) {
+        const id = like.filterOptionId;
+        filterLikeCounts[id] = (filterLikeCounts[id] || 0) + 1;
+      }
+    }
+
+    const topCards = Object.entries(filterLikeCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([id, count]) => {
+        const filter = filters.find((f) => f._id === id);
+        return { name: filter?.name ?? "Unknown", likes: count };
+      });
+
+    return {
+      totalLikes: filterLikes,
+      totalSaves: filterSaves,
+      totalComments: filterComments,
+      totalCards: filters.length,
+      topCards,
+    };
+  },
+});

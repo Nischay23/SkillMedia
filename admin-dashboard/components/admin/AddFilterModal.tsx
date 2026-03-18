@@ -57,6 +57,8 @@ export function AddFilterModal({
   const [avgSalary, setAvgSalary] = useState("");
   const [relevantExams, setRelevantExams] = useState("");
   const [image, setImage] = useState("");
+  const [ranking, setRanking] = useState("");
+  const [annualVacancies, setAnnualVacancies] = useState("");
 
   // Determine the type based on parent
   const filterType: FilterType = parent
@@ -74,6 +76,8 @@ export function AddFilterModal({
     setAvgSalary("");
     setRelevantExams("");
     setImage("");
+    setRanking("");
+    setAnnualVacancies("");
   };
 
   // Handle close
@@ -106,6 +110,8 @@ export function AddFilterModal({
         avgSalary: avgSalary.trim() || undefined,
         relevantExams: relevantExams.trim() || undefined,
         image: image.trim() || undefined,
+        ranking: ranking ? parseInt(ranking, 10) : undefined,
+        annualVacancies: annualVacancies ? parseInt(annualVacancies, 10) : undefined,
       });
 
       addToast({
@@ -232,6 +238,40 @@ export function AddFilterModal({
                   value={relevantExams}
                   onChange={(e) => setRelevantExams(e.target.value)}
                   placeholder="Exam names"
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            {/* Two columns: Ranking & Annual Vacancies */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Ranking */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Ranking
+                </label>
+                <input
+                  type="number"
+                  value={ranking}
+                  onChange={(e) => setRanking(e.target.value)}
+                  placeholder="e.g., 1"
+                  min="1"
+                  className="input-field"
+                />
+                <p className="mt-0.5 text-xs text-muted-foreground">1 = highest demand</p>
+              </div>
+
+              {/* Annual Vacancies */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Annual Vacancies
+                </label>
+                <input
+                  type="number"
+                  value={annualVacancies}
+                  onChange={(e) => setAnnualVacancies(e.target.value)}
+                  placeholder="e.g., 45000"
+                  min="0"
                   className="input-field"
                 />
               </div>

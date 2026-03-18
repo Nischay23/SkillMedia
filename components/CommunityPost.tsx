@@ -1,10 +1,9 @@
-// app/components/CommunityPost.tsx
+// components/CommunityPost.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
-  Platform,
   Pressable,
   TouchableOpacity,
   View,
@@ -15,7 +14,6 @@ import { Typography } from "@/components/ui/Typography";
 import {
   SpacingValues,
   CardSpacing,
-  ComponentSpacing,
 } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import {
@@ -28,39 +26,58 @@ import { useMutation, useQuery } from "convex/react";
 
 interface CommunityPostProps {
   post: CommunityPostType;
+  onOpenComments?: () => void;
 }
 
 export default function CommunityPost({
   post,
+  onOpenComments,
 }: CommunityPostProps) {
   const { theme } = useTheme();
   const { user: clerkUser } = useUser();
   const [showFullContent, setShowFullContent] =
     useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
 
-  // Check if the post author is an admin
-  const postAuthor = useQuery(
-    api.users.getUserProfile,
-    post.userId ? { id: post.userId } : "skip",
+  // ── Optimistic like state ───────────────────────────
+  // Keep a local copy so UI updates instantly without waiting
+  // for the feed query to re-run.
+  const isLikedQuery = useQuery(
+    api.likes.getIsLiked,
+    clerkUser ? { communityPostId: post._id } : "skip",
   );
-  const isAdminPost = postAuthor?.isAdmin === true;
+  const [optimisticLiked, setOptimisticLiked] = useState<
+    boolean | null
+  >(null);
+  const [optimisticCount, setOptimisticCount] = useState(
+    post.likes ?? 0,
+  );
 
-  // Query if the current user has liked this post (temporarily disabled)
-  const isLiked = false;
+  // Sync optimistic state once the real query resolves
+  useEffect(() => {
+    if (isLikedQuery !== undefined) {
+      setOptimisticLiked(isLikedQuery);
+    }
+  }, [isLikedQuery]);
 
-  // Query if the current user has saved this post
+  // Keep count in sync if feed refreshes
+  useEffect(() => {
+    setOptimisticCount(post.likes ?? 0);
+  }, [post.likes]);
+
+  // ── Other queries ───────────────────────────────────
   const isSaved = useQuery(
     api.savedContent.getIsSaved,
     clerkUser ? { communityPostId: post._id } : "skip",
   );
-
-  // Get current logged-in user for delete permissions
   const currentUserConvex = useQuery(
     api.users.getUserByClerkId,
     clerkUser ? { clerkId: clerkUser.id } : "skip",
   );
 
+  // ── Mutations ───────────────────────────────────────
+  const toggleLikeMutation = useMutation(
+    api.likes.toggleLike,
+  );
   const toggleSaveMutation = useMutation(
     api.savedContent.toggleSave,
   );
@@ -71,7 +88,26 @@ export default function CommunityPost({
   // ── Handlers ────────────────────────────────────────
   const handleLike = async () => {
     if (!clerkUser) return;
-    console.log("Like functionality coming soon");
+
+    // Optimistic update — flip state & count immediately
+    const wasLiked = optimisticLiked === true;
+    setOptimisticLiked(!wasLiked);
+    setOptimisticCount((c) =>
+      wasLiked ? Math.max(0, c - 1) : c + 1,
+    );
+
+    try {
+      await toggleLikeMutation({
+        communityPostId: post._id,
+      });
+    } catch (error) {
+      // Revert on error
+      setOptimisticLiked(wasLiked);
+      setOptimisticCount((c) =>
+        wasLiked ? c + 1 : Math.max(0, c - 1),
+      );
+      console.error("Error toggling like:", error);
+    }
   };
 
   const handleSave = async () => {
@@ -85,7 +121,7 @@ export default function CommunityPost({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     Alert.alert(
       "Delete Post",
       "Are you sure you want to delete this post?",
@@ -109,7 +145,7 @@ export default function CommunityPost({
   };
 
   const canDeletePost = () => {
-    if (!currentUserConvex || !post.user) return false;
+    if (!currentUserConvex) return false;
     return (
       currentUserConvex._id === post.userId ||
       currentUserConvex.isAdmin
@@ -128,13 +164,14 @@ export default function CommunityPost({
   const truncateContent = (text: string, max = 200) =>
     text.length <= max ? text : text.slice(0, max) + "…";
 
-  // ── Themed styles ───────────────────────────────────
+  // ── Styles ──────────────────────────────────────────
   const styles = useThemedStyles((t) => ({
     card: {
       width: "100%" as const,
+      borderLeftWidth: 4,
+      borderLeftColor: t.colors.primary,
+      paddingBottom: 16,
     },
-
-    /* ── Header ─────────────────────────────── */
     header: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -147,6 +184,8 @@ export default function CommunityPost({
       borderRadius: 18,
       marginRight: 10,
       backgroundColor: t.colors.surfaceLight,
+      borderWidth: 1.5,
+      borderColor: t.colors.primary + "33",
     },
     avatarPlaceholder: {
       width: 36,
@@ -156,21 +195,17 @@ export default function CommunityPost({
       backgroundColor: t.colors.primary + "20",
       alignItems: "center" as const,
       justifyContent: "center" as const,
+      borderWidth: 1.5,
+      borderColor: t.colors.primary + "33",
     },
-    headerMeta: {
-      flex: 1,
-    },
-    deleteButton: {
-      padding: 6,
-    },
+    headerMeta: { flex: 1 },
+    deleteButton: { padding: 6 },
     separator: {
       height: 1,
       backgroundColor: t.colors.border,
       marginBottom: CardSpacing.gap,
       marginHorizontal: 16,
     },
-
-    /* ── Content ────────────────────────────── */
     titleContainer: {
       marginBottom: 6,
       paddingHorizontal: 16,
@@ -179,26 +214,18 @@ export default function CommunityPost({
       marginBottom: CardSpacing.gap,
       paddingHorizontal: 16,
     },
-
-    /* ── Image ──────────────────────────────── */
+    // Image: simple approach — show placeholder until loaded, then swap
     imageWrapper: {
       overflow: "hidden" as const,
       marginBottom: CardSpacing.gap,
       backgroundColor: t.colors.surfaceLight,
+      width: "100%" as const,
+      aspectRatio: 16 / 9,
     },
     postImage: {
       width: "100%" as const,
-      aspectRatio: 16 / 9,
+      height: "100%" as const,
     },
-    imagePlaceholder: {
-      width: "100%" as const,
-      aspectRatio: 16 / 9,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      backgroundColor: t.colors.surfaceLight,
-    },
-
-    /* ── Linked paths ───────────────────────── */
     linkedPaths: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,
@@ -212,8 +239,6 @@ export default function CommunityPost({
       paddingVertical: SpacingValues.xs,
       borderRadius: 12,
     },
-
-    /* ── Engagement bar ─────────────────────── */
     engagementBar: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -230,11 +255,14 @@ export default function CommunityPost({
     },
   }));
 
-  // ── Render ──────────────────────────────────────────
   const authorName =
     post.user?.fullname ||
     post.user?.username ||
     "Anonymous";
+
+  // The real liked state: optimistic if set, else query result
+  const displayLiked =
+    optimisticLiked ?? isLikedQuery === true;
 
   return (
     <View style={styles.card}>
@@ -255,7 +283,6 @@ export default function CommunityPost({
             />
           </View>
         )}
-
         <View style={styles.headerMeta}>
           <Typography
             variant="body"
@@ -268,7 +295,6 @@ export default function CommunityPost({
             {formatDate(post.createdAt)}
           </Typography>
         </View>
-
         {canDeletePost() && (
           <TouchableOpacity
             onPress={handleDelete}
@@ -295,55 +321,49 @@ export default function CommunityPost({
         </View>
       ) : null}
 
-      {/* ── Body text ── */}
+      {/* ── Body ── */}
       <View style={styles.content}>
         <Typography variant="body" color="text">
           {showFullContent
             ? post.content
             : truncateContent(post.content)}
         </Typography>
-
         {post.content.length > 200 && (
           <Pressable
-            onPress={() =>
-              setShowFullContent(!showFullContent)
-            }
+            onPress={() => setShowFullContent((v) => !v)}
+            style={{ flexDirection: "row" as const, alignItems: "center" as const, gap: 4, marginTop: SpacingValues.xs }}
           >
             <Typography
               variant="body"
               color="primary"
               weight="medium"
-              style={{ marginTop: SpacingValues.xs }}
             >
               {showFullContent ? "Show less" : "Read more"}
             </Typography>
+            <Ionicons
+              name={showFullContent ? "chevron-up" : "chevron-down"}
+              size={14}
+              color={theme.colors.primary}
+            />
           </Pressable>
         )}
       </View>
 
       {/* ── Image ── */}
+      {/* FIX: use a simple wrapper with fixed aspect ratio.
+          expo-image handles its own loading state internally.
+          No more invisible-image bug from stacked absolute positioning. */}
       {post.imageUrl ? (
         <View style={styles.imageWrapper}>
-          {imageLoading && (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons
-                name="image-outline"
-                size={28}
-                color={theme.colors.textMuted}
-              />
-            </View>
-          )}
           <Image
             source={{ uri: post.imageUrl }}
-            style={[
-              styles.postImage,
-              imageLoading && {
-                position: "absolute",
-                opacity: 0,
-              },
-            ]}
+            style={styles.postImage}
             contentFit="cover"
-            onLoad={() => setImageLoading(false)}
+            // Show a blurhash placeholder while loading
+            placeholder={{
+              blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6.",
+            }}
+            transition={300}
           />
         </View>
       ) : null}
@@ -369,13 +389,17 @@ export default function CommunityPost({
       {/* ── Engagement bar ── */}
       <View style={styles.engagementBar}>
         <AnimatedLikeButton
-          isLiked={isLiked === true}
-          count={post.likes}
+          isLiked={displayLiked}
+          count={optimisticCount}
           onPress={handleLike}
           size={20}
         />
 
-        <Pressable style={styles.engagementItem}>
+        <Pressable
+          onPress={onOpenComments}
+          style={styles.engagementItem}
+          hitSlop={10}
+        >
           <Ionicons
             name="chatbubble-outline"
             size={20}
@@ -393,6 +417,7 @@ export default function CommunityPost({
         <Pressable
           onPress={handleSave}
           style={styles.engagementItem}
+          hitSlop={10}
         >
           <Ionicons
             name={isSaved ? "bookmark" : "bookmark-outline"}

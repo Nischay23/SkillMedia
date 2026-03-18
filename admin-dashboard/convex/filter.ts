@@ -14,7 +14,13 @@ export const getFilterChildren = query({
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
 
-    const sorted = options.sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = options.sort((a, b) => {
+      // Sort by ranking ascending (nulls last), then alphabetically
+      const rankA = a.ranking ?? Infinity;
+      const rankB = b.ranking ?? Infinity;
+      if (rankA !== rankB) return rankA - rankB;
+      return a.name.localeCompare(b.name);
+    });
 
     if (args.limit && args.limit > 0) {
       return sorted.slice(0, args.limit);
@@ -70,6 +76,8 @@ export const getFilterOptionById = query({
         ...option,
         likes: option.likes || 0,
         comments: option.comments || 0,
+        ranking: option.ranking ?? null,
+        annualVacancies: option.annualVacancies ?? null,
       };
     }
     return null;

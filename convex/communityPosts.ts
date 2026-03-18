@@ -8,6 +8,44 @@ import {
 } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
 
+// Helper: Enrich a post with resolved image URL and filter option names
+async function enrichPost(ctx: QueryCtx, post: any) {
+  const user = await ctx.db.get(
+    post.userId as Id<"users">,
+  );
+
+  // Resolve storageId to URL if imageUrl is not set
+  let imageUrl = post.imageUrl;
+  if (!imageUrl && post.storageId) {
+    imageUrl = await ctx.storage.getUrl(post.storageId);
+  }
+
+  // Populate linkedFilterOptionNames
+  const linkedFilterOptionNames = await Promise.all(
+    (post.linkedFilterOptionIds || []).map(
+      async (id: Id<"FilterOption">) => {
+        const filterOption = await ctx.db.get(id);
+        return filterOption?.name ?? "Unknown";
+      },
+    ),
+  );
+
+  return {
+    ...post,
+    imageUrl,
+    linkedFilterOptionNames,
+    user: user
+      ? {
+          _id: user._id,
+          username: user.username,
+          fullname: user.fullname,
+          profileImage: user.profileImage,
+          isAdmin: user.isAdmin === true,
+        }
+      : null,
+  };
+}
+
 // Helper: Recursively get all descendant filter IDs
 async function getAllDescendantFilterIds(
   ctx: QueryCtx,
@@ -97,23 +135,9 @@ export const getCommunityPostsByFilterHierarchy = query({
     const limit = args.limit || 20;
     filteredPosts = filteredPosts.slice(0, limit);
 
-    // 8. Enrich with user data
+    // 8. Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      filteredPosts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-                isAdmin: user.isAdmin === true,
-              }
-            : null,
-        };
-      }),
+      filteredPosts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -154,23 +178,9 @@ export const getCommunityPosts = query({
 
     posts = posts.slice(0, 20);
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      posts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-                isAdmin: user.isAdmin === true,
-              }
-            : null,
-        };
-      }),
+      posts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -198,23 +208,9 @@ export const getCommunityPostsByFilterOption = query({
       )
       .slice(0, 20); // Take only first 20
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      filteredPosts.map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-                isAdmin: user.isAdmin === true,
-              }
-            : null,
-        };
-      }),
+      filteredPosts.map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;
@@ -322,19 +318,7 @@ export const getCommunityPostById = query({
     const post = await ctx.db.get(args.postId);
     if (!post) return null;
 
-    const user = await ctx.db.get(post.userId);
-
-    return {
-      ...post,
-      user: user
-        ? {
-            _id: user._id,
-            username: user.username,
-            fullname: user.fullname,
-            profileImage: user.profileImage,
-          }
-        : null,
-    };
+    return enrichPost(ctx, post);
   },
 });
 
@@ -355,20 +339,10 @@ export const getCommunityPostsByUser = query({
         ? posts.filter((p) => p.status === "published")
         : posts;
 
-    const user = await ctx.db.get(args.userId);
-
-    // Enrich with user data
-    const postsWithUsers = filteredPosts.map((post) => ({
-      ...post,
-      user: user
-        ? {
-            _id: user._id,
-            username: user.username,
-            fullname: user.fullname,
-            profileImage: user.profileImage,
-          }
-        : null,
-    }));
+    // Enrich with user data, resolved images, and filter names
+    const postsWithUsers = await Promise.all(
+      filteredPosts.map((post) => enrichPost(ctx, post)),
+    );
 
     return postsWithUsers;
   },
@@ -476,22 +450,9 @@ export const searchCommunityPosts = query({
     // Sort by creation time (newest first)
     posts.sort((a, b) => b.createdAt - a.createdAt);
 
-    // Enrich with user data
+    // Enrich with user data, resolved images, and filter names
     const postsWithUsers = await Promise.all(
-      posts.slice(0, 50).map(async (post) => {
-        const user = await ctx.db.get(post.userId);
-        return {
-          ...post,
-          user: user
-            ? {
-                _id: user._id,
-                username: user.username,
-                fullname: user.fullname,
-                profileImage: user.profileImage,
-              }
-            : null,
-        };
-      }),
+      posts.slice(0, 50).map((post) => enrichPost(ctx, post)),
     );
 
     return postsWithUsers;

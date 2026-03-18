@@ -3,13 +3,17 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { StatsCard } from "@/components/admin/StatsCard";
-import { 
-  FileText, 
-  ListTree, 
-  Users, 
-  Plus, 
+import {
+  FileText,
+  ListTree,
+  Users,
+  Plus,
   Settings,
-  ArrowRight 
+  ArrowRight,
+  Heart,
+  Bookmark,
+  MessageCircle,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -17,6 +21,7 @@ export default function AdminDashboard() {
   // Fetch data from Convex
   const posts = useQuery(api.communityPosts.getCommunityPosts, { statusFilter: "all" });
   const filters = useQuery(api.filter.getAllFilterOptions);
+  const engagementStats = useQuery(api.adminFilters.getEngagementStats);
 
   // Calculate stats
   const totalPosts = posts?.length ?? 0;
@@ -27,6 +32,7 @@ export default function AdminDashboard() {
   // Loading states
   const postsLoading = posts === undefined;
   const filtersLoading = filters === undefined;
+  const engagementLoading = engagementStats === undefined;
 
   return (
     <div className="space-y-8">
@@ -65,12 +71,40 @@ export default function AdminDashboard() {
           loading={filtersLoading}
         />
         <StatsCard
-          title="Active Users"
-          value="—"
-          icon={Users}
-          change="Coming soon"
+          title="Career Cards"
+          value={engagementStats?.totalCards ?? "—"}
+          icon={TrendingUp}
+          change="All levels"
           changeType="neutral"
-          loading={false}
+          loading={engagementLoading}
+        />
+      </div>
+
+      {/* Engagement Stats */}
+      <div className="grid gap-6 sm:grid-cols-3">
+        <StatsCard
+          title="Total Likes"
+          value={engagementStats?.totalLikes ?? 0}
+          icon={Heart}
+          change="On career cards"
+          changeType="positive"
+          loading={engagementLoading}
+        />
+        <StatsCard
+          title="Total Saves"
+          value={engagementStats?.totalSaves ?? 0}
+          icon={Bookmark}
+          change="Bookmarked cards"
+          changeType="positive"
+          loading={engagementLoading}
+        />
+        <StatsCard
+          title="Total Comments"
+          value={engagementStats?.totalComments ?? 0}
+          icon={MessageCircle}
+          change="On career cards"
+          changeType="positive"
+          loading={engagementLoading}
         />
       </div>
 
@@ -134,13 +168,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Activity Preview */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Posts */}
         <div className="rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Recent Posts</h2>
-            <Link 
-              href="/admin/posts" 
+            <Link
+              href="/admin/posts"
               className="text-sm text-primary hover:underline"
             >
               View all
@@ -248,6 +282,48 @@ export default function AdminDashboard() {
             ) : (
               <p className="text-center text-sm text-muted-foreground py-4">
                 No filters configured yet.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Most Popular Cards */}
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <h2 className="text-lg font-semibold text-foreground">Most Popular Cards</h2>
+          <div className="mt-4 space-y-3">
+            {engagementLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                  <div className="h-10 w-10 animate-pulse rounded bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                  </div>
+                </div>
+              ))
+            ) : engagementStats?.topCards && engagementStats.topCards.length > 0 ? (
+              engagementStats.topCards.map((card, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-lg bg-background p-3 transition-colors hover:bg-muted"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary-muted text-sm font-bold text-primary">
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium text-foreground">
+                      {card.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {card.likes} likes
+                    </p>
+                  </div>
+                  <Heart className="h-4 w-4 text-red-400" />
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                No engagement data yet.
               </p>
             )}
           </div>
