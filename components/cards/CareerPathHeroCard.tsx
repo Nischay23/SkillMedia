@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  Alert,
   Pressable,
   Text,
   View,
@@ -15,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Typography } from "@/components/ui/Typography";
-import { useThemedStyles } from "@/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import RankingBadge from "@/components/RankingBadge";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -81,7 +82,11 @@ export default function CareerPathHeroCard({
 }: CareerPathHeroCardProps) {
   const { user: clerkUser } = useUser();
   const router = useRouter();
+  const { theme } = useTheme();
   const gradientColors = resolveGradient(category);
+
+  // Current user for admin check
+  const currentUser = useQuery(api.users.getCurrentUser);
 
   // Group data
   const group = useQuery(
@@ -93,6 +98,7 @@ export default function CareerPathHeroCard({
     group ? { groupId: group._id } : "skip",
   );
   const joinGroupMutation = useMutation(api.groups.joinGroup);
+  const createGroupMutation = useMutation(api.groups.createGroup);
 
   // Join button animation
   const joinScale = useSharedValue(1);
@@ -109,6 +115,27 @@ export default function CareerPathHeroCard({
   const handleOpenGroup = () => {
     if (!group) return;
     router.push(`/group/${group._id}` as any);
+  };
+
+  const handleStartCommunity = async () => {
+    if (!filterOptionId) return;
+
+    if (currentUser?.isAdmin) {
+      // Admin can create the group
+      const newGroupId = await createGroupMutation({
+        filterOptionId,
+        name: title,
+        description: description || undefined,
+      });
+      router.push(`/group/${newGroupId}` as any);
+    } else {
+      // Non-admin sees alert
+      Alert.alert(
+        "Coming Soon",
+        "Community coming soon for this career path!",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const styles = useThemedStyles((t) => ({
@@ -241,7 +268,19 @@ export default function CareerPathHeroCard({
       height: 44,
       borderRadius: 12,
       borderWidth: 1.5,
-      borderColor: "rgba(255,255,255,0.5)",
+      borderColor: t.colors.primary,
+      gap: 8,
+    },
+    startButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: 44,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: t.colors.border,
+      borderStyle: "dashed" as const,
+      backgroundColor: "transparent",
       gap: 8,
     },
   }));
@@ -368,13 +407,14 @@ export default function CareerPathHeroCard({
           </Pressable>
         </View>
 
-        {/* Group Join/Open section */}
-        {group && clerkUser && (
+        {/* Group Join/Open section - Always show when there's a filterOptionId */}
+        {filterOptionId && clerkUser && (
           <Animated.View
             entering={FadeIn.duration(300)}
             style={styles.groupSection}
           >
-            {isMember ? (
+            {group && isMember ? (
+              // Group exists and user is member - Open Group
               <Pressable
                 onPressIn={() => {
                   joinScale.value = withSpring(0.96);
@@ -390,18 +430,19 @@ export default function CareerPathHeroCard({
                   <Ionicons
                     name="chatbubbles-outline"
                     size={16}
-                    color="#FFFFFF"
+                    color={theme.colors.primary}
                   />
                   <Typography
                     variant="body"
                     weight="semibold"
-                    style={{ color: "#FFFFFF" }}
+                    style={{ color: theme.colors.primary }}
                   >
                     Open Group
                   </Typography>
                 </Animated.View>
               </Pressable>
-            ) : (
+            ) : group && !isMember ? (
+              // Group exists but user is NOT member - Join Community
               <View>
                 <Pressable
                   onPressIn={() => {
@@ -445,6 +486,34 @@ export default function CareerPathHeroCard({
                   {group.memberCount.toLocaleString()} members
                 </Typography>
               </View>
+            ) : (
+              // No group exists - Start Community
+              <Pressable
+                onPressIn={() => {
+                  joinScale.value = withSpring(0.96);
+                }}
+                onPressOut={() => {
+                  joinScale.value = withSpring(1);
+                }}
+                onPress={handleStartCommunity}
+              >
+                <Animated.View
+                  style={[styles.startButton, joinScaleStyle]}
+                >
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={16}
+                    color="rgba(255,255,255,0.6)"
+                  />
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    style={{ color: "rgba(255,255,255,0.6)" }}
+                  >
+                    Start Community
+                  </Typography>
+                </Animated.View>
+              </Pressable>
             )}
           </Animated.View>
         )}

@@ -23,6 +23,7 @@ import type * as filter from "../filter.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as likes from "../likes.js";
+import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   groups: typeof groups;
   http: typeof http;
   likes: typeof likes;
+  messages: typeof messages;
   migrations: typeof migrations;
   notifications: typeof notifications;
   posts: typeof posts;
