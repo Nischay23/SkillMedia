@@ -1,7 +1,6 @@
 import { Loader } from "@/components/Loader";
 import Notification from "@/components/Notification";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,28 +21,16 @@ import {
   useTheme,
   useThemedStyles,
 } from "@/providers/ThemeProvider";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 export default function Notifications() {
   const { theme, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const headerOpacity = useSharedValue(1);
 
   const notifications = useQuery(
     api.notifications.getNotifications,
   );
-
-  // Disable entering animations after first data load
-  useEffect(() => {
-    if (notifications !== undefined && isFirstLoad) {
-      const timer = setTimeout(
-        () => setIsFirstLoad(false),
-        800,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [notifications, isFirstLoad]);
 
   const styles = useThemedStyles((theme) => ({
     container: {
@@ -87,24 +74,8 @@ export default function Notifications() {
   }, [headerOpacity]);
 
   if (notifications === undefined) return <Loader />;
-  if (notifications.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar
-          translucent
-          backgroundColor="transparent"
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-        />
-        <EmptyState
-          type="no-notifications"
-          title="No Notifications"
-          description="When you get notifications, they'll show up here."
-        />
-      </SafeAreaView>
-    );
-  }
+  if (notifications.length === 0)
+    return <NoNotificationsFound />;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -130,8 +101,7 @@ export default function Notifications() {
         data={notifications}
         renderItem={({ item, index }) => (
           <AnimatedCard
-            delay={Math.min(index * 100, 500)}
-            useEnteringAnimation={isFirstLoad}
+            delay={index * 50}
             style={{ marginBottom: theme.spacing.md }}
           >
             <Notification notification={item} />
@@ -148,6 +118,48 @@ export default function Notifications() {
           />
         }
       />
+    </SafeAreaView>
+  );
+}
+
+function NoNotificationsFound() {
+  const { theme } = useTheme();
+
+  const styles = useThemedStyles((theme) => ({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      paddingHorizontal: theme.spacing.xl,
+    },
+  }));
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{ alignItems: "center" }}>
+        <Ionicons
+          name="notifications-outline"
+          size={48}
+          color={theme.colors.primary}
+        />
+        <Typography
+          variant="h4"
+          color="text"
+          style={{ marginTop: theme.spacing.md }}
+        >
+          No notifications yet
+        </Typography>
+        <Typography
+          variant="body"
+          color="textSecondary"
+          align="center"
+          style={{ marginTop: theme.spacing.sm }}
+        >
+          When you get notifications, they&apos;ll show up
+          here
+        </Typography>
+      </View>
     </SafeAreaView>
   );
 }

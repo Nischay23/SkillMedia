@@ -1,82 +1,9 @@
-import { useTheme } from "@/providers/ThemeProvider";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-
-// Custom Tab Bar Icon with scale animation and glow dot
-const TabIcon = ({
-  name,
-  color,
-  focused,
-  glowColor,
-}: {
-  name: keyof typeof Ionicons.glyphMap;
-  color: string;
-  focused: boolean;
-  glowColor: string;
-}) => {
-  const dotScale = useSharedValue(focused ? 1 : 0);
-  const dotOpacity = useSharedValue(focused ? 1 : 0);
-  const iconScale = useSharedValue(focused ? 1.1 : 1);
-
-  // Animate the glow dot
-  dotScale.value = withSpring(focused ? 1 : 0, {
-    damping: 15,
-    stiffness: 300,
-  });
-  dotOpacity.value = withTiming(focused ? 1 : 0, {
-    duration: 200,
-  });
-
-  // Animate icon scale
-  iconScale.value = withSpring(focused ? 1.15 : 1, {
-    damping: 12,
-    stiffness: 200,
-  });
-
-  const dotAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale.value }],
-    opacity: dotOpacity.value,
-  }));
-
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScale.value }],
-  }));
-
-  return (
-    <View style={styles.tabIconContainer}>
-      <Animated.View style={iconAnimatedStyle}>
-        <Ionicons name={name} size={24} color={color} />
-      </Animated.View>
-      {/* Small dot indicator */}
-      <Animated.View
-        style={[
-          styles.glowDot,
-          {
-            backgroundColor: glowColor,
-            shadowColor: glowColor,
-          },
-          dotAnimatedStyle,
-        ]}
-      />
-    </View>
-  );
-};
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/providers/ThemeProvider";
 
 export default function TabLayout() {
-  const { theme, isDark } = useTheme();
-
-  // Haptic feedback on tab press
-  const handleTabPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  const { theme } = useTheme();
 
   return (
     <Tabs
@@ -86,121 +13,81 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 12,
-          left: 16,
-          right: 16,
-          height: 60,
           backgroundColor: theme.colors.surface,
-          borderTopWidth: 0,
-          borderRadius: 24,
-          paddingTop: 8,
-          paddingBottom: 8,
-          paddingHorizontal: 0,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.12,
-          shadowRadius: 12,
-          elevation: 8,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          position: "absolute",
+          elevation: 0,
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          paddingTop: theme.spacing.sm,
+          height: 60,
+          paddingBottom: theme.spacing.sm,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Explore",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? "compass" : "compass-outline"}
+          tabBarIcon: ({ size, color }) => (
+            <Ionicons
+              name="home"
+              size={size}
               color={color}
-              focused={focused}
-              glowColor={theme.colors.primary}
             />
           ),
         }}
-        listeners={{ tabPress: handleTabPress }}
       />
       <Tabs.Screen
         name="bookmarks"
         options={{
-          title: "Saved",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={
-                focused ? "bookmark" : "bookmark-outline"
-              }
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="bookmark"
+              size={size}
               color={color}
-              focused={focused}
-              glowColor={theme.colors.primary}
             />
           ),
         }}
-        listeners={{ tabPress: handleTabPress }}
       />
       <Tabs.Screen
-        name="groups"
+        name="create"
         options={{
-          title: "Groups",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? "people" : "people-outline"}
-              color={color}
-              focused={focused}
-              glowColor={theme.colors.primary}
+          tabBarIcon: ({ size }) => (
+            <Ionicons
+              name="add-circle"
+              size={size + 4}
+              color={theme.colors.primary}
             />
           ),
         }}
-        listeners={{ tabPress: handleTabPress }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Notifications",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? "heart" : "heart-outline"}
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="heart"
+              size={size}
               color={color}
-              focused={focused}
-              glowColor={theme.colors.primary}
             />
           ),
         }}
-        listeners={{ tabPress: handleTabPress }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Me",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? "person" : "person-outline"}
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="person-circle"
+              size={size}
               color={color}
-              focused={focused}
-              glowColor={theme.colors.primary}
             />
           ),
         }}
-        listeners={{ tabPress: handleTabPress }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabIconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
-  },
-  glowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 3,
-    // Glow effect
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-});

@@ -97,8 +97,7 @@ export const AnimatedButton: React.FC<
     },
     text: {
       fontFamily: theme.typography.fontFamily.medium,
-      fontWeight: theme.typography.weights
-        .semibold as "600",
+      fontWeight: "600" as const,
       textAlign: "center" as const,
     },
     textPrimary: {

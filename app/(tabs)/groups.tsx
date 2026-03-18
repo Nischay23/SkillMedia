@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetFlatList,
+  BottomSheetScrollView,
   BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
@@ -29,6 +30,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Typography } from "@/components/ui/Typography";
@@ -218,6 +220,7 @@ function GroupCard({
 export default function GroupsScreen() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const currentUser = useQuery(api.users.getCurrentUser);
   const myGroups = useQuery(api.groups.getMyGroups);
 
@@ -241,7 +244,7 @@ export default function GroupsScreen() {
   );
 
   const snapPoints = useMemo(
-    () => (selectingFilter ? ["80%"] : ["55%"]),
+    () => (selectingFilter ? ["75%", "92%"] : ["75%", "92%"]),
     [selectingFilter],
   );
 
@@ -378,6 +381,7 @@ export default function GroupsScreen() {
     sheetContent: {
       paddingHorizontal: 20,
       gap: 16,
+      paddingBottom: insets.bottom + 90,
     },
     sheetLabel: {
       marginBottom: 6,
@@ -408,6 +412,10 @@ export default function GroupsScreen() {
       borderRadius: 12,
       overflow: "hidden" as const,
     },
+    createButtonWrapper: {
+      paddingBottom: insets.bottom + 90,
+      paddingHorizontal: 16,
+    },
     createGradient: {
       flex: 1,
       alignItems: "center" as const,
@@ -422,17 +430,34 @@ export default function GroupsScreen() {
       borderBottomWidth: 1,
       borderBottomColor: t.colors.border,
     },
-    filterSearchInput: {
+    filterSearchContainer: {
       marginHorizontal: 16,
       marginBottom: 8,
-      backgroundColor: t.colors.background,
+      position: "relative" as const,
+    },
+    filterSearchInput: {
+      backgroundColor: t.colors.surface,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: t.colors.border,
-      paddingHorizontal: 14,
+      paddingLeft: 36,
+      paddingRight: 14,
       paddingVertical: 10,
       fontSize: 14,
       color: t.colors.text,
+    },
+    searchIcon: {
+      position: "absolute" as const,
+      left: 12,
+      top: 12,
+      zIndex: 1,
+    },
+    filterHeader: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
     },
   }));
 
@@ -572,22 +597,18 @@ export default function GroupsScreen() {
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
           android_keyboardInputMode="adjustResize"
+          bottomInset={insets.bottom + 80}
         >
           {selectingFilter ? (
             <>
-              <BottomSheetView
-                style={{
-                  paddingHorizontal: 20,
-                  marginBottom: 12,
-                }}
-              >
+              {/* Fixed Header */}
+              <BottomSheetView style={styles.filterHeader}>
                 <Pressable
                   onPress={() => setSelectingFilter(false)}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 6,
-                    marginBottom: 12,
+                    gap: 12,
                   }}
                 >
                   <Ionicons
@@ -603,6 +624,16 @@ export default function GroupsScreen() {
                     Select Career Path
                   </Typography>
                 </Pressable>
+              </BottomSheetView>
+
+              {/* Fixed Search Input */}
+              <View style={styles.filterSearchContainer}>
+                <Ionicons
+                  name="search-outline"
+                  size={16}
+                  color={theme.colors.textMuted}
+                  style={styles.searchIcon}
+                />
                 <BottomSheetTextInput
                   style={styles.filterSearchInput}
                   placeholder="Search career paths..."
@@ -612,7 +643,9 @@ export default function GroupsScreen() {
                   value={filterSearch}
                   onChangeText={setFilterSearch}
                 />
-              </BottomSheetView>
+              </View>
+
+              {/* Scrollable Filter List */}
               <BottomSheetFlatList
                 data={filteredFilters}
                 keyExtractor={(item: any) => item._id}
@@ -641,124 +674,132 @@ export default function GroupsScreen() {
               />
             </>
           ) : (
-            <BottomSheetView style={styles.sheetContent}>
-              <Typography
-                variant="h3"
-                weight="bold"
-                color="text"
-              >
-                Create Group
-              </Typography>
-
-              {/* Career Path */}
-              <View>
+            <BottomSheetScrollView
+              contentContainerStyle={{
+                paddingBottom: insets.bottom + 90,
+              }}
+            >
+              <View style={styles.sheetContent}>
                 <Typography
-                  variant="caption"
-                  weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
+                  variant="h3"
+                  weight="bold"
+                  color="text"
                 >
-                  Career Path
+                  Create Group
                 </Typography>
-                <Pressable
-                  onPress={() => setSelectingFilter(true)}
-                  style={styles.filterSelector}
-                >
+
+                {/* Career Path */}
+                <View>
                   <Typography
-                    variant="body"
-                    color={
-                      selectedFilterId
-                        ? "text"
-                        : "textMuted"
+                    variant="caption"
+                    weight="medium"
+                    color="textSecondary"
+                    style={styles.sheetLabel}
+                  >
+                    Career Path
+                  </Typography>
+                  <Pressable
+                    onPress={() => setSelectingFilter(true)}
+                    style={styles.filterSelector}
+                  >
+                    <Typography
+                      variant="body"
+                      color={
+                        selectedFilterId
+                          ? "text"
+                          : "textMuted"
+                      }
+                      numberOfLines={1}
+                      style={{ flex: 1 }}
+                    >
+                      {selectedFilterName ||
+                        "Select a career path"}
+                    </Typography>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={theme.colors.textMuted}
+                    />
+                  </Pressable>
+                </View>
+
+                {/* Group Name */}
+                <View>
+                  <Typography
+                    variant="caption"
+                    weight="medium"
+                    color="textSecondary"
+                    style={styles.sheetLabel}
+                  >
+                    Group Name
+                  </Typography>
+                  <BottomSheetTextInput
+                    style={styles.sheetInput}
+                    value={groupName}
+                    onChangeText={setGroupName}
+                    placeholder="Enter group name"
+                    placeholderTextColor={
+                      theme.colors.textMuted
                     }
-                    numberOfLines={1}
-                    style={{ flex: 1 }}
-                  >
-                    {selectedFilterName ||
-                      "Select a career path"}
-                  </Typography>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={theme.colors.textMuted}
                   />
-                </Pressable>
-              </View>
+                </View>
 
-              {/* Group Name */}
-              <View>
-                <Typography
-                  variant="caption"
-                  weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
-                >
-                  Group Name
-                </Typography>
-                <BottomSheetTextInput
-                  style={styles.sheetInput}
-                  value={groupName}
-                  onChangeText={setGroupName}
-                  placeholder="Enter group name"
-                  placeholderTextColor={
-                    theme.colors.textMuted
-                  }
-                />
-              </View>
-
-              {/* Description */}
-              <View>
-                <Typography
-                  variant="caption"
-                  weight="medium"
-                  color="textSecondary"
-                  style={styles.sheetLabel}
-                >
-                  Description (optional)
-                </Typography>
-                <BottomSheetTextInput
-                  style={[
-                    styles.sheetInput,
-                    {
-                      height: 80,
-                      textAlignVertical: "top" as const,
-                    },
-                  ]}
-                  value={groupDesc}
-                  onChangeText={setGroupDesc}
-                  placeholder="Describe this group..."
-                  placeholderTextColor={
-                    theme.colors.textMuted
-                  }
-                  multiline
-                />
-              </View>
-
-              {/* Submit */}
-              <Pressable
-                onPress={handleCreateGroup}
-                disabled={!selectedFilterId}
-                style={[
-                  styles.createButton,
-                  !selectedFilterId && { opacity: 0.5 },
-                ]}
-              >
-                <LinearGradient
-                  colors={["#6C5DD3", "#8676FF"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.createGradient}
-                >
+                {/* Description */}
+                <View>
                   <Typography
-                    variant="body"
-                    weight="bold"
-                    style={{ color: "#FFFFFF" }}
+                    variant="caption"
+                    weight="medium"
+                    color="textSecondary"
+                    style={styles.sheetLabel}
                   >
-                    Create Group
+                    Description (optional)
                   </Typography>
-                </LinearGradient>
-              </Pressable>
-            </BottomSheetView>
+                  <BottomSheetTextInput
+                    style={[
+                      styles.sheetInput,
+                      {
+                        height: 80,
+                        textAlignVertical: "top" as const,
+                      },
+                    ]}
+                    value={groupDesc}
+                    onChangeText={setGroupDesc}
+                    placeholder="Describe this group..."
+                    placeholderTextColor={
+                      theme.colors.textMuted
+                    }
+                    multiline
+                  />
+                </View>
+
+                {/* Submit Button */}
+                <View style={styles.createButtonWrapper}>
+                  <Pressable
+                    onPress={handleCreateGroup}
+                    disabled={!selectedFilterId}
+                    style={[
+                      styles.createButton,
+                      !selectedFilterId && { opacity: 0.5 },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={["#6C5DD3", "#8676FF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.createGradient}
+                    >
+                      <Typography
+                        variant="body"
+                        weight="bold"
+                        style={{ color: "#FFFFFF" }}
+                      >
+                        Create Group
+                      </Typography>
+                    </LinearGradient>
+                  </Pressable>
+                </View>
+              </View>
+            </BottomSheetScrollView>
           )}
         </BottomSheet>
       )}

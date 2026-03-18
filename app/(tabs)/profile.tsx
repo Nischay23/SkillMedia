@@ -7,7 +7,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,7 +15,6 @@ import Animated, {
 } from "react-native-reanimated";
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -38,7 +37,6 @@ export default function Profile() {
   const { theme, isDark } = useTheme();
   const [isEditModalVisible, setIsEditModalVisible] =
     useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   // Animation values
   const headerOpacity = useSharedValue(1);
@@ -61,17 +59,6 @@ export default function Profile() {
     api.posts.getPostsByUser,
     currentUser ? { userId: currentUser._id } : "skip",
   );
-
-  // Disable entering animations after first data load
-  useEffect(() => {
-    if (posts !== undefined && isFirstLoad) {
-      const timer = setTimeout(
-        () => setIsFirstLoad(false),
-        800,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [posts, isFirstLoad]);
 
   const updateProfile = useMutation(
     api.users.updateProfile,
@@ -105,103 +92,55 @@ export default function Profile() {
       backgroundColor: theme.colors.surface,
     },
     profileInfo: {
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 0,
+      padding: theme.spacing.lg,
     },
     avatarAndStats: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
+      marginBottom: theme.spacing.lg,
+    },
+    avatarContainer: {
+      marginRight: theme.spacing["2xl"],
     },
     avatar: {
-      width: 76,
-      height: 76,
-      borderRadius: 38,
+      width: 86,
+      height: 86,
+      borderRadius: 43,
       borderWidth: 3,
       borderColor: theme.colors.primary,
     },
     statsContainer: {
-      flex: 1,
       flexDirection: "row" as const,
-      justifyContent: "space-evenly" as const,
-      alignItems: "center" as const,
-      marginLeft: 20,
+      flex: 1,
+      justifyContent: "space-around" as const,
     },
     statItem: {
       alignItems: "center" as const,
     },
-    statDivider: {
-      width: 1,
-      height: 28,
-      backgroundColor: theme.colors.border,
-    },
-    statNumber: {
-      fontSize: 17,
-      fontWeight: "700" as const,
-      color: theme.colors.text,
-    },
-    statLabel: {
-      fontSize: 12,
-      color: theme.colors.textSecondary,
-      marginTop: 1,
-    },
-    nameText: {
-      fontSize: 14,
-      fontWeight: "600" as const,
-      color: theme.colors.text,
-      marginTop: 10,
-    },
-    bioText: {
-      fontSize: 13,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
-      lineHeight: 18,
-    },
-    actionRow: {
+    actionButtons: {
       flexDirection: "row" as const,
-      gap: 8,
-      marginTop: 12,
+      alignItems: "center" as const,
+      marginTop: theme.spacing.lg,
+      gap: theme.spacing.md,
     },
     editButton: {
       flex: 1,
-      height: 34,
-      borderWidth: 1.5,
-      borderColor: theme.colors.primary,
-      borderRadius: 8,
-      backgroundColor: "transparent",
-      justifyContent: "center" as const,
-      alignItems: "center" as const,
-    },
-    editButtonText: {
-      fontSize: 13,
-      fontWeight: "600" as const,
-      color: theme.colors.primary,
     },
     shareButton: {
-      height: 34,
-      width: 34,
+      padding: theme.spacing.sm,
+      borderRadius: theme.borderRadius.md,
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 8,
-      backgroundColor: theme.colors.surface,
-      justifyContent: "center" as const,
-      alignItems: "center" as const,
-    },
-    gridDivider: {
-      height: 1,
-      backgroundColor: theme.colors.border,
-      marginTop: 14,
     },
     gridContainer: {
-      paddingHorizontal: 1.5,
-      marginTop: 2,
-      paddingBottom: 90,
+      paddingHorizontal: theme.spacing.xs,
     },
     gridItem: {
       flex: 1 / 3,
       aspectRatio: 1,
-      margin: 1.5,
-      borderRadius: 12,
+      margin: theme.spacing.xs,
+      borderRadius: theme.borderRadius.sm,
       overflow: "hidden" as const,
     },
     gridImage: {
@@ -238,7 +177,7 @@ export default function Profile() {
       color: theme.colors.text,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      fontSize: theme.typography.sizes.body,
+      fontSize: 16,
     },
     bioInput: {
       height: 100,
@@ -268,7 +207,6 @@ export default function Profile() {
       height: 200,
       justifyContent: "center" as const,
       alignItems: "center" as const,
-      gap: 12,
       marginTop: theme.spacing.xl,
     },
   }));
@@ -340,81 +278,107 @@ export default function Profile() {
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.profileInfo}>
-          {/* Avatar + Stats row (Instagram style) */}
+        <AnimatedCard delay={0} style={styles.profileInfo}>
+          {/* AVATAR & STATS */}
           <View style={styles.avatarAndStats}>
-            <Image
-              source={currentUser.image}
-              style={styles.avatar}
-              contentFit="cover"
-              transition={200}
-            />
+            <View style={styles.avatarContainer}>
+              <Image
+                source={currentUser.image}
+                style={styles.avatar}
+                contentFit="cover"
+                transition={200}
+              />
+            </View>
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography
+                  variant="h3"
+                  color="text"
+                  weight="bold"
+                >
                   {currentUser.posts}
-                </Text>
-                <Text style={styles.statLabel}>Posts</Text>
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                >
+                  Posts
+                </Typography>
               </View>
-              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography
+                  variant="h3"
+                  color="text"
+                  weight="bold"
+                >
                   {currentUser.followers}
-                </Text>
-                <Text style={styles.statLabel}>
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                >
                   Followers
-                </Text>
+                </Typography>
               </View>
-              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography
+                  variant="h3"
+                  color="text"
+                  weight="bold"
+                >
                   {currentUser.following}
-                </Text>
-                <Text style={styles.statLabel}>
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                >
                   Following
-                </Text>
+                </Typography>
               </View>
             </View>
           </View>
 
-          {/* Name + Bio */}
-          <Text style={styles.nameText}>
+          <Typography
+            variant="h3"
+            color="text"
+            weight="semibold"
+            style={{ marginTop: theme.spacing.md }}
+          >
             {currentUser.fullname}
-          </Text>
+          </Typography>
           {currentUser.bio && (
-            <Text style={styles.bioText} numberOfLines={2}>
+            <Typography
+              variant="body"
+              color="textSecondary"
+              style={{ marginTop: theme.spacing.sm }}
+            >
               {currentUser.bio}
-            </Text>
+            </Typography>
           )}
 
-          {/* Action row: Edit Profile + Share */}
-          <View style={styles.actionRow}>
+          <View style={styles.actionButtons}>
             <Animated.View
-              style={[{ flex: 1 }, buttonAnimatedStyle]}
+              style={[
+                styles.editButton,
+                buttonAnimatedStyle,
+              ]}
             >
-              <TouchableOpacity
-                style={styles.editButton}
+              <AnimatedButton
+                title="Edit Profile"
                 onPress={handleEditPress}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.editButtonText}>
-                  Edit profile
-                </Text>
-              </TouchableOpacity>
+                variant="outline"
+              />
             </Animated.View>
             <TouchableOpacity style={styles.shareButton}>
               <Ionicons
-                name="person-add-outline"
-                size={16}
+                name="share-outline"
+                size={20}
                 color={theme.colors.text}
               />
             </TouchableOpacity>
           </View>
-
-          {/* Grid divider */}
-          <View style={styles.gridDivider} />
-        </View>
+        </AnimatedCard>
 
         {posts.length === 0 && <NoPostsFound />}
 
@@ -425,8 +389,7 @@ export default function Profile() {
           contentContainerStyle={styles.gridContainer}
           renderItem={({ item, index }) => (
             <AnimatedCard
-              delay={Math.min((index + 1) * 100, 500)}
-              useEnteringAnimation={isFirstLoad}
+              delay={(index + 1) * 50}
               style={styles.gridItem}
             >
               <TouchableOpacity

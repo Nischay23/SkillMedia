@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  Alert,
   Pressable,
   Text,
   View,
@@ -93,6 +94,11 @@ export default function CareerPathHeroCard({
     group ? { groupId: group._id } : "skip",
   );
   const joinGroupMutation = useMutation(api.groups.joinGroup);
+  const createGroupMutation = useMutation(api.groups.createGroup);
+  const convexUser = useQuery(
+    api.users.getUserByClerkId,
+    clerkUser ? { clerkId: clerkUser.id } : "skip",
+  );
 
   // Join button animation
   const joinScale = useSharedValue(1);
@@ -109,6 +115,31 @@ export default function CareerPathHeroCard({
   const handleOpenGroup = () => {
     if (!group) return;
     router.push(`/group/${group._id}` as any);
+  };
+
+  const handleStartCommunity = async () => {
+    if (!filterOptionId) return;
+
+    // Check if user is admin
+    if (!convexUser?.isAdmin) {
+      Alert.alert(
+        "Community coming soon",
+        "Community coming soon for this career path!"
+      );
+      return;
+    }
+
+    // Admin can create group
+    try {
+      const groupId = await createGroupMutation({
+        filterOptionId,
+        name: title,
+        description: description,
+      });
+      router.push(`/group/${groupId}` as any);
+    } catch (error) {
+      Alert.alert("Error", "Failed to create community");
+    }
   };
 
   const styles = useThemedStyles((t) => ({
@@ -244,6 +275,23 @@ export default function CareerPathHeroCard({
       borderColor: "rgba(255,255,255,0.5)",
       gap: 8,
     },
+    startButton: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      height: 44,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderStyle: "dashed" as const,
+      borderColor: "rgba(255,255,255,0.3)",
+      backgroundColor: "transparent" as const,
+      gap: 8,
+    },
+    memberCount: {
+      color: "rgba(255,255,255,0.6)",
+      textAlign: "center" as const,
+      marginTop: 6,
+    },
   }));
 
   const infoBadges: {
@@ -368,13 +416,14 @@ export default function CareerPathHeroCard({
           </Pressable>
         </View>
 
-        {/* Group Join/Open section */}
-        {group && clerkUser && (
+        {/* Group Join/Open/Start section - ALWAYS show button on career path cards */}
+        {filterOptionId && clerkUser && (
           <Animated.View
             entering={FadeIn.duration(300)}
             style={styles.groupSection}
           >
-            {isMember ? (
+            {group && isMember ? (
+              // User is already a member - show Open Group button
               <Pressable
                 onPressIn={() => {
                   joinScale.value = withSpring(0.96);
@@ -401,7 +450,8 @@ export default function CareerPathHeroCard({
                   </Typography>
                 </Animated.View>
               </Pressable>
-            ) : (
+            ) : group ? (
+              // Group exists but user is not a member - show Join Community button
               <View>
                 <Pressable
                   onPressIn={() => {
@@ -434,17 +484,43 @@ export default function CareerPathHeroCard({
                     </LinearGradient>
                   </Animated.View>
                 </Pressable>
-                <Typography
-                  variant="caption"
-                  style={{
-                    color: "rgba(255,255,255,0.6)",
-                    textAlign: "center" as const,
-                    marginTop: 6,
-                  }}
-                >
-                  {group.memberCount.toLocaleString()} members
-                </Typography>
+                {group.memberCount > 0 && (
+                  <Typography
+                    variant="caption"
+                    style={styles.memberCount}
+                  >
+                    {group.memberCount.toLocaleString()} members
+                  </Typography>
+                )}
               </View>
+            ) : (
+              // No group exists yet - show Start Community button
+              <Pressable
+                onPressIn={() => {
+                  joinScale.value = withSpring(0.96);
+                }}
+                onPressOut={() => {
+                  joinScale.value = withSpring(1);
+                }}
+                onPress={handleStartCommunity}
+              >
+                <Animated.View
+                  style={[styles.startButton, joinScaleStyle]}
+                >
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={16}
+                    color="rgba(255,255,255,0.6)"
+                  />
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    style={{ color: "rgba(255,255,255,0.6)" }}
+                  >
+                    Start Community
+                  </Typography>
+                </Animated.View>
+              </Pressable>
             )}
           </Animated.View>
         )}

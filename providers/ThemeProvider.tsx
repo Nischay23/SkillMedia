@@ -1,16 +1,14 @@
 // providers/ThemeProvider.tsx
-import { createTheme } from "@/constants/theme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
 import React, {
   createContext,
-  ReactNode,
   useContext,
-  useEffect,
   useState,
+  useEffect,
+  ReactNode,
 } from "react";
 import { useColorScheme } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createTheme } from "@/constants/theme";
 
 type ThemeMode = "dark" | "light" | "system";
 
@@ -19,8 +17,6 @@ interface ThemeContextType {
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   isDark: boolean;
-  toggleTheme: () => void;
-  fontsLoaded: boolean;
 }
 
 const ThemeContext = createContext<
@@ -37,23 +33,6 @@ export const ThemeProvider: React.FC<
   const systemColorScheme = useColorScheme();
   const [themeMode, setThemeModeState] =
     useState<ThemeMode>("system");
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-
-  // Load custom Poppins fonts (with fallbacks)
-  // To use actual Poppins fonts, download them from https://fonts.google.com/specimen/Poppins
-  // and add to assets/fonts/, then uncomment the lines in utils/fontLoader.ts
-  const [loadedFonts] = useFonts({
-    "Poppins-Regular": require("@/assets/fonts/SpaceMono-Regular.ttf"),
-    "Poppins-SemiBold": require("@/assets/fonts/JetBrainsMono-Medium.ttf"),
-    "Poppins-Bold": require("@/assets/fonts/JetBrainsMono-Medium.ttf"),
-  });
-
-  useEffect(() => {
-    if (loadedFonts) {
-      setFontsLoaded(true);
-      SplashScreen.hideAsync();
-    }
-  }, [loadedFonts]);
 
   // Determine actual theme based on mode
   const getActualTheme = (mode: ThemeMode) => {
@@ -98,22 +77,11 @@ export const ThemeProvider: React.FC<
     }
   };
 
-  /**
-   * Toggle between light and dark themes
-   * Persists the preference to AsyncStorage
-   */
-  const toggleTheme = async () => {
-    const newMode: ThemeMode = isDark ? "light" : "dark";
-    await setThemeMode(newMode);
-  };
-
   const value: ThemeContextType = {
     theme,
     themeMode,
     setThemeMode,
     isDark,
-    toggleTheme,
-    fontsLoaded,
   };
 
   return (

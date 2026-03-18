@@ -1,30 +1,22 @@
 // components/ui/AnimatedCard.tsx
-import { useThemedStyles } from "@/providers/ThemeProvider";
-import { getThemedCardStyle } from "@/constants/CardStyles";
 import React, { useEffect } from "react";
 import { ViewStyle } from "react-native";
 import Animated, {
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useThemedStyles } from "@/providers/ThemeProvider";
 
 interface AnimatedCardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   delay?: number;
-  variant?: "default" | "elevated" | "outlined" | "transparent";
+  variant?: "default" | "elevated" | "outlined";
   pressable?: boolean;
   onPress?: () => void;
-  /**
-   * Use entering animation from Reanimated for list items
-   * Provides smoother cascade animations
-   * @default true
-   */
-  useEnteringAnimation?: boolean;
 }
 
 export const AnimatedCard: React.FC<AnimatedCardProps> = ({
@@ -34,43 +26,32 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   variant = "default",
   pressable = false,
   onPress,
-  useEnteringAnimation = true,
 }) => {
-  const opacity = useSharedValue(
-    useEnteringAnimation ? 1 : 0,
-  );
-  const translateY = useSharedValue(
-    useEnteringAnimation ? 0 : 30,
-  );
-  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(30);
+  const scale = useSharedValue(pressable ? 1 : 1);
 
   const styles = useThemedStyles((theme) => ({
     card: {
-      ...getThemedCardStyle("base", theme.colors.shadow),
       backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadius.xl,
       padding: theme.spacing.lg,
+      overflow: "hidden" as const,
     },
     default: {
       ...theme.shadows.md,
       shadowColor: theme.colors.shadow,
     },
     elevated: {
-      ...getThemedCardStyle(
-        "elevated",
-        theme.colors.shadow,
-      ),
-      backgroundColor: theme.colors.card,
-      padding: theme.spacing.lg,
+      ...theme.shadows.lg,
+      shadowColor: theme.colors.shadow,
+      elevation: 8,
     },
     outlined: {
-      ...getThemedCardStyle("flat", theme.colors.shadow),
+      borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.card,
-      padding: theme.spacing.lg,
-    },
-    transparent: {
-      backgroundColor: "transparent",
-      padding: 0,
+      ...theme.shadows.sm,
+      shadowColor: theme.colors.shadow,
     },
   }));
 
@@ -88,29 +69,24 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
         return styles.elevated;
       case "outlined":
         return styles.outlined;
-      case "transparent":
-        return styles.transparent;
       default:
         return styles.default;
     }
   };
 
-  // Only use manual animation if not using entering animation
   useEffect(() => {
-    if (!useEnteringAnimation) {
-      opacity.value = withDelay(
-        delay,
-        withTiming(1, { duration: 600 }),
-      );
-      translateY.value = withDelay(
-        delay,
-        withSpring(0, {
-          damping: 20,
-          stiffness: 90,
-        }),
-      );
-    }
-  }, [delay, opacity, translateY, useEnteringAnimation]);
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, { duration: 600 }),
+    );
+    translateY.value = withDelay(
+      delay,
+      withSpring(0, {
+        damping: 20,
+        stiffness: 90,
+      }),
+    );
+  }, [delay, opacity, translateY]);
 
   const handlePressIn = () => {
     if (pressable) {
@@ -130,22 +106,13 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     }
   };
 
-  // Calculate entering animation with staggered delay
-  const enteringAnimation = useEnteringAnimation
-    ? FadeInDown.delay(delay)
-        .duration(400)
-        .springify()
-        .damping(15)
-    : undefined;
-
   if (pressable && onPress) {
     return (
       <Animated.View
-        entering={enteringAnimation}
         style={[
-          variant !== "transparent" && styles.card,
+          styles.card,
           getVariantStyle(),
-          !useEnteringAnimation && animatedStyle,
+          animatedStyle,
           style,
         ]}
         onTouchStart={handlePressIn}
@@ -159,11 +126,10 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   return (
     <Animated.View
-      entering={enteringAnimation}
       style={[
-        variant !== "transparent" && styles.card,
+        styles.card,
         getVariantStyle(),
-        !useEnteringAnimation && animatedStyle,
+        animatedStyle,
         style,
       ]}
     >
