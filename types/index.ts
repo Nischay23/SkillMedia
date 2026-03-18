@@ -20,10 +20,6 @@ export type FilterOption = {
   relevantExams?: string;
   image?: string;
 
-  // Ranking & vacancy data
-  ranking?: number | null;
-  annualVacancies?: number | null;
-
   // Engagement counters
   likes?: number;
   comments?: number;
@@ -32,17 +28,10 @@ export type FilterOption = {
 export type CommunityPost = {
   _id: Id<"communityPosts">;
   userId: Id<"users">;
-
-  // Content fields
-  title: string;
   content: string;
   imageUrl?: string;
   storageId?: Id<"_storage">;
   linkedFilterOptionIds: Id<"FilterOption">[];
-
-  // Status workflow
-  status: "draft" | "published";
-  publishedAt?: number;
 
   // Engagement counters
   likes: number;
@@ -57,7 +46,6 @@ export type CommunityPost = {
     username?: string;
     fullname?: string;
     profileImage?: string;
-    isAdmin?: boolean;
   } | null;
   linkedFilterOptionNames?: string[];
 };

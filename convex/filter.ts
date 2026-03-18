@@ -10,7 +10,9 @@ export const getFilterChildren = query({
   handler: async (ctx, args) => {
     const options = await ctx.db
       .query("FilterOption")
-      .withIndex("by_parentId", (q) => q.eq("parentId", args.parentId))
+      .withIndex("by_parentId", (q) =>
+        q.eq("parentId", args.parentId),
+      )
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
 
@@ -54,7 +56,7 @@ export const getFilterNamesByIds = query({
       return [];
     }
     const options = await Promise.all(
-      args.filterIds.map((id) => ctx.db.get(id))
+      args.filterIds.map((id) => ctx.db.get(id)),
     );
     // Filter out any nulls if an ID doesn't exist
     return options.filter(Boolean); // Filters out null/undefined results

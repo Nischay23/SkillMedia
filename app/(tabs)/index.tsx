@@ -1,102 +1,63 @@
-// app/(tabs)/index.tsx — Dual-feed layout (filtered hero + explore mode)
-import { Ionicons } from "@expo/vector-icons";
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+// app/(tabs)/index.tsx (Main Feed Screen - Themed & Animated)
+import React, { useState, useCallback } from "react";
 import {
   FlatList,
   RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  StatusBar,
   TouchableOpacity,
   View,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
-  FadeIn,
-  FadeOut,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
-  withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 
-import CareerPathHeroCard from "@/components/cards/CareerPathHeroCard";
+import { Loader } from "@/components/Loader";
+import CareerPathDetails from "@/components/CareerPathDetails";
 import CommunityPost from "@/components/CommunityPost";
-import PostCardWrapper from "@/components/PostCardWrapper";
-import CommentsModal from "@/components/CommentsModal";
-import FilterChipsBar from "@/components/FilterChipsBar";
 import FilterModal from "@/components/FilterModal";
-import { EmptyState } from "@/components/ui/EmptyState";
-import {
-  FeedSkeletonLoader,
-  FilteredFeedSkeleton,
-} from "@/components/ui/SkeletonLoader";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
-import FloatingActionButton from "@/components/ui/FloatingActionButton";
 import { Typography } from "@/components/ui/Typography";
 
 import { api } from "@/convex/_generated/api";
+import type {
+  FilterOption,
+  CommunityPost as CommunityPostType,
+} from "@/types";
+import { useAuth } from "@clerk/clerk-expo";
+import { useQuery } from "convex/react";
 import { Id } from "@/convex/_generated/dataModel";
 import {
   useTheme,
   useThemedStyles,
 } from "@/providers/ThemeProvider";
-import type {
-  CommunityPost as CommunityPostType,
-  FilterOption,
-} from "@/types";
-import { useUser } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
-import { useMutation, useQuery } from "convex/react";
 
-// ─── Career facts (shown during refresh) ──────────────
-const CAREER_FACTS = [
-  "💡 The tech industry adds ~200k new jobs every year in SA.",
-  "📈 Data analysts are among the fastest-growing roles worldwide.",
-  "🎓 70% of employers value skills over formal degrees.",
-  "🌍 Remote work opportunities grew 300% since 2020.",
-  "🔧 Skilled trades have a 98% employment rate within 6 months.",
-  "💰 Cloud engineers earn 20% more than the industry average.",
-  "📊 Digital marketing roles grew 33% in the last 2 years.",
-  "🏗️ South Africa needs 30,000 more engineers by 2030.",
-  "🤖 AI & ML skills command a 35% salary premium.",
-  "📱 Mobile development remains a top-5 in-demand skill.",
-];
-
-// ─── Component ─────────────────────────────────────────
 export default function FeedScreen() {
-  const { user: clerkUser } = useUser();
-  const router = useRouter();
+  const { signOut } = useAuth();
   const { theme, isDark } = useTheme();
-  const currentUser = useQuery(api.users.getCurrentUser);
-
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<
     Id<"FilterOption">[]
   >([]);
   const [showFilterModal, setShowFilterModal] =
     useState(false);
-  const [careerFact, setCareerFact] = useState("");
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const factIndexRef = useRef(0);
 
-  // Animation
+  // Animation values
   const headerOpacity = useSharedValue(1);
-  const spinValue = useSharedValue(0);
+  const filterScale = useSharedValue(1);
 
-  // Derived state
   const isViewingSpecificPath = selectedFilters.length > 0;
   const lastSelectedFilterId = isViewingSpecificPath
     ? selectedFilters[selectedFilters.length - 1]
     : null;
 
-  // ─── Queries ───────────────────────────────────────────
+  // Queries
   const selectedFilterDetails = useQuery(
     api.filter.getFilterOptionById,
     lastSelectedFilterId
@@ -105,20 +66,8 @@ export default function FeedScreen() {
   );
 
   const communityPostsResult = useQuery(
-    api.communityPosts.getCommunityPostsByFilterHierarchy,
-    lastSelectedFilterId
-      ? {
-          filterOptionId: lastSelectedFilterId,
-          statusFilter: "published",
-        }
-      : "skip",
-  );
-
-  const allCommunityPosts = useQuery(
     api.communityPosts.getCommunityPosts,
-    !lastSelectedFilterId
-      ? { statusFilter: "published" }
-      : "skip",
+    {},
   );
 
   const activeFilterNames = useQuery(
@@ -128,568 +77,312 @@ export default function FeedScreen() {
       : "skip",
   );
 
-  // Saved state for the hero card
-  const isPathSaved = useQuery(
-    api.savedContent.getIsSaved,
-    lastSelectedFilterId && clerkUser
-      ? { filterOptionId: lastSelectedFilterId }
-      : "skip",
-  );
-
-  const toggleSaveMutation = useMutation(
-    api.savedContent.toggleSave,
-  );
-
-  // State for comments modal (used by all card types)
-  const [commentsPostId, setCommentsPostId] =
-    useState<Id<"communityPosts"> | null>(null);
-
-  // ─── Themed styles ─────────────────────────────────────
-  const styles = useThemedStyles((t) => ({
+  const styles = useThemedStyles((theme) => ({
     container: {
       flex: 1,
-      backgroundColor: t.colors.background,
+      backgroundColor: theme.colors.background,
     },
     header: {
       flexDirection: "row" as const,
+      justifyContent: "center" as const,
       alignItems: "center" as const,
-      paddingHorizontal: t.spacing.lg,
-      paddingVertical: t.spacing.sm,
-      backgroundColor: t.colors.background,
+      paddingHorizontal: theme.spacing.xl,
+      paddingVertical: theme.spacing.lg,
+      backgroundColor: theme.colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
-      elevation: 2,
-      zIndex: 10,
+      borderBottomColor: theme.colors.border,
     },
-    headerTitle: {
-      flex: 1,
-      textAlign: "center" as const,
+    logoutButton: {
+      position: "absolute" as const,
+      right: theme.spacing.xl,
+      padding: theme.spacing.sm,
+      borderRadius: theme.borderRadius.md,
+      backgroundColor: theme.colors.surface,
     },
-    headerButton: {
-      padding: t.spacing.sm,
-      borderRadius: t.borderRadius.md,
-      backgroundColor: t.colors.surface,
+    filterSection: {
+      paddingHorizontal: theme.spacing.xl,
+      paddingVertical: theme.spacing.lg,
+      alignItems: "center" as const,
     },
-    scrollContent: {
-      paddingTop: t.spacing.sm,
-      paddingBottom: 90,
+    filterChipContainer: {
+      paddingHorizontal: theme.spacing.xl,
+      paddingBottom: theme.spacing.lg,
+      alignItems: "center" as const,
     },
-    heroSection: {
-      marginTop: t.spacing.lg,
-      marginBottom: t.spacing.xl,
-    },
-    sectionHeader: {
+    filterChip: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      gap: t.spacing.sm,
-      marginBottom: t.spacing.lg,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.borderRadius.full,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      maxWidth: "90%" as const,
     },
-    sectionDivider: {
-      marginTop: t.spacing.xl,
-      paddingTop: t.spacing.xl,
+    clearFilterButton: {
+      backgroundColor: theme.colors.borderLight,
+      borderRadius: theme.borderRadius.full,
+      padding: theme.spacing.xs,
+    },
+    contentContainer: {
+      paddingHorizontal: theme.spacing.lg,
+      paddingBottom: theme.spacing["6xl"],
+    },
+    emptyStateContainer: {
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: theme.spacing["6xl"],
+      paddingHorizontal: theme.spacing.xl,
+    },
+    sectionContainer: {
+      marginTop: theme.spacing["4xl"],
+      paddingVertical: theme.spacing.xl,
       borderTopWidth: 1,
-      borderTopColor: t.colors.border,
-    },
-    emptyState: {
-      flex: 1,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      paddingVertical: t.spacing["6xl"],
-      paddingHorizontal: t.spacing.xl,
-    },
-    flatListContent: {
-      paddingTop: t.spacing.sm,
-      paddingBottom: 90,
-    },
-    refreshBanner: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      gap: t.spacing.md,
-      paddingVertical: t.spacing.md,
-      paddingHorizontal: t.spacing.lg,
-      marginHorizontal: t.spacing.lg,
-      marginBottom: t.spacing.sm,
-      backgroundColor: t.colors.primary + "12",
-      borderRadius: t.borderRadius.lg,
+      borderTopColor: theme.colors.border,
     },
   }));
 
-  // ─── Animated styles ───────────────────────────────────
+  // Animated styles
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
   }));
 
-  // ─── Callbacks ─────────────────────────────────────────
-  const onRefresh = useCallback(() => {
-    // Pick the next career fact (round-robin so no repeats in a row)
-    const fact =
-      CAREER_FACTS[
-        factIndexRef.current % CAREER_FACTS.length
-      ];
-    factIndexRef.current += 1;
-    setCareerFact(fact);
-    setRefreshing(true);
+  const filterAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: filterScale.value }],
+  }));
 
-    // Animate header dim + compass spin
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
     headerOpacity.value = withTiming(0.8, {
       duration: 200,
     });
-    spinValue.value = 0;
-    spinValue.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 600 }),
-        withTiming(0, { duration: 0 }),
-      ),
-      -1, // infinite while refreshing
-    );
-
-    // Convex queries are reactive — data auto-updates.
-    // The timeout gives the fact time to be read.
     setTimeout(() => {
       setRefreshing(false);
       headerOpacity.value = withTiming(1, {
         duration: 200,
       });
-      spinValue.value = withTiming(0, { duration: 200 });
-    }, 1500);
-  }, [headerOpacity, spinValue]);
+    }, 1000);
+  }, [headerOpacity, setRefreshing]);
 
-  const spinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${spinValue.value * 360}deg` }],
-  }));
-
-  const handleFilterPress = () => setShowFilterModal(true);
-
-  const handleChipPress = (index: number) => {
-    setSelectedFilters((prev) => prev.slice(0, index + 1));
-    setShowFilterModal(true);
-  };
-
-  const handleClearFilters = () => setSelectedFilters([]);
-
-  const handleSavePath = async () => {
-    if (!clerkUser || !lastSelectedFilterId) return;
-    await toggleSaveMutation({
-      filterOptionId: lastSelectedFilterId,
-    });
-  };
-
-  const handleSharePath = async () => {
-    const name =
-      selectedFilterDetails?.name ?? "this career path";
-    const deepLink = lastSelectedFilterId
-      ? `skillmedia://career/${lastSelectedFilterId}`
-      : "";
-    await Share.share({
-      message: `Check out ${name} on SkillsApp!${deepLink ? `\n${deepLink}` : ""}`,
-    });
-  };
-
-  const handleDeepDive = () => {
-    // Scroll is already showing the related posts below the hero card
-  };
-
-  // ─── Loading guards ────────────────────────────────────
-  const postsToDisplay = isViewingSpecificPath
-    ? communityPostsResult
-    : allCommunityPosts;
-
-  // Disable entering animations after first data load
-  useEffect(() => {
-    if (postsToDisplay !== undefined && isFirstLoad) {
-      const timer = setTimeout(
-        () => setIsFirstLoad(false),
-        800,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [postsToDisplay, isFirstLoad]);
-
-  if (postsToDisplay === undefined) {
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        <StatusBar
-          translucent
-          backgroundColor="transparent"
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-        />
-        {isViewingSpecificPath ? (
-          <FilteredFeedSkeleton />
-        ) : (
-          <FeedSkeletonLoader count={4} />
-        )}
-      </SafeAreaView>
-    );
+  // Loading state handling
+  if (communityPostsResult === undefined) {
+    return <Loader />;
   }
 
   if (
     isViewingSpecificPath &&
     selectedFilterDetails === undefined
   ) {
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        <StatusBar
-          translucent
-          backgroundColor="transparent"
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-        />
-        <FilteredFeedSkeleton />
-      </SafeAreaView>
-    );
+    return <Loader />;
   }
 
-  // ─── Post-type detection ───────────────────────────────
-  const QUESTION_PATTERN =
-    /^(who|what|when|where|why|how|is|are|can|do|does|should|would|could|has|have|any\s|which|did)\b/i;
-
-  const isExpertPost = (post: CommunityPostType): boolean =>
-    post.user?.isAdmin === true;
-
-  const isDiscussionPost = (
-    post: CommunityPostType,
-  ): boolean => {
-    const text = (post.title || post.content || "").trim();
-    return (
-      QUESTION_PATTERN.test(text) || text.endsWith("?")
-    );
+  const handleFilterPress = () => {
+    filterScale.value = withSpring(0.95, {
+      damping: 10,
+      stiffness: 400,
+    });
+    setTimeout(() => {
+      filterScale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 400,
+      });
+      setShowFilterModal(true);
+    }, 100);
   };
 
-  // ─── Item separator ────────────────────────────────────
-  const ItemSeparator = () => (
-    <View
-      style={{
-        height: 8,
-        backgroundColor: theme.colors.background,
-      }}
-    />
-  );
-
-  // ─── Render helpers ────────────────────────────────────
-  const renderPostItem = ({
-    item,
-    index,
-  }: {
-    item: CommunityPostType;
-    index: number;
-  }) => {
-    const staggerDelay = Math.min(index * 100, 500);
-
-    if (isExpertPost(item)) {
-      return (
-        <AnimatedCard
-          variant="transparent"
-          delay={staggerDelay}
-          useEnteringAnimation={isFirstLoad}
-        >
-          <PostCardWrapper
-            post={item}
-            variant="expert"
-            onOpenComments={() =>
-              setCommentsPostId(item._id)
-            }
-          />
-        </AnimatedCard>
-      );
-    }
-
-    if (isDiscussionPost(item)) {
-      return (
-        <AnimatedCard
-          variant="transparent"
-          delay={staggerDelay}
-          useEnteringAnimation={isFirstLoad}
-        >
-          <PostCardWrapper
-            post={item}
-            variant="discussion"
-            onOpenComments={() =>
-              setCommentsPostId(item._id)
-            }
-          />
-        </AnimatedCard>
-      );
-    }
-
-    return (
-      <AnimatedCard
-        variant="transparent"
-        delay={staggerDelay}
-        useEnteringAnimation={isFirstLoad}
-      >
-        <CommunityPost
-          post={item}
-          onOpenComments={() => setCommentsPostId(item._id)}
-        />
-      </AnimatedCard>
-    );
+  const handleClearFilters = () => {
+    setSelectedFilters([]);
   };
 
-  const renderEmptyExplore = () => (
-    <EmptyState
-      type="no-filters"
-      title="Start Exploring Careers"
-      description="Use the filter to discover career paths, or be the first to share a post!"
-      actionLabel="Open Filter"
-      onAction={handleFilterPress}
-    />
-  );
+  const handleSignOut = () => {
+    signOut();
+  };
 
-  const renderEmptyFiltered = (name: string) => (
-    <EmptyState
-      type="no-posts"
-      title="No Posts Yet"
-      description={`No discussions yet for "${name}". Be the first to start one!`}
-      icon="chatbubbles-outline"
-      iconSize={56}
-    />
-  );
-
-  // ─── Filtered mode (hero card + related posts) ────────
-  const renderFilteredFeed = () => {
-    const filterOption =
-      selectedFilterDetails as FilterOption | null;
-
-    if (!filterOption) {
-      return (
-        <EmptyState
-          type="error"
-          title="Path Unavailable"
-          description="Details for this path are not available. Try another selection."
-          actionLabel="Open Filter"
-          onAction={handleFilterPress}
-        />
-      );
-    }
-
-    const posts = postsToDisplay ?? [];
-
-    return (
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="transparent"
-            colors={["transparent"]}
-            progressViewOffset={-100}
-          />
-        }
-      >
-        {/* Career fact banner */}
-        {refreshing && careerFact ? (
-          <Animated.View
-            entering={FadeIn.duration(250)}
-            exiting={FadeOut.duration(200)}
-            style={styles.refreshBanner}
-          >
-            <Animated.View style={spinStyle}>
-              <Ionicons
-                name="compass-outline"
-                size={20}
-                color={theme.colors.primary}
-              />
-            </Animated.View>
-            <Typography
-              variant="caption"
-              color="primary"
-              weight="medium"
-              style={{ flex: 1 }}
-            >
-              {careerFact}
-            </Typography>
-          </Animated.View>
-        ) : null}
-
-        {/* Hero Card */}
-        <View style={styles.heroSection}>
-          <CareerPathHeroCard
-            title={filterOption.name}
-            description={filterOption.description ?? ""}
-            salary={filterOption.avgSalary}
-            requirements={filterOption.requirements}
-            exams={filterOption.relevantExams}
-            category={filterOption.type ?? "default"}
-            filterOptionId={filterOption._id}
-            ranking={filterOption.ranking}
-            annualVacancies={filterOption.annualVacancies}
-            isSaved={isPathSaved === true}
-            onSave={handleSavePath}
-            onShare={handleSharePath}
-            onDeepDive={handleDeepDive}
-          />
-        </View>
-
-        {/* Related Posts Section */}
-        <View style={styles.sectionDivider}>
-          <View style={styles.sectionHeader}>
+  // Display content logic
+  const displayContent = () => {
+    if (!isViewingSpecificPath) {
+      // No filters selected - show general community posts
+      if (
+        !communityPostsResult ||
+        communityPostsResult.length === 0
+      ) {
+        return (
+          <View style={styles.emptyStateContainer}>
             <Ionicons
-              name="chatbubbles-outline"
-              size={20}
-              color={theme.colors.primary}
+              name="information-circle-outline"
+              size={40}
+              color={theme.colors.textMuted}
             />
-            <Typography variant="h3" color="text">
-              Related Discussions
-            </Typography>
-          </View>
-
-          {posts.length > 0
-            ? posts.map((item, index) => {
-                const post = item as CommunityPostType;
-                const staggerDelay = Math.min(
-                  (index + 1) * 100,
-                  500,
-                );
-                const separator = index > 0 && (
-                  <View
-                    style={{
-                      height: 8,
-                      backgroundColor:
-                        theme.colors.background,
-                    }}
-                  />
-                );
-
-                if (isExpertPost(post)) {
-                  return (
-                    <React.Fragment key={post._id}>
-                      {separator}
-                      <AnimatedCard
-                        variant="transparent"
-                        delay={staggerDelay}
-                        useEnteringAnimation={isFirstLoad}
-                      >
-                        <PostCardWrapper
-                          post={post}
-                          variant="expert"
-                          onOpenComments={() =>
-                            setCommentsPostId(post._id)
-                          }
-                        />
-                      </AnimatedCard>
-                    </React.Fragment>
-                  );
-                }
-                if (isDiscussionPost(post)) {
-                  return (
-                    <React.Fragment key={post._id}>
-                      {separator}
-                      <AnimatedCard
-                        variant="transparent"
-                        delay={staggerDelay}
-                        useEnteringAnimation={isFirstLoad}
-                      >
-                        <PostCardWrapper
-                          post={post}
-                          variant="discussion"
-                          onOpenComments={() =>
-                            setCommentsPostId(post._id)
-                          }
-                        />
-                      </AnimatedCard>
-                    </React.Fragment>
-                  );
-                }
-                return (
-                  <React.Fragment key={post._id}>
-                    {separator}
-                    <AnimatedCard
-                      variant="transparent"
-                      delay={staggerDelay}
-                      useEnteringAnimation={isFirstLoad}
-                    >
-                      <CommunityPost
-                        post={post}
-                        onOpenComments={() =>
-                          setCommentsPostId(post._id)
-                        }
-                      />
-                    </AnimatedCard>
-                  </React.Fragment>
-                );
-              })
-            : renderEmptyFiltered(filterOption.name)}
-        </View>
-      </ScrollView>
-    );
-  };
-
-  // ─── Explore mode (all posts) ─────────────────────────
-  const renderExploreFeed = () => {
-    const posts = postsToDisplay ?? [];
-
-    if (posts.length === 0) return renderEmptyExplore();
-
-    return (
-      <FlatList
-        data={posts as CommunityPostType[]}
-        renderItem={renderPostItem}
-        keyExtractor={(item) => item._id}
-        ItemSeparatorComponent={ItemSeparator}
-        ListHeaderComponent={
-          refreshing && careerFact ? (
-            <Animated.View
-              entering={FadeIn.duration(250)}
-              exiting={FadeOut.duration(200)}
-              style={[
-                styles.refreshBanner,
-                { marginBottom: theme.spacing.lg },
-              ]}
+            <Typography
+              variant="body"
+              color="textSecondary"
+              align="center"
+              style={{ marginTop: theme.spacing.lg }}
             >
-              <Animated.View style={spinStyle}>
-                <Ionicons
-                  name="compass-outline"
-                  size={20}
-                  color={theme.colors.primary}
-                />
-              </Animated.View>
+              No community posts yet. Explore career paths
+              or be the first to share!
+            </Typography>
+            <AnimatedButton
+              title="Open Filter"
+              onPress={() => setShowFilterModal(true)}
+              variant="outline"
+              style={{ marginTop: theme.spacing.xl }}
+            />
+          </View>
+        );
+      }
+
+      return (
+        <FlatList
+          data={communityPostsResult}
+          renderItem={({ item, index }) => (
+            <AnimatedCard
+              delay={index * 100}
+              style={{ marginBottom: theme.spacing.lg }}
+            >
+              <CommunityPost
+                post={item as CommunityPostType}
+              />
+            </AnimatedCard>
+          )}
+          keyExtractor={(item) => item._id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+        />
+      );
+    } else {
+      // Filters selected - display detailed path info
+      const finalFilterOption =
+        selectedFilterDetails as FilterOption | null;
+
+      if (!finalFilterOption) {
+        return (
+          <View style={styles.emptyStateContainer}>
+            <Ionicons
+              name="warning-outline"
+              size={40}
+              color={theme.colors.warning}
+            />
+            <Typography
+              variant="body"
+              color="textSecondary"
+              align="center"
+              style={{ marginTop: theme.spacing.lg }}
+            >
+              Details for this selected path are not
+              available. Try another selection.
+            </Typography>
+            <AnimatedButton
+              title="Open Filter"
+              onPress={() => setShowFilterModal(true)}
+              variant="outline"
+              style={{ marginTop: theme.spacing.xl }}
+            />
+          </View>
+        );
+      }
+
+      // Check if FilterOption has content to display
+      const hasPathContent =
+        finalFilterOption.description ||
+        finalFilterOption.requirements ||
+        finalFilterOption.avgSalary ||
+        finalFilterOption.relevantExams ||
+        finalFilterOption.image;
+
+      return (
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.colors.primary}
+            />
+          }
+        >
+          {hasPathContent ? (
+            <AnimatedCard delay={0}>
+              <CareerPathDetails
+                filterOption={finalFilterOption}
+              />
+            </AnimatedCard>
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Ionicons
+                name="information-circle-outline"
+                size={40}
+                color={theme.colors.textMuted}
+              />
               <Typography
-                variant="caption"
-                color="primary"
-                weight="medium"
-                style={{ flex: 1 }}
+                variant="body"
+                color="textSecondary"
+                align="center"
+                style={{ marginTop: theme.spacing.lg }}
               >
-                {careerFact}
+                No detailed content available for &ldquo;
+                {finalFilterOption.name}&rdquo;. Explore
+                sub-categories or check community
+                discussions.
               </Typography>
-            </Animated.View>
-          ) : null
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="transparent"
-            colors={["transparent"]}
-            progressViewOffset={-100}
-          />
-        }
-      />
-    );
+              {(!communityPostsResult ||
+                communityPostsResult.length === 0) && (
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                  align="center"
+                  style={{ marginTop: theme.spacing.md }}
+                >
+                  No community discussions found for this
+                  path yet.
+                </Typography>
+              )}
+            </View>
+          )}
+
+          {/* Community posts related to this path */}
+          {communityPostsResult &&
+            communityPostsResult.length > 0 && (
+              <View style={styles.sectionContainer}>
+                <Typography
+                  variant="h3"
+                  color="text"
+                  style={{
+                    marginBottom: theme.spacing.lg,
+                    textAlign: "center",
+                  }}
+                >
+                  Community Discussions on{" "}
+                  {finalFilterOption.name}
+                </Typography>
+                {communityPostsResult.map((item, index) => (
+                  <AnimatedCard
+                    key={item._id}
+                    delay={(index + 1) * 100}
+                    style={{
+                      marginBottom: theme.spacing.lg,
+                    }}
+                  >
+                    <CommunityPost
+                      post={item as CommunityPostType}
+                    />
+                  </AnimatedCard>
+                ))}
+              </View>
+            )}
+        </ScrollView>
+      );
+    }
   };
 
-  // ─── Main render ───────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -698,7 +391,7 @@ export default function FeedScreen() {
         barStyle={isDark ? "light-content" : "dark-content"}
       />
 
-      {/* Header */}
+      {/* Modern Dark Header */}
       <Animated.View
         style={[styles.header, headerAnimatedStyle]}
       >
@@ -706,53 +399,75 @@ export default function FeedScreen() {
           variant="h2"
           color="text"
           weight="bold"
-          style={styles.headerTitle}
+          style={{ flex: 1, textAlign: "center" }}
         >
           Jobs & Skills
         </Typography>
-
         <TouchableOpacity
-          onPress={handleFilterPress}
-          style={styles.headerButton}
+          onPress={handleSignOut}
+          style={styles.logoutButton}
         >
           <Ionicons
-            name="options-outline"
+            name="log-out-outline"
             size={24}
-            color={theme.colors.primary}
+            color={theme.colors.text}
           />
-          {isViewingSpecificPath && (
-            <View
-              style={{
-                position: "absolute" as const,
-                top: 6,
-                right: 6,
-                width: 7,
-                height: 7,
-                borderRadius: 3.5,
-                backgroundColor: theme.colors.primary,
-              }}
-            />
-          )}
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Filter Breadcrumbs */}
-      <FilterChipsBar
-        selectedPath={
-          activeFilterNames
-            ? activeFilterNames
-                .filter((opt) => opt)
-                .map((opt) => opt!.name)
-            : []
-        }
-        onChipPress={handleChipPress}
-        onClearAll={handleClearFilters}
-      />
+      {/* MODERN FILTER BUTTON */}
+      <View style={styles.filterSection}>
+        <Animated.View style={filterAnimatedStyle}>
+          <AnimatedButton
+            title="Filter"
+            onPress={handleFilterPress}
+            variant="primary"
+            icon={
+              <Ionicons
+                name="options-outline"
+                size={20}
+                color={theme.colors.background}
+              />
+            }
+          />
+        </Animated.View>
+      </View>
 
-      {/* Conditional Feed */}
-      {isViewingSpecificPath
-        ? renderFilteredFeed()
-        : renderExploreFeed()}
+      {/* APPLIED FILTERS CHIP */}
+      {selectedFilters.length > 0 && (
+        <View style={styles.filterChipContainer}>
+          <View style={styles.filterChip}>
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              style={{
+                flex: 1,
+                marginRight: theme.spacing.sm,
+              }}
+            >
+              Applied:{" "}
+              {activeFilterNames
+                ? activeFilterNames
+                    .filter((opt) => opt)
+                    .map((opt) => opt!.name)
+                    .join(" > ")
+                : "Loading..."}
+            </Typography>
+            <TouchableOpacity
+              onPress={handleClearFilters}
+              style={styles.clearFilterButton}
+            >
+              <Ionicons
+                name="close"
+                size={16}
+                color={theme.colors.text}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {displayContent()}
 
       <FilterModal
         isVisible={showFilterModal}
@@ -763,20 +478,6 @@ export default function FeedScreen() {
         }}
         onCancel={() => setShowFilterModal(false)}
       />
-
-      <FloatingActionButton
-        onPress={() => router.push("/(tabs)/create" as any)}
-        isAdmin={currentUser?.isAdmin === true}
-      />
-
-      {/* Comments Modal for Expert/Discussion cards */}
-      {commentsPostId && (
-        <CommentsModal
-          communityPostId={commentsPostId}
-          visible={!!commentsPostId}
-          onClose={() => setCommentsPostId(null)}
-        />
-      )}
     </SafeAreaView>
   );
 }

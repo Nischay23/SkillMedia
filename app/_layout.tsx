@@ -1,30 +1,28 @@
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context";
 import InitialLayout from "@/components/InitialLayout";
-import { ToastProvider } from "@/components/ui/Toast";
 import ClerkAndConvexProvider from "@/providers/ClerkAndConvexProvider";
 import {
   ThemeProvider,
   useTheme,
 } from "@/providers/ThemeProvider";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import * as NavigationBar from "expo-navigation-bar";
 import { SplashScreen } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useFonts } from "expo-font";
+import { useCallback, useEffect } from "react";
+import * as NavigationBar from "expo-navigation-bar";
 import { Platform } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 SplashScreen.preventAutoHideAsync();
 
 // Inner component to access theme after provider is set up
 function ThemedApp() {
-  const { theme, isDark, fontsLoaded } = useTheme();
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
-    if (Platform.OS === "android" && fontsLoaded) {
+    if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync(
         theme.colors.background,
       );
@@ -32,38 +30,37 @@ function ThemedApp() {
         isDark ? "light" : "dark",
       );
     }
-  }, [theme.colors.background, isDark, fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
+  }, [theme.colors.background, isDark]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <ToastProvider>
-          <SafeAreaProvider>
-            <SafeAreaView
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.background,
-              }}
-            >
-              <InitialLayout />
-            </SafeAreaView>
-            <StatusBar
-              style={isDark ? "light" : "dark"}
-              translucent
-              backgroundColor="transparent"
-            />
-          </SafeAreaProvider>
-        </ToastProvider>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <InitialLayout />
+      </SafeAreaView>
+      <StatusBar
+        style={isDark ? "light" : "dark"}
+        translucent
+        backgroundColor="transparent"
+      />
+    </SafeAreaProvider>
   );
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    "JetBrainsMono-Medium": require("../assets/fonts/JetBrainsMono-Medium.ttf"),
+    Roboto: require("../assets/fonts/SpaceMono-Regular.ttf"), // Using available font as fallback
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) await SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
   return (
     <ClerkAndConvexProvider>
       <ThemeProvider>

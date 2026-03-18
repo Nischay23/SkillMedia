@@ -1,6 +1,6 @@
 // convex/seedData.ts
-import { Id } from "./_generated/dataModel";
 import { mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Helper to retrieve a FilterOption ID by its name and parent,
@@ -16,7 +16,7 @@ async function getFilterOptionIdByName(
     | "sector"
     | "subSector"
     | "branch"
-    | "role"
+    | "role",
 ): Promise<Id<"FilterOption"> | undefined> {
   let query = ctx.db
     .query("FilterOption")
@@ -24,17 +24,17 @@ async function getFilterOptionIdByName(
 
   if (parentId === null) {
     query = query.filter((q: any) =>
-      q.eq(q.field("parentId"), undefined)
+      q.eq(q.field("parentId"), undefined),
     ); // Root level check
   } else if (parentId !== undefined) {
     query = query.filter((q: any) =>
-      q.eq(q.field("parentId"), parentId)
+      q.eq(q.field("parentId"), parentId),
     );
   }
 
   if (type) {
     query = query.filter((q: any) =>
-      q.eq(q.field("type"), type)
+      q.eq(q.field("type"), type),
     );
   }
 
@@ -59,7 +59,7 @@ export const seedFilterOptions = mutation({
       await ctx.db.delete(option._id);
     }
     console.log(
-      `Cleared ${existingOptions.length} existing filter options and associated data.`
+      `Cleared ${existingOptions.length} existing filter options and associated data.`,
     );
 
     const createdFilterIds: {
@@ -86,7 +86,7 @@ export const seedFilterOptions = mutation({
         avgSalary?: string;
         relevantExams?: string;
         image?: string; // New field for path images
-      }
+      },
     ): Promise<void> => {
       const parentConvexId = parentManualId
         ? createdFilterIds[parentManualId]
@@ -98,7 +98,7 @@ export const seedFilterOptions = mutation({
         !parentConvexId
       ) {
         console.error(
-          `ERROR: Parent ID '${parentManualId}' not found for '${name}' (manualId: ${manualId}). Skipping.`
+          `ERROR: Parent ID '${parentManualId}' not found for '${name}' (manualId: ${manualId}). Skipping.`,
         );
         return;
       }
@@ -118,7 +118,7 @@ export const seedFilterOptions = mutation({
       });
       createdFilterIds[manualId] = newId;
       console.log(
-        `  CREATED: ${type} - "${name}" (Manual ID: ${manualId} -> Convex ID: ${newId})`
+        `  CREATED: ${type} - "${name}" (Manual ID: ${manualId} -> Convex ID: ${newId})`,
       );
     };
 
@@ -137,7 +137,7 @@ export const seedFilterOptions = mutation({
           "UPSC CSE, SSC CGL, CAT, GATE, Bank PO Exams",
         image:
           "https://via.placeholder.com/400x200/4CAF50/FFFFFF?text=Graduation",
-      }
+      },
     );
     await insertFilterOption(
       "qual_12th",
@@ -153,7 +153,7 @@ export const seedFilterOptions = mutation({
           "NDA, SSC CHSL, Railway Group D, State Police Exams",
         image:
           "https://via.placeholder.com/400x200/2196F3/FFFFFF?text=12th+Standard",
-      }
+      },
     );
     await insertFilterOption(
       "qual_10th",
@@ -169,7 +169,7 @@ export const seedFilterOptions = mutation({
           "SSC MTS, Railway Group D, ITI Entrance Exams",
         image:
           "https://via.placeholder.com/400x200/FFC107/000000?text=10th+Standard",
-      }
+      },
     );
     await insertFilterOption(
       "qual_diploma",
@@ -185,7 +185,7 @@ export const seedFilterOptions = mutation({
           "JE Exams, PSU Diploma Trainee Exams",
         image:
           "https://via.placeholder.com/400x200/9C27B0/FFFFFF?text=Diploma",
-      }
+      },
     );
 
     // --- 2. Job Categories (Under 'Graduation' for this example) ---
@@ -199,7 +199,7 @@ export const seedFilterOptions = mutation({
           "Explore stable and prestigious career opportunities in various government sectors at central and state levels.",
         image:
           "https://via.placeholder.com/400x200/607D8B/FFFFFF?text=Government+Jobs",
-      }
+      },
     );
     await insertFilterOption(
       "cat_private",
@@ -211,7 +211,7 @@ export const seedFilterOptions = mutation({
           "Dive into the dynamic and growth-oriented private sector, offering diverse roles across industries.",
         image:
           "https://via.placeholder.com/400x200/FF9800/FFFFFF?text=Private+Jobs",
-      }
+      },
     );
     await insertFilterOption(
       "cat_business",
@@ -223,7 +223,7 @@ export const seedFilterOptions = mutation({
           "Learn about starting your own venture, becoming a freelancer, or joining startup ecosystems.",
         image:
           "https://via.placeholder.com/400x200/795548/FFFFFF?text=Entrepreneurship",
-      }
+      },
     );
     await insertFilterOption(
       "cat_sports",
@@ -235,7 +235,7 @@ export const seedFilterOptions = mutation({
           "Careers related to professional sports, coaching, sports management, and fitness industries.",
         image:
           "https://via.placeholder.com/400x200/E91E63/FFFFFF?text=Sports",
-      }
+      },
     );
     await insertFilterOption(
       "cat_agri",
@@ -247,7 +247,7 @@ export const seedFilterOptions = mutation({
           "Opportunities in farming, agricultural research, food processing, and related rural development sectors.",
         image:
           "https://via.placeholder.com/400x200/8BC34A/FFFFFF?text=Agriculture",
-      }
+      },
     );
 
     // --- 3. Sectors (Under Categories) ---
@@ -264,7 +264,7 @@ export const seedFilterOptions = mutation({
           "CDS, AFCAT, UPSC CAPF, NDA (for 12th qual, but roles here for grad)",
         image:
           "https://via.placeholder.com/400x200/00008B/FFFFFF?text=Defence",
-      }
+      },
     );
     await insertFilterOption(
       "sec_banking_govt",
@@ -278,7 +278,7 @@ export const seedFilterOptions = mutation({
           "IBPS PO/Clerk, SBI PO/Clerk, RBI Grade B",
         image:
           "https://via.placeholder.com/400x200/26A69A/FFFFFF?text=Govt+Banking",
-      }
+      },
     );
     await insertFilterOption(
       "sec_railways",
@@ -291,7 +291,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "RRB NTPC, RRB JE, RRB Group D",
         image:
           "https://via.placeholder.com/400x200/FF5722/FFFFFF?text=Indian+Railways",
-      }
+      },
     );
     await insertFilterOption(
       "sec_civil_svc",
@@ -305,7 +305,7 @@ export const seedFilterOptions = mutation({
           "UPSC Civil Services Exam (CSE), State PSC Exams",
         image:
           "https://via.placeholder.com/400x200/5E35B1/FFFFFF?text=Civil+Services",
-      }
+      },
     );
 
     // Under Private Jobs
@@ -319,7 +319,7 @@ export const seedFilterOptions = mutation({
           "Explore the fast-paced world of Information Technology, including software development, data, and cybersecurity.",
         image:
           "https://via.placeholder.com/400x200/008080/FFFFFF?text=IT+Software",
-      }
+      },
     );
     await insertFilterOption(
       "sec_manufacturing",
@@ -331,7 +331,7 @@ export const seedFilterOptions = mutation({
           "Careers in product design, production, quality control, and supply chain within traditional and advanced manufacturing.",
         image:
           "https://via.placeholder.com/400x200/757575/FFFFFF?text=Manufacturing",
-      }
+      },
     );
     await insertFilterOption(
       "sec_finance_private",
@@ -343,7 +343,7 @@ export const seedFilterOptions = mutation({
           "Opportunities in private banks, investment firms, wealth management, and fintech startups.",
         image:
           "https://via.placeholder.com/400x200/3F51B5/FFFFFF?text=Private+Finance",
-      }
+      },
     );
     await insertFilterOption(
       "sec_retail",
@@ -355,7 +355,7 @@ export const seedFilterOptions = mutation({
           "Roles in sales, marketing, operations, logistics, and customer experience in online and offline retail.",
         image:
           "https://via.placeholder.com/400x200/FFEB3B/000000?text=Retail",
-      }
+      },
     );
 
     // --- 4. Sub-Sectors (Under Sectors) ---
@@ -370,7 +370,7 @@ export const seedFilterOptions = mutation({
           "Life as an officer or jawan in the Indian Army, focusing on land-based operations and defense.",
         image:
           "https://via.placeholder.com/400x200/0D47A1/FFFFFF?text=Indian+Army",
-      }
+      },
     );
     await insertFilterOption(
       "sub_navy",
@@ -382,7 +382,7 @@ export const seedFilterOptions = mutation({
           "Careers in the naval forces, involving maritime operations, engineering, and logistics.",
         image:
           "https://via.placeholder.com/400x200/1565C0/FFFFFF?text=Indian+Navy",
-      }
+      },
     );
     await insertFilterOption(
       "sub_airforce",
@@ -394,7 +394,7 @@ export const seedFilterOptions = mutation({
           "Opportunities in aviation, ground duties, and technical roles within the Indian Air Force.",
         image:
           "https://via.placeholder.com/400x200/1976D2/FFFFFF?text=Indian+Air+Force",
-      }
+      },
     );
     await insertFilterOption(
       "sub_paramil",
@@ -406,7 +406,7 @@ export const seedFilterOptions = mutation({
           "Roles in central armed police forces like CRPF, BSF, CISF, ITBP, and SSB, maintaining internal security.",
         image:
           "https://via.placeholder.com/400x200/2196F3/FFFFFF?text=Paramilitary",
-      }
+      },
     );
 
     // Under IT & Software
@@ -420,7 +420,7 @@ export const seedFilterOptions = mutation({
           "The core of IT, focusing on designing, coding, and maintaining software applications.",
         image:
           "https://via.placeholder.com/400x200/4CAF50/FFFFFF?text=Software+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "sub_it_data_sci",
@@ -432,7 +432,7 @@ export const seedFilterOptions = mutation({
           "Using data to derive insights, build predictive models, and develop artificial intelligence solutions.",
         image:
           "https://via.placeholder.com/400x200/8BC34A/FFFFFF?text=Data+Science",
-      }
+      },
     );
     await insertFilterOption(
       "sub_it_cyb_sec",
@@ -444,7 +444,7 @@ export const seedFilterOptions = mutation({
           "Protecting computer systems and networks from digital attacks and unauthorized access.",
         image:
           "https://via.placeholder.com/400x200/FFEB3B/000000?text=Cybersecurity",
-      }
+      },
     );
 
     // --- 5. Branches (Under Sub-Sectors) ---
@@ -459,7 +459,7 @@ export const seedFilterOptions = mutation({
           "Officers responsible for commanding ships, navigation, weapons systems, and overall operations.",
         requirements:
           "Graduate in any stream or specific engineering branches (depending on entry).",
-      }
+      },
     );
     await insertFilterOption(
       "branch_navy_engg",
@@ -471,7 +471,7 @@ export const seedFilterOptions = mutation({
           "Maintaining and operating the propulsion systems, machinery, and technical aspects of naval vessels.",
         requirements:
           "B.Tech/B.E. in Mechanical, Marine, Electrical, or equivalent disciplines.",
-      }
+      },
     );
 
     // Under Software Development
@@ -485,7 +485,7 @@ export const seedFilterOptions = mutation({
           "Building the user-facing part of websites and applications that users interact with directly.",
         requirements:
           "Strong grasp of HTML, CSS, JavaScript, and frameworks like React, Vue, or Angular.",
-      }
+      },
     );
     await insertFilterOption(
       "branch_soft_dev_back",
@@ -497,7 +497,7 @@ export const seedFilterOptions = mutation({
           "Developing the server-side logic, databases, and APIs that power applications.",
         requirements:
           "Proficiency in languages like Python, Java, Node.js, and understanding of databases.",
-      }
+      },
     );
     await insertFilterOption(
       "branch_soft_dev_full",
@@ -509,7 +509,7 @@ export const seedFilterOptions = mutation({
           "Combining both frontend and backend skills to build complete web applications from end to end.",
         requirements:
           "A blend of frontend (HTML, CSS, JS, React/Vue) and backend (Node.js/Python/Java, databases) expertise.",
-      }
+      },
     );
 
     // --- 6. Roles (Under Branches - the deepest level for specific career exploration) ---
@@ -529,7 +529,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "AFCAT, CDS (for flying branch)",
         image:
           "https://via.placeholder.com/400x200/1565C0/FFFFFF?text=Navy+Pilot",
-      }
+      },
     );
     await insertFilterOption(
       "role_navy_observer",
@@ -545,7 +545,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "AFCAT",
         image:
           "https://via.placeholder.com/400x200/1565C0/FFFFFF?text=Navy+Observer",
-      }
+      },
     );
     await insertFilterOption(
       "role_navy_logistics",
@@ -561,7 +561,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "Indian Navy SSC Entry",
         image:
           "https://via.placeholder.com/400x200/1565C0/FFFFFF?text=Navy+Logistics",
-      }
+      },
     );
 
     // Under Frontend Development
@@ -580,7 +580,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Portfolio & Skills-based)",
         image:
           "https://via.placeholder.com/400x200/000000/61DAFB?text=React+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "role_vue_dev",
@@ -597,7 +597,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Portfolio & Skills-based)",
         image:
           "https://via.placeholder.com/400x200/42B883/FFFFFF?text=Vue+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "role_angular_dev",
@@ -614,7 +614,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Portfolio & Skills-based)",
         image:
           "https://via.placeholder.com/400x200/DD0031/FFFFFF?text=Angular+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "role_ui_ux_designer",
@@ -631,7 +631,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Portfolio & Portfolio-based)",
         image:
           "https://via.placeholder.com/400x200/F06292/FFFFFF?text=UI%2FUX+Designer",
-      }
+      },
     );
 
     // Under Backend Development
@@ -650,7 +650,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Skills-based)",
         image:
           "https://via.placeholder.com/400x200/339933/FFFFFF?text=Node.js+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "role_python_dev",
@@ -667,7 +667,7 @@ export const seedFilterOptions = mutation({
         relevantExams: "N/A (Skills-based)",
         image:
           "https://via.placeholder.com/400x200/3776AB/FFFFFF?text=Python+Dev",
-      }
+      },
     );
     await insertFilterOption(
       "role_java_dev",
@@ -685,7 +685,7 @@ export const seedFilterOptions = mutation({
           "Oracle Certified Professional (OCP)",
         image:
           "https://via.placeholder.com/400x200/007396/FFFFFF?text=Java+Dev",
-      }
+      },
     );
 
     console.log("--- Filter Options Seeding Complete ---");
@@ -700,11 +700,11 @@ export const seedCommunityPosts = mutation({
   args: {},
   handler: async (ctx) => {
     console.log(
-      "--- Starting Sample Community Posts Seeding ---"
+      "--- Starting Sample Community Posts Seeding ---",
     );
 
     console.log(
-      "Clearing existing CommunityPost documents and associated likes, comments, savedContent..."
+      "Clearing existing CommunityPost documents and associated likes, comments, savedContent...",
     );
     const existingPosts = await ctx.db
       .query("communityPosts")
@@ -713,7 +713,7 @@ export const seedCommunityPosts = mutation({
       await ctx.db.delete(post._id);
     }
     console.log(
-      `Cleared ${existingPosts.length} existing community posts and associated data.`
+      `Cleared ${existingPosts.length} existing community posts and associated data.`,
     );
 
     let adminUser = await ctx.db
@@ -733,7 +733,7 @@ export const seedCommunityPosts = mutation({
       });
       adminUser = (await ctx.db.get(dummyUserId))!;
       console.log(
-        `Created dummy admin user: ${adminUser.username}`
+        `Created dummy admin user: ${adminUser.username}`,
       );
     }
     const createdByUserId: Id<"users"> = adminUser._id;
@@ -742,26 +742,26 @@ export const seedCommunityPosts = mutation({
       ctx,
       "React Developer",
       null,
-      "role"
+      "role",
     );
     const pythonDevId = await getFilterOptionIdByName(
       ctx,
       "Python Developer",
       null,
-      "role"
+      "role",
     );
     const navyPilotId = await getFilterOptionIdByName(
       ctx,
       "SSC Pilot (Navy)",
       null,
-      "role"
+      "role",
     );
     const frontendDevBranchId =
       await getFilterOptionIdByName(
         ctx,
         "Frontend Development",
         null,
-        "branch"
+        "branch",
       );
 
     if (
@@ -771,14 +771,13 @@ export const seedCommunityPosts = mutation({
       !frontendDevBranchId
     ) {
       console.error(
-        "Missing critical FilterOption IDs for seeding community posts. Run seedFilterOptions first."
+        "Missing critical FilterOption IDs for seeding community posts. Run seedFilterOptions first.",
       );
       return;
     }
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
-      title: "Just landed my first React dev internship!",
       content:
         "Just landed my first React dev internship! Super excited. Any tips for a beginner on state management in large apps?",
       imageUrl:
@@ -787,8 +786,6 @@ export const seedCommunityPosts = mutation({
         reactDevId,
         frontendDevBranchId,
       ],
-      status: "published" as const,
-      publishedAt: Date.now(),
       likes: 5,
       comments: 2,
       createdAt: Date.now(),
@@ -796,19 +793,16 @@ export const seedCommunityPosts = mutation({
       isActive: true,
     });
     console.log(
-      "  Added 'React Dev Internship' community post."
+      "  Added 'React Dev Internship' community post.",
     );
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
-      title: "Best Python frameworks for scalable APIs?",
       content:
         "What are the best frameworks for building scalable APIs with Python, besides Django and Flask?",
       imageUrl:
         "https://via.placeholder.com/400x250/4B0082/FFFFFF?text=Python+API",
       linkedFilterOptionIds: [pythonDevId],
-      status: "published" as const,
-      publishedAt: Date.now() - 3600 * 1000,
       likes: 8,
       comments: 4,
       createdAt: Date.now() - 3600 * 1000,
@@ -819,14 +813,11 @@ export const seedCommunityPosts = mutation({
 
     await ctx.db.insert("communityPosts", {
       userId: createdByUserId,
-      title: "Why I chose Defence Services - Indian Navy",
       content:
         "The discipline and leadership skills learned in the armed forces are unparalleled. Highly recommend exploring this path if you seek purpose and growth! #IndianNavy #DefenceServices",
       imageUrl:
         "https://via.placeholder.com/400x250/00008B/FFFFFF?text=Motivation",
       linkedFilterOptionIds: [navyPilotId],
-      status: "published" as const,
-      publishedAt: Date.now() - 2 * 24 * 3600 * 1000,
       likes: 12,
       comments: 3,
       createdAt: Date.now() - 2 * 24 * 3600 * 1000,
@@ -834,11 +825,11 @@ export const seedCommunityPosts = mutation({
       isActive: true,
     });
     console.log(
-      "  Added 'Defence Services Motivation' community post."
+      "  Added 'Defence Services Motivation' community post.",
     );
 
     console.log(
-      "--- Sample Community Posts Seeding Complete ---"
+      "--- Sample Community Posts Seeding Complete ---",
     );
   },
 });
