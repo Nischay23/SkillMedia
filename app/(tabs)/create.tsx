@@ -2,7 +2,6 @@ import { Loader } from "@/components/Loader";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
-import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import * as ImagePicker from "expo-image-picker";
@@ -28,12 +27,16 @@ import {
 export default function CreatePost() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
-  const { userId } = useAuth();
-  const [caption, setCaption] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [selectedImage, setSelectedImage] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
+  const generateUploadUrl = useMutation(
+    api.posts.generateUploadUrl,
+  );
   const createPost = useMutation(api.posts.createPost);
 
   const styles = useThemedStyles((theme) => ({
@@ -88,12 +91,13 @@ export default function CreatePost() {
   }));
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
     if (!result.canceled && result.assets[0]) {
       setSelectedImage(result.assets[0].uri);
@@ -101,40 +105,52 @@ export default function CreatePost() {
   };
 
   const handlePost = async () => {
-    if (!selectedImage) {
-      Alert.alert("Error", "Please select an image");
+    if (!title.trim()) {
+      Alert.alert("Error", "Please enter a title");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Get upload URL
-      const uploadUrl = await generateUploadUrl();
+      let storageId;
 
-      // Upload image
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
+      // Upload image if selected
+      if (selectedImage) {
+        // Get upload URL
+        const uploadUrl = await generateUploadUrl();
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": blob.type },
-        body: blob,
-      });
+        // Upload image
+        const response = await fetch(selectedImage);
+        const blob = await response.blob();
 
-      const { storageId } = await uploadResponse.json();
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": blob.type },
+          body: blob,
+        });
+
+        const uploadResult = await uploadResponse.json();
+        storageId = uploadResult.storageId;
+      }
 
       // Create post
       await createPost({
-        caption,
+        title: title.trim(),
+        content: content.trim() || title.trim(),
         storageId,
+        status: "published",
       });
 
-      setCaption("");
+      setTitle("");
+      setContent("");
       setSelectedImage(null);
       router.push("/(tabs)");
     } catch (error) {
       console.error("Error creating post:", error);
-      Alert.alert("Error", "Failed to create post. Please try again.");
+      Alert.alert(
+        "Error",
+        "Failed to create post. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +183,9 @@ export default function CreatePost() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={
+          Platform.OS === "ios" ? "padding" : "height"
+        }
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -203,11 +221,25 @@ export default function CreatePost() {
           </TouchableOpacity>
 
           <TextInput
-            style={styles.captionInput}
-            placeholder="Write a caption..."
+            style={[
+              styles.captionInput,
+              {
+                minHeight: 50,
+                marginBottom: theme.spacing.md,
+              },
+            ]}
+            placeholder="Title"
             placeholderTextColor={theme.colors.textMuted}
-            value={caption}
-            onChangeText={setCaption}
+            value={title}
+            onChangeText={setTitle}
+          />
+
+          <TextInput
+            style={styles.captionInput}
+            placeholder="Write something..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={content}
+            onChangeText={setContent}
             multiline
             numberOfLines={4}
           />
@@ -217,7 +249,7 @@ export default function CreatePost() {
               title="Share Post"
               onPress={handlePost}
               variant="primary"
-              disabled={!selectedImage}
+              disabled={!title.trim()}
             />
           </View>
         </ScrollView>

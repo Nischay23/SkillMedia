@@ -8,6 +8,7 @@ import BottomSheet, {
 import { LinearGradient } from "expo-linear-gradient";
 import React, {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -86,9 +87,24 @@ function GroupCard({
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
+  const badgeScale = useSharedValue(group.unreadCount > 0 ? 1 : 0);
+
+  // Animate badge when it appears
+  useEffect(() => {
+    if (group.unreadCount > 0) {
+      badgeScale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    } else {
+      badgeScale.value = withSpring(0, { damping: 10, stiffness: 300 });
+    }
+  }, [group.unreadCount, badgeScale]);
 
   const scaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+
+  const badgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: badgeScale.value }],
+    opacity: badgeScale.value,
   }));
 
   const handlePressIn = useCallback(() => {
@@ -104,6 +120,23 @@ function GroupCard({
       stiffness: 300,
     });
   }, [scale]);
+
+  // Format last message time
+  const formatMessageTime = (timestamp: number | undefined) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Now";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  };
 
   return (
     <Animated.View
@@ -141,7 +174,7 @@ function GroupCard({
             scaleStyle,
           ]}
         >
-          {/* Avatar with active dot */}
+          {/* Avatar with unread badge */}
           <View style={{ position: "relative" }}>
             <View
               style={{
@@ -169,20 +202,41 @@ function GroupCard({
                 </Typography>
               </LinearGradient>
             </View>
-            {/* Active dot */}
-            <View
-              style={{
-                position: "absolute",
-                bottom: 0,
-                right: 0,
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: "#22C55E",
-                borderWidth: 2,
-                borderColor: theme.colors.surface,
-              }}
-            />
+            {/* Unread badge */}
+            {group.unreadCount > 0 && (
+              <Animated.View
+                style={[
+                  {
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    minWidth: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    overflow: "hidden",
+                  },
+                  badgeStyle,
+                ]}
+              >
+                <LinearGradient
+                  colors={["#EF4444", "#F87171"]}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 6,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    weight="bold"
+                    style={{ color: "#FFFFFF", fontSize: 11 }}
+                  >
+                    {group.unreadCount > 99 ? "99+" : group.unreadCount}
+                  </Typography>
+                </LinearGradient>
+              </Animated.View>
+            )}
           </View>
 
           {/* Content */}
@@ -197,7 +251,7 @@ function GroupCard({
             >
               <Typography
                 variant="body"
-                weight="semibold"
+                weight={group.unreadCount > 0 ? "bold" : "semibold"}
                 color="text"
                 numberOfLines={1}
                 style={{ flex: 1, fontSize: 15 }}
@@ -206,34 +260,45 @@ function GroupCard({
               </Typography>
               <Typography
                 variant="caption"
-                color="textMuted"
+                color={group.unreadCount > 0 ? "primary" : "textMuted"}
                 style={{ fontSize: 11, marginLeft: 8 }}
               >
-                Active
+                {formatMessageTime(group.lastMessage?.createdAt)}
               </Typography>
             </View>
 
-            {/* Row 2: Career path chip */}
-            <View
-              style={{
-                alignSelf: "flex-start",
-                backgroundColor:
-                  theme.colors.primary + "18",
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 3,
-                marginTop: 6,
-              }}
-            >
+            {/* Row 2: Last message preview or career path */}
+            {group.lastMessage ? (
               <Typography
                 variant="caption"
-                color="primary"
-                weight="semibold"
-                style={{ fontSize: 11 }}
+                color={group.unreadCount > 0 ? "text" : "textMuted"}
+                weight={group.unreadCount > 0 ? "medium" : "normal"}
+                numberOfLines={1}
+                style={{ marginTop: 4, fontSize: 13 }}
               >
-                {group.filterOptionName}
+                {group.lastMessage.senderName}: {group.lastMessage.content}
               </Typography>
-            </View>
+            ) : (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: theme.colors.primary + "18",
+                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                  marginTop: 6,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  weight="semibold"
+                  style={{ fontSize: 11 }}
+                >
+                  {group.filterOptionName}
+                </Typography>
+              </View>
+            )}
 
             {/* Row 3: Member count */}
             <View

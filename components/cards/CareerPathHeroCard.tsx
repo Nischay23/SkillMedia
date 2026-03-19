@@ -1,12 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import {
-  Alert,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -16,7 +11,10 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Typography } from "@/components/ui/Typography";
-import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 import RankingBadge from "@/components/RankingBadge";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -97,8 +95,12 @@ export default function CareerPathHeroCard({
     api.groups.getIsMember,
     group ? { groupId: group._id } : "skip",
   );
-  const joinGroupMutation = useMutation(api.groups.joinGroup);
-  const createGroupMutation = useMutation(api.groups.createGroup);
+  const joinGroupMutation = useMutation(
+    api.groups.joinGroup,
+  );
+  const createGroupMutation = useMutation(
+    api.groups.createGroup,
+  );
 
   // Join button animation
   const joinScale = useSharedValue(1);
@@ -133,7 +135,7 @@ export default function CareerPathHeroCard({
       Alert.alert(
         "Coming Soon",
         "Community coming soon for this career path!",
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     }
   };
@@ -425,7 +427,10 @@ export default function CareerPathHeroCard({
                 onPress={handleOpenGroup}
               >
                 <Animated.View
-                  style={[styles.openButton, joinScaleStyle]}
+                  style={[
+                    styles.openButton,
+                    joinScaleStyle,
+                  ]}
                 >
                   <Ionicons
                     name="chatbubbles-outline"
@@ -483,7 +488,8 @@ export default function CareerPathHeroCard({
                     marginTop: 6,
                   }}
                 >
-                  {group.memberCount.toLocaleString()} members
+                  {group.memberCount.toLocaleString()}{" "}
+                  members
                 </Typography>
               </View>
             ) : (
@@ -498,7 +504,10 @@ export default function CareerPathHeroCard({
                 onPress={handleStartCommunity}
               >
                 <Animated.View
-                  style={[styles.startButton, joinScaleStyle]}
+                  style={[
+                    styles.startButton,
+                    joinScaleStyle,
+                  ]}
                 >
                   <Ionicons
                     name="add-circle-outline"
@@ -508,7 +517,9 @@ export default function CareerPathHeroCard({
                   <Typography
                     variant="body"
                     weight="semibold"
-                    style={{ color: "rgba(255,255,255,0.6)" }}
+                    style={{
+                      color: "rgba(255,255,255,0.6)",
+                    }}
                   >
                     Start Community
                   </Typography>

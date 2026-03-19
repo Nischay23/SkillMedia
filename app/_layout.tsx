@@ -1,6 +1,7 @@
 import InitialLayout from "@/components/InitialLayout";
 import { ToastProvider } from "@/components/ui/Toast";
 import ClerkAndConvexProvider from "@/providers/ClerkAndConvexProvider";
+import { PushNotificationProvider } from "@/providers/PushNotificationProvider";
 import {
   ThemeProvider,
   useTheme,
@@ -42,21 +43,23 @@ function ThemedApp() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <ToastProvider>
-          <SafeAreaProvider>
-            <SafeAreaView
-              style={{
-                flex: 1,
-                backgroundColor: theme.colors.background,
-              }}
-            >
-              <InitialLayout />
-            </SafeAreaView>
-            <StatusBar
-              style={isDark ? "light" : "dark"}
-              translucent
-              backgroundColor="transparent"
-            />
-          </SafeAreaProvider>
+          <PushNotificationProvider>
+            <SafeAreaProvider>
+              <SafeAreaView
+                style={{
+                  flex: 1,
+                  backgroundColor: theme.colors.background,
+                }}
+              >
+                <InitialLayout />
+              </SafeAreaView>
+              <StatusBar
+                style={isDark ? "light" : "dark"}
+                translucent
+                backgroundColor="transparent"
+              />
+            </SafeAreaProvider>
+          </PushNotificationProvider>
         </ToastProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

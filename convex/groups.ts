@@ -16,6 +16,106 @@ export const getGroupByFilterOption = query({
   },
 });
 
+// Mark group as read - updates lastReadAt timestamp
+export const markGroupAsRead = mutation({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const membership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
+      )
+      .first();
+
+    if (membership) {
+      await ctx.db.patch(membership._id, {
+        lastReadAt: Date.now(),
+      });
+    }
+  },
+});
+
+// Get unread count for a specific group
+export const getUnreadCount = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const membership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
+      )
+      .first();
+
+    if (!membership) return 0;
+
+    const lastReadAt = membership.lastReadAt ?? 0;
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_group_and_created", (q) =>
+        q.eq("groupId", args.groupId),
+      )
+      .filter((q) =>
+        q.and(
+          q.gt(q.field("createdAt"), lastReadAt),
+          q.neq(q.field("userId"), user._id),
+          q.neq(q.field("isDeleted"), true),
+        ),
+      )
+      .collect();
+
+    return messages.length;
+  },
+});
+
+// Get total unread count across all groups
+export const getTotalUnreadCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const memberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    let total = 0;
+
+    for (const membership of memberships) {
+      const group = await ctx.db.get(membership.groupId);
+      if (!group || !group.isActive) continue;
+
+      const lastReadAt = membership.lastReadAt ?? 0;
+
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_group_and_created", (q) =>
+          q.eq("groupId", membership.groupId),
+        )
+        .filter((q) =>
+          q.and(
+            q.gt(q.field("createdAt"), lastReadAt),
+            q.neq(q.field("userId"), user._id),
+            q.neq(q.field("isDeleted"), true),
+          ),
+        )
+        .collect();
+
+      total += messages.length;
+    }
+
+    return total;
+  },
+});
+
 export const getMyGroups = query({
   args: {},
   handler: async (ctx) => {
@@ -35,15 +135,63 @@ export const getMyGroups = query({
           group.filterOptionId,
         );
 
+        // Calculate unread count
+        const lastReadAt = m.lastReadAt ?? 0;
+        const unreadMessages = await ctx.db
+          .query("messages")
+          .withIndex("by_group_and_created", (q) =>
+            q.eq("groupId", m.groupId),
+          )
+          .filter((q) =>
+            q.and(
+              q.gt(q.field("createdAt"), lastReadAt),
+              q.neq(q.field("userId"), user._id),
+              q.neq(q.field("isDeleted"), true),
+            ),
+          )
+          .collect();
+
+        // Get last message for preview
+        const lastMessage = await ctx.db
+          .query("messages")
+          .withIndex("by_group_and_created", (q) =>
+            q.eq("groupId", m.groupId),
+          )
+          .filter((q) => q.neq(q.field("isDeleted"), true))
+          .order("desc")
+          .first();
+
+        let lastMessagePreview = null;
+        if (lastMessage) {
+          const sender = await ctx.db.get(
+            lastMessage.userId,
+          );
+          lastMessagePreview = {
+            content:
+              lastMessage.type === "image"
+                ? "📷 Photo"
+                : lastMessage.content,
+            senderName: sender?.fullname ?? "Unknown",
+            createdAt: lastMessage.createdAt,
+          };
+        }
+
         return {
           ...group,
           filterOptionName: filterOption?.name ?? "Unknown",
           role: m.role,
+          unreadCount: unreadMessages.length,
+          lastMessage: lastMessagePreview,
         };
       }),
     );
 
-    return groups.filter(Boolean);
+    // Sort by last message time (most recent first)
+    return groups.filter(Boolean).sort((a, b) => {
+      const aTime = a?.lastMessage?.createdAt ?? 0;
+      const bTime = b?.lastMessage?.createdAt ?? 0;
+      return bTime - aTime;
+    });
   },
 });
 

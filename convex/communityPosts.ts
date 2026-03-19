@@ -222,6 +222,7 @@ export const createCommunityPost = mutation({
     title: v.string(),
     content: v.string(),
     imageUrl: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
     linkedFilterOptionIds: v.optional(
       v.array(v.id("FilterOption")),
     ),
@@ -235,11 +236,18 @@ export const createCommunityPost = mutation({
 
     const status = args.status || "draft";
 
+    // Resolve storageId to URL if provided
+    let imageUrl = args.imageUrl;
+    if (args.storageId) {
+      imageUrl = await ctx.storage.getUrl(args.storageId) ?? undefined;
+    }
+
     const postId = await ctx.db.insert("communityPosts", {
       userId: currentUser._id,
       title: args.title,
       content: args.content,
-      imageUrl: args.imageUrl,
+      imageUrl,
+      storageId: args.storageId,
       linkedFilterOptionIds:
         args.linkedFilterOptionIds || [],
       status: status,
@@ -253,6 +261,15 @@ export const createCommunityPost = mutation({
     });
 
     return postId;
+  },
+});
+
+// Generate upload URL for image uploads
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await getAuthenticatedUser(ctx);
+    return await ctx.storage.generateUploadUrl();
   },
 });
 

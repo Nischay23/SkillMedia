@@ -20,7 +20,7 @@ export const createUser = mutation({
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) =>
-        q.eq("clerkId", args.clerkId)
+        q.eq("clerkId", args.clerkId),
       )
       .first();
 
@@ -44,7 +44,7 @@ export const getUserByClerkId = query({
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) =>
-        q.eq("clerkId", args.clerkId)
+        q.eq("clerkId", args.clerkId),
       )
       .unique();
 
@@ -61,7 +61,7 @@ export const getCurrentUser = query({
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) =>
-        q.eq("clerkId", identity.subject)
+        q.eq("clerkId", identity.subject),
       )
       .unique();
 
@@ -84,8 +84,54 @@ export const updateProfile = mutation({
   },
 });
 
+// Save push notification token
+export const savePushToken = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    await ctx.db.patch(currentUser._id, {
+      pushToken: args.token,
+    });
+  },
+});
+
+// Get push tokens for users in a group (for sending notifications)
+export const getGroupMemberPushTokens = query({
+  args: {
+    groupId: v.id("groups"),
+    excludeUserId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const members = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group", (q) =>
+        q.eq("groupId", args.groupId),
+      )
+      .collect();
+
+    const tokens: string[] = [];
+
+    for (const member of members) {
+      if (
+        args.excludeUserId &&
+        member.userId === args.excludeUserId
+      ) {
+        continue;
+      }
+
+      const user = await ctx.db.get(member.userId);
+      if (user?.pushToken) {
+        tokens.push(user.pushToken);
+      }
+    }
+
+    return tokens;
+  },
+});
+
 export async function getAuthenticatedUser(
-  ctx: QueryCtx | MutationCtx
+  ctx: QueryCtx | MutationCtx,
 ) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthorized");
@@ -93,7 +139,7 @@ export async function getAuthenticatedUser(
   const currentUser = await ctx.db
     .query("users")
     .withIndex("by_clerk_id", (q) =>
-      q.eq("clerkId", identity.subject)
+      q.eq("clerkId", identity.subject),
     )
     .first();
 

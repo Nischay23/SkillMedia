@@ -13,6 +13,8 @@ export default defineSchema({
     clerkId: v.string(),
     isAdmin: v.optional(v.boolean()),
     createdAt: v.optional(v.number()),
+    // Push notification token
+    pushToken: v.optional(v.string()),
     // Temporary fields for migration
     image: v.optional(v.string()),
     followers: v.optional(v.number()),
@@ -200,7 +202,16 @@ export default defineSchema({
     type: v.union(
       v.literal("text"),
       v.literal("announcement"),
+      v.literal("image"),
     ),
+    // Image message fields
+    storageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
+    // Reactions
+    reactions: v.optional(v.array(v.object({
+      emoji: v.string(),
+      userId: v.id("users"),
+    }))),
     isPinned: v.optional(v.boolean()),
     isDeleted: v.optional(v.boolean()),
     createdAt: v.number(),
@@ -210,4 +221,22 @@ export default defineSchema({
       "groupId",
       "createdAt",
     ]),
+
+  // 12. reports table: Message reports
+  reports: defineTable({
+    reporterId: v.id("users"),
+    messageId: v.id("messages"),
+    groupId: v.id("groups"),
+    reason: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("dismissed"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_status", ["status"])
+    .index("by_message", ["messageId"])
+    .index("by_reporter_and_message", ["reporterId", "messageId"]),
 });
