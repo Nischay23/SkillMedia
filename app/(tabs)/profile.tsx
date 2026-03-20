@@ -15,7 +15,6 @@ import Animated, {
 } from "react-native-reanimated";
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -352,40 +351,52 @@ export default function Profile() {
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography variant="body" weight="bold" color="text">
                   {currentUser.posts}
-                </Text>
-                <Text style={styles.statLabel}>Posts</Text>
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  Posts
+                </Typography>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography variant="body" weight="bold" color="text">
                   {currentUser.followers}
-                </Text>
-                <Text style={styles.statLabel}>
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
                   Followers
-                </Text>
+                </Typography>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
+                <Typography variant="body" weight="bold" color="text">
                   {currentUser.following}
-                </Text>
-                <Text style={styles.statLabel}>
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
                   Following
-                </Text>
+                </Typography>
               </View>
             </View>
           </View>
 
           {/* Name + Bio */}
-          <Text style={styles.nameText}>
+          <Typography
+            variant="body"
+            weight="semibold"
+            color="text"
+            style={{ marginTop: 10 }}
+          >
             {currentUser.fullname}
-          </Text>
+          </Typography>
           {currentUser.bio && (
-            <Text style={styles.bioText} numberOfLines={2}>
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              numberOfLines={2}
+              style={{ marginTop: 2, lineHeight: 18 }}
+            >
               {currentUser.bio}
-            </Text>
+            </Typography>
           )}
 
           {/* Action row: Edit Profile + Share */}
@@ -398,9 +409,14 @@ export default function Profile() {
                 onPress={handleEditPress}
                 activeOpacity={0.7}
               >
-                <Text style={styles.editButtonText}>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  color="primary"
+                  style={{ fontSize: 13 }}
+                >
                   Edit profile
-                </Text>
+                </Typography>
               </TouchableOpacity>
             </Animated.View>
             <TouchableOpacity style={styles.shareButton}>

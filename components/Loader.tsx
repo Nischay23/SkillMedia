@@ -1,39 +1,34 @@
 // app/components/Loader.tsx
 import React from "react";
+import { View, ActivityIndicator } from "react-native";
+import { Typography } from "@/components/ui/Typography";
 import {
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-} from "react-native";
-import {
-  COLORS,
-  FontSize,
-  SpacingValues,
-} from "@/constants/theme"; // Import your colors
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 
-export const Loader = () => (
-  <View style={styles.container}>
-    <ActivityIndicator
-      size="large"
-      color={COLORS.primary}
-    />
-    <Text style={styles.text}>
-      Loading opportunities...
-    </Text>
-  </View>
-);
+export const Loader = () => {
+  const { theme } = useTheme();
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.background, // Use your app's background color
-  },
-  text: {
-    marginTop: 10,
-    color: COLORS.gray, // A readable color for loading text
-    fontSize: FontSize.body,
-  },
-});
+  const styles = useThemedStyles((t) => ({
+    container: {
+      flex: 1,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      backgroundColor: t.colors.background,
+    },
+  }));
+
+  return (
+    <View style={styles.container}>
+      <ActivityIndicator size="large" color={theme.colors.primary} />
+      <Typography
+        variant="body"
+        color="textMuted"
+        style={{ marginTop: 10 }}
+      >
+        Loading opportunities...
+      </Typography>
+    </View>
+  );
+};

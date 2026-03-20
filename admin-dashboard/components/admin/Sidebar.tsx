@@ -2,20 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListTree, FileText, Settings, Users, BookOpen } from "lucide-react";
+import { LayoutDashboard, ListTree, FileText, Settings, Users, BookOpen, Users2, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Filters", href: "/admin/filters", icon: ListTree },
   { name: "Posts", href: "/admin/posts", icon: FileText },
   { name: "Articles", href: "/admin/articles", icon: BookOpen },
+  { name: "Groups", href: "/admin/groups", icon: Users2 },
+  { name: "Reports", href: "/admin/reports", icon: Flag, hasBadge: true },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const reportCounts = useQuery(api.reports.getReportCounts);
+  const pendingReports = reportCounts?.pending ?? 0;
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-sidebar">
@@ -34,11 +40,11 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex flex-col gap-1 p-4">
         {navigation.map((item) => {
-          const isActive = 
-            item.href === "/admin" 
-              ? pathname === "/admin" 
+          const isActive =
+            item.href === "/admin"
+              ? pathname === "/admin"
               : pathname.startsWith(item.href);
-          
+
           return (
             <Link
               key={item.name}
@@ -52,6 +58,11 @@ export function Sidebar() {
             >
               <item.icon className="h-5 w-5" />
               {item.name}
+              {item.hasBadge && pendingReports > 0 && (
+                <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">
+                  {pendingReports > 99 ? "99+" : pendingReports}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useToast } from "@/components/admin/Toast";
-import { X, Loader2, Save } from "lucide-react";
+import {
+  X,
+  Loader2,
+  Save,
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  List,
+  ListOrdered,
+} from "lucide-react";
 
 interface ArticleEditorProps {
   isOpen: boolean;
@@ -32,6 +42,7 @@ export function ArticleEditor({
 }: ArticleEditorProps) {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [title, setTitle] = useState(article?.title ?? "");
   const [content, setContent] = useState(article?.content ?? "");
@@ -42,6 +53,91 @@ export function ArticleEditor({
   const updateArticle = useMutation(api.adminArticles.updateArticle);
 
   const isEditing = !!article;
+
+  // Markdown helper functions
+  const insertMarkdown = (before: string, after: string = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.slice(start, end);
+    const newText =
+      content.slice(0, start) +
+      before +
+      selectedText +
+      after +
+      content.slice(end);
+
+    setContent(newText);
+
+    // Restore focus and selection
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = selectedText
+        ? start + before.length + selectedText.length + after.length
+        : start + before.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const insertLinePrefix = (prefix: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Find the start of the current line
+    const lineStart = content.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = content.indexOf("\n", end);
+    const actualLineEnd = lineEnd === -1 ? content.length : lineEnd;
+
+    const selectedLines = content.slice(lineStart, actualLineEnd);
+    const lines = selectedLines.split("\n");
+    const newLines = lines.map((line) => prefix + line).join("\n");
+
+    const newText = content.slice(0, lineStart) + newLines + content.slice(actualLineEnd);
+    setContent(newText);
+
+    // Restore focus
+    setTimeout(() => {
+      textarea.focus();
+    }, 0);
+  };
+
+  const toolbarButtons = [
+    {
+      icon: Bold,
+      label: "Bold",
+      action: () => insertMarkdown("**", "**"),
+    },
+    {
+      icon: Italic,
+      label: "Italic",
+      action: () => insertMarkdown("_", "_"),
+    },
+    {
+      icon: Heading1,
+      label: "Heading 1",
+      action: () => insertLinePrefix("# "),
+    },
+    {
+      icon: Heading2,
+      label: "Heading 2",
+      action: () => insertLinePrefix("## "),
+    },
+    {
+      icon: List,
+      label: "Bullet List",
+      action: () => insertLinePrefix("- "),
+    },
+    {
+      icon: ListOrdered,
+      label: "Numbered List",
+      action: () => insertLinePrefix("1. "),
+    },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,9 +186,9 @@ export function ArticleEditor({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-2xl rounded-xl border border-border bg-card shadow-theme-xl animate-scale-in">
+      <div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card shadow-theme-xl animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
               {isEditing ? "Edit Article" : "New Article"}
@@ -127,17 +223,46 @@ export function ArticleEditor({
               />
             </div>
 
-            {/* Content */}
+            {/* Content with Markdown Toolbar */}
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">
                 Content <span className="text-xs text-muted-foreground">(Markdown supported)</span>
               </label>
+
+              {/* Markdown Toolbar */}
+              <div className="flex items-center gap-1 rounded-t-lg border border-b-0 border-border bg-muted/50 px-2 py-1.5">
+                {toolbarButtons.map((btn) => (
+                  <button
+                    key={btn.label}
+                    type="button"
+                    onClick={btn.action}
+                    title={btn.label}
+                    className="rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <btn.icon className="h-4 w-4" />
+                  </button>
+                ))}
+                <div className="mx-2 h-5 w-px bg-border" />
+                <span className="text-xs text-muted-foreground">
+                  **bold** · _italic_ · # heading
+                </span>
+              </div>
+
               <textarea
+                ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your article content here..."
-                rows={10}
-                className="input-field resize-none font-mono text-sm"
+                placeholder="Write your article content here...
+
+Use markdown for formatting:
+# Heading 1
+## Heading 2
+**bold text**
+_italic text_
+- bullet point
+1. numbered list"
+                rows={14}
+                className="input-field resize-none rounded-t-none border-t-0 font-mono text-sm"
               />
             </div>
 
@@ -155,17 +280,25 @@ export function ArticleEditor({
                   min="1"
                   className="input-field"
                 />
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Lower number appears first
+                </p>
               </div>
 
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex items-center">
+                <label className="flex items-center gap-3 cursor-pointer rounded-lg border border-border bg-muted/50 px-4 py-3 w-full hover:bg-muted transition-colors">
                   <input
                     type="checkbox"
                     checked={isPublished}
                     onChange={(e) => setIsPublished(e.target.checked)}
                     className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-foreground">Published</span>
+                  <div>
+                    <span className="text-sm font-medium text-foreground block">Published</span>
+                    <span className="text-xs text-muted-foreground">
+                      {isPublished ? "Visible to users" : "Only admins can see"}
+                    </span>
+                  </div>
                 </label>
               </div>
             </div>

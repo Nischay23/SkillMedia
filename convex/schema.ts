@@ -175,6 +175,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     coverImage: v.optional(v.string()),
     memberCount: v.number(),
+    messageCount: v.optional(v.number()),
     createdBy: v.id("users"),
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -186,7 +187,7 @@ export default defineSchema({
   groupMembers: defineTable({
     groupId: v.id("groups"),
     userId: v.id("users"),
-    role: v.union(v.literal("admin"), v.literal("member")),
+    role: v.union(v.literal("admin"), v.literal("moderator"), v.literal("member")),
     joinedAt: v.number(),
     lastReadAt: v.optional(v.number()),
   })

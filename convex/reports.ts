@@ -192,6 +192,78 @@ export const dismissReport = mutation({
   },
 });
 
+// Get reports for a specific group (admin only)
+export const getReportsForGroup = query({
+  args: {
+    groupId: v.id("groups"),
+    status: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("reviewed"),
+        v.literal("dismissed"),
+        v.literal("all"),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user.isAdmin) throw new Error("Unauthorized");
+
+    const reports = await ctx.db
+      .query("reports")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .order("desc")
+      .collect();
+
+    // Filter by status if specified
+    let filteredReports = reports;
+    if (args.status && args.status !== "all") {
+      filteredReports = reports.filter((r) => r.status === args.status);
+    }
+
+    // Enrich reports
+    const enrichedReports = await Promise.all(
+      filteredReports.map(async (report) => {
+        const reporter = await ctx.db.get(report.reporterId);
+        const message = await ctx.db.get(report.messageId);
+        let reportedUser = null;
+        if (message) {
+          reportedUser = await ctx.db.get(message.userId);
+        }
+
+        return {
+          ...report,
+          reporter: reporter
+            ? {
+                _id: reporter._id,
+                fullname: reporter.fullname,
+                username: reporter.username,
+                profileImage: reporter.profileImage,
+              }
+            : null,
+          message: message
+            ? {
+                _id: message._id,
+                content: message.content,
+                type: message.type,
+                isDeleted: message.isDeleted,
+              }
+            : null,
+          reportedUser: reportedUser
+            ? {
+                _id: reportedUser._id,
+                fullname: reportedUser.fullname,
+                username: reportedUser.username,
+              }
+            : null,
+        };
+      })
+    );
+
+    return enrichedReports;
+  },
+});
+
 // Delete reported message and mark report as reviewed (admin only)
 export const deleteReportedMessage = mutation({
   args: {

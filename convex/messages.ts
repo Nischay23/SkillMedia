@@ -391,3 +391,125 @@ export const unpinMessage = mutation({
     await ctx.db.patch(args.messageId, { isPinned: false });
   },
 });
+
+// Get messages for admin panel (newest first)
+export const getMessagesForAdmin = query({
+  args: {
+    groupId: v.id("groups"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user.isAdmin) throw new Error("Unauthorized");
+
+    const limit = args.limit ?? 100;
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_group_and_created", (q) =>
+        q.eq("groupId", args.groupId)
+      )
+      .order("desc")
+      .take(limit);
+
+    const enrichedMessages = await Promise.all(
+      messages.map(async (msg) => {
+        const sender = await ctx.db.get(msg.userId);
+
+        let imageUrl = msg.imageUrl;
+        if (msg.type === "image" && msg.storageId && !imageUrl) {
+          imageUrl = (await ctx.storage.getUrl(msg.storageId)) ?? undefined;
+        }
+
+        // Check if message has reports
+        const reports = await ctx.db
+          .query("reports")
+          .withIndex("by_message", (q) => q.eq("messageId", msg._id))
+          .filter((q) => q.eq(q.field("status"), "pending"))
+          .collect();
+
+        return {
+          _id: msg._id,
+          groupId: msg.groupId,
+          userId: msg.userId,
+          content: msg.isDeleted ? "[Message deleted]" : msg.content,
+          type: msg.type,
+          imageUrl,
+          isPinned: msg.isPinned ?? false,
+          isDeleted: msg.isDeleted ?? false,
+          createdAt: msg.createdAt,
+          pendingReportsCount: reports.length,
+          sender: sender
+            ? {
+                _id: sender._id,
+                fullname: sender.fullname,
+                username: sender.username,
+                profileImage: sender.profileImage,
+                isAdmin: sender.isAdmin ?? false,
+              }
+            : null,
+        };
+      })
+    );
+
+    return enrichedMessages;
+  },
+});
+
+// Admin: Send announcement to a group
+export const sendAdminAnnouncement = mutation({
+  args: {
+    groupId: v.id("groups"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user.isAdmin) throw new Error("Only admins can send announcements");
+
+    const group = await ctx.db.get(args.groupId);
+    if (!group) throw new Error("Group not found");
+
+    const messageId = await ctx.db.insert("messages", {
+      groupId: args.groupId,
+      userId: user._id,
+      content: args.content.trim(),
+      type: "announcement",
+      createdAt: Date.now(),
+    });
+
+    // Update group message count
+    await ctx.db.patch(args.groupId, {
+      messageCount: (group.messageCount ?? 0) + 1,
+    });
+
+    return messageId;
+  },
+});
+
+// Admin: Soft delete any message
+export const adminDeleteMessage = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user.isAdmin) throw new Error("Unauthorized");
+
+    const message = await ctx.db.get(args.messageId);
+    if (!message) throw new Error("Message not found");
+
+    await ctx.db.patch(args.messageId, {
+      isDeleted: true,
+      content: "",
+    });
+
+    // Also mark any pending reports for this message as reviewed
+    const reports = await ctx.db
+      .query("reports")
+      .withIndex("by_message", (q) => q.eq("messageId", args.messageId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .collect();
+
+    for (const report of reports) {
+      await ctx.db.patch(report._id, { status: "reviewed" });
+    }
+  },
+});

@@ -5,8 +5,52 @@ import {
   mutation,
   query,
   QueryCtx,
+  MutationCtx,
 } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
+
+// Helper: Auto-create groups for filter options if they don't exist
+async function ensureGroupsForFilterOptions(
+  ctx: MutationCtx,
+  filterOptionIds: Id<"FilterOption">[],
+  creatorId: Id<"users">
+) {
+  for (const filterOptionId of filterOptionIds) {
+    // Check if group already exists
+    const existingGroup = await ctx.db
+      .query("groups")
+      .withIndex("by_filter_option", (q) =>
+        q.eq("filterOptionId", filterOptionId)
+      )
+      .first();
+
+    if (!existingGroup) {
+      // Get filter option details
+      const filterOption = await ctx.db.get(filterOptionId);
+      if (!filterOption) continue;
+
+      // Create the group
+      const groupId = await ctx.db.insert("groups", {
+        filterOptionId: filterOptionId,
+        name: filterOption.name,
+        description: filterOption.description,
+        memberCount: 1,
+        messageCount: 0,
+        createdBy: creatorId,
+        isActive: true,
+        createdAt: Date.now(),
+      });
+
+      // Add creator as admin member
+      await ctx.db.insert("groupMembers", {
+        groupId,
+        userId: creatorId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    }
+  }
+}
 
 // Helper: Enrich a post with resolved image URL and filter option names
 async function enrichPost(ctx: QueryCtx, post: any) {
@@ -235,6 +279,7 @@ export const createCommunityPost = mutation({
     if (!currentUser) throw new Error("Unauthorized");
 
     const status = args.status || "draft";
+    const filterOptionIds = args.linkedFilterOptionIds || [];
 
     // Resolve storageId to URL if provided
     let imageUrl = args.imageUrl;
@@ -248,8 +293,7 @@ export const createCommunityPost = mutation({
       content: args.content,
       imageUrl,
       storageId: args.storageId,
-      linkedFilterOptionIds:
-        args.linkedFilterOptionIds || [],
+      linkedFilterOptionIds: filterOptionIds,
       status: status,
       publishedAt:
         status === "published" ? Date.now() : undefined,
@@ -259,6 +303,11 @@ export const createCommunityPost = mutation({
       updatedAt: Date.now(),
       isActive: true,
     });
+
+    // Auto-create groups for linked filter options when publishing
+    if (status === "published" && filterOptionIds.length > 0) {
+      await ensureGroupsForFilterOptions(ctx, filterOptionIds, currentUser._id);
+    }
 
     return postId;
   },
@@ -318,6 +367,58 @@ export const deleteCommunityPost = mutation({
       )
       .collect();
 
+    for (const saved of savedContent) {
+      await ctx.db.delete(saved._id);
+    }
+
+    // Delete the post
+    await ctx.db.delete(args.postId);
+
+    return { success: true };
+  },
+});
+
+// Admin: Delete any community post
+export const adminDeleteCommunityPost = mutation({
+  args: {
+    postId: v.id("communityPosts"),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser?.isAdmin) throw new Error("Admin only");
+
+    const post = await ctx.db.get(args.postId);
+    if (!post) throw new Error("Post not found");
+
+    // Delete associated comments
+    const comments = await ctx.db
+      .query("comments")
+      .filter((q) =>
+        q.eq(q.field("communityPostId"), args.postId),
+      )
+      .collect();
+    for (const comment of comments) {
+      await ctx.db.delete(comment._id);
+    }
+
+    // Delete associated likes
+    const likes = await ctx.db
+      .query("likes")
+      .filter((q) =>
+        q.eq(q.field("communityPostId"), args.postId),
+      )
+      .collect();
+    for (const like of likes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Delete saved content
+    const savedContent = await ctx.db
+      .query("savedContent")
+      .filter((q) =>
+        q.eq(q.field("communityPostId"), args.postId),
+      )
+      .collect();
     for (const saved of savedContent) {
       await ctx.db.delete(saved._id);
     }
@@ -400,6 +501,9 @@ export const updateCommunityPost = mutation({
         args.linkedFilterOptionIds;
     }
 
+    // Track if we're transitioning to published
+    const isPublishing = args.status === "published" && post.status !== "published";
+
     // Handle status change
     if (args.status !== undefined) {
       updates.status = args.status;
@@ -412,6 +516,15 @@ export const updateCommunityPost = mutation({
     }
 
     await ctx.db.patch(args.postId, updates);
+
+    // Auto-create groups when publishing
+    if (isPublishing) {
+      const filterOptionIds = args.linkedFilterOptionIds ?? post.linkedFilterOptionIds;
+      if (filterOptionIds.length > 0) {
+        await ensureGroupsForFilterOptions(ctx, filterOptionIds, currentUser._id);
+      }
+    }
+
     return { success: true };
   },
 });
@@ -574,9 +687,15 @@ export const bulkUpdateStatus = mutation({
     if (!currentUser?.isAdmin)
       throw new Error("Admin only");
 
+    // Collect all filter option IDs from posts being published
+    const filterOptionIdsToCreateGroups: Id<"FilterOption">[] = [];
+
     for (const postId of args.postIds) {
       const post = await ctx.db.get(postId);
       if (!post) continue;
+
+      // Track if we're transitioning to published
+      const isPublishing = args.status === "published" && post.status !== "published";
 
       await ctx.db.patch(postId, {
         status: args.status,
@@ -586,6 +705,17 @@ export const bulkUpdateStatus = mutation({
             : post.publishedAt,
         updatedAt: Date.now(),
       });
+
+      // Collect filter option IDs for group creation
+      if (isPublishing && post.linkedFilterOptionIds.length > 0) {
+        filterOptionIdsToCreateGroups.push(...post.linkedFilterOptionIds);
+      }
+    }
+
+    // Auto-create groups for all unique filter options
+    if (filterOptionIdsToCreateGroups.length > 0) {
+      const uniqueFilterIds = [...new Set(filterOptionIdsToCreateGroups)];
+      await ensureGroupsForFilterOptions(ctx, uniqueFilterIds, currentUser._id);
     }
 
     return { updated: args.postIds.length };

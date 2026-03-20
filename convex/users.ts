@@ -161,9 +161,9 @@ export const getUserProfile = query({
 // Check if current user is following another user
 export const isFollowing = query({
   args: { followingId: v.id("users") },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     try {
-      const currentUser = await getAuthenticatedUser(ctx);
+      await getAuthenticatedUser(ctx);
       // For now, return false since we don't have a follows table implemented
       return false;
     } catch {
@@ -175,12 +175,12 @@ export const isFollowing = query({
 // Toggle follow/unfollow a user
 export const toggleFollow = mutation({
   args: { followingId: v.id("users") },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     try {
-      const currentUser = await getAuthenticatedUser(ctx);
+      await getAuthenticatedUser(ctx);
       // For now, just return success since we don't have a follows table implemented
       return { success: true };
-    } catch (error) {
+    } catch {
       throw new Error("Failed to toggle follow");
     }
   },

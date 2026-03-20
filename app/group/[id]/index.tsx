@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import BottomSheet, {
   BottomSheetBackdrop,
-  BottomSheetScrollView,
   BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
@@ -38,9 +37,7 @@ import Animated, {
   SlideInUp,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withRepeat,
-  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -836,6 +833,7 @@ export default function GroupChatScreen() {
     if (messages && currentUser) {
       markAsReadMutation({ groupId });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages?.length, currentUser, groupId, markAsReadMutation]);
 
   // Auto-scroll on new messages
@@ -931,7 +929,7 @@ export default function GroupChatScreen() {
       setSelectedImage(null);
       setImageCaption("");
       setImagePreviewOpen(false);
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to upload image");
     } finally {
       setUploading(false);

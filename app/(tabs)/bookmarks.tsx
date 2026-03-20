@@ -2,7 +2,6 @@ import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Typography } from "@/components/ui/Typography";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

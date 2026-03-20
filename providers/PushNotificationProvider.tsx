@@ -56,6 +56,7 @@ export function PushNotificationProvider({
     permissionStatus,
     registerForPushNotifications,
     checkPermissionStatus,
+    isExpoGo,
   } = usePushNotifications();
 
   const [hasPrompted, setHasPrompted] = useState(false);
@@ -86,24 +87,26 @@ export function PushNotificationProvider({
     transform: [{ rotate: `${bellRotation.value}deg` }],
   }));
 
-  // Check permission status on mount
+  // Check permission status on mount (skip in Expo Go)
   useEffect(() => {
-    if (isSignedIn) {
+    if (isSignedIn && !isExpoGo) {
       checkPermissionStatus();
     }
-  }, [isSignedIn, checkPermissionStatus]);
+  }, [isSignedIn, checkPermissionStatus, isExpoGo]);
 
   const showPermissionPrompt = useCallback(() => {
-    if (permissionStatus === "granted" || hasPrompted)
+    // Don't show prompt in Expo Go
+    if (isExpoGo || permissionStatus === "granted" || hasPrompted)
       return;
     setIsPromptVisible(true);
     bottomSheetRef.current?.expand();
-  }, [permissionStatus, hasPrompted]);
+  }, [permissionStatus, hasPrompted, isExpoGo]);
 
-  // Auto-show prompt after a delay if not granted and not prompted
+  // Auto-show prompt after a delay if not granted and not prompted (skip in Expo Go)
   useEffect(() => {
     if (
       isSignedIn &&
+      !isExpoGo &&
       permissionStatus !== null &&
       permissionStatus !== "granted" &&
       !hasPrompted
@@ -116,6 +119,7 @@ export function PushNotificationProvider({
     }
   }, [
     isSignedIn,
+    isExpoGo,
     permissionStatus,
     hasPrompted,
     showPermissionPrompt,

@@ -1,26 +1,231 @@
 // components/CareerPathDetails.tsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
-  Text,
+  ScrollView,
   Pressable,
   Share,
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 import { useThemedStyles, useTheme } from "@/providers/ThemeProvider";
+import { Typography } from "@/components/ui/Typography";
 import RankingBadge from "@/components/RankingBadge";
+import VacancyChip from "@/components/VacancyChip";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-expo";
-
 import { FilterOption } from "@/types";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface CareerPathDetailsProps {
   filterOption: FilterOption;
+}
+
+// Skeleton Card for loading state
+function SkeletonCard({ height = 80 }: { height?: number }) {
+  const styles = useThemedStyles((t) => ({
+    skeleton: {
+      backgroundColor: t.colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.08)",
+      height,
+    },
+    bar: {
+      backgroundColor: t.colors.surfaceLight,
+      borderRadius: 8,
+      height: 14,
+      width: "60%" as const,
+      marginBottom: 8,
+    },
+    barShort: {
+      backgroundColor: t.colors.surfaceLight,
+      borderRadius: 6,
+      height: 10,
+      width: "80%" as const,
+    },
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(300)}
+      style={styles.skeleton}
+    >
+      <View style={styles.bar} />
+      <View style={styles.barShort} />
+    </Animated.View>
+  );
+}
+
+// Section Card wrapper
+function SectionCard({
+  children,
+  entering,
+}: {
+  children: React.ReactNode;
+  entering?: any;
+}) {
+  const styles = useThemedStyles((t) => ({
+    card: {
+      backgroundColor: t.colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.08)",
+    },
+  }));
+
+  return (
+    <Animated.View entering={entering} style={styles.card}>
+      {children}
+    </Animated.View>
+  );
+}
+
+// Section Header with icon
+function SectionHeader({
+  icon,
+  iconColor,
+  title,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+}) {
+  const { theme } = useTheme();
+  const styles = useThemedStyles((t) => ({
+    row: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 10,
+      marginBottom: 12,
+    },
+    iconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: `${iconColor}15`,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+  }));
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={icon} size={18} color={iconColor} />
+      </View>
+      <Typography variant="h4" weight="semibold">
+        {title}
+      </Typography>
+    </View>
+  );
+}
+
+// Animated Article Card with expand/collapse using height animation
+function ArticleCard({
+  title,
+  content,
+  isExpanded,
+  onToggle,
+}: {
+  title: string;
+  content: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const { theme } = useTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const styles = useThemedStyles((t) => ({
+    card: {
+      backgroundColor: t.colors.surfaceLight,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      overflow: "hidden" as const,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      padding: 14,
+    },
+    title: {
+      flex: 1,
+      marginRight: 8,
+    },
+    content: {
+      paddingHorizontal: 14,
+      paddingBottom: 14,
+      paddingTop: 0,
+    },
+    readMore: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      marginTop: 8,
+    },
+  }));
+
+  const preview = content.length > 120 ? content.slice(0, 120) + "..." : content;
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        scale.value = withSpring(0.98);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1);
+      }}
+      onPress={onToggle}
+    >
+      <Animated.View style={[styles.card, animatedStyle]}>
+        <View style={styles.header}>
+          <Typography variant="body" weight="semibold" style={styles.title}>
+            {title}
+          </Typography>
+          <Ionicons
+            name={isExpanded ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={theme.colors.textMuted}
+          />
+        </View>
+        <View style={styles.content}>
+          <Typography variant="caption" color="textSecondary">
+            {isExpanded ? content : preview}
+          </Typography>
+          {!isExpanded && (
+            <View style={styles.readMore}>
+              <Typography variant="caption" color="primary" weight="medium">
+                Read more
+              </Typography>
+              <Ionicons
+                name="chevron-forward"
+                size={14}
+                color={theme.colors.primary}
+              />
+            </View>
+          )}
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
 }
 
 export default function CareerPathDetails({
@@ -44,16 +249,12 @@ export default function CareerPathDetails({
   );
 
   // Mutations
-  const toggleSaveMutation = useMutation(
-    api.savedContent.toggleSave,
-  );
+  const toggleSaveMutation = useMutation(api.savedContent.toggleSave);
 
   const handleSave = async () => {
     if (!clerkUser) return;
     try {
-      await toggleSaveMutation({
-        filterOptionId: filterOption._id,
-      });
+      await toggleSaveMutation({ filterOptionId: filterOption._id });
     } catch (error) {
       console.error("Error toggling save:", error);
     }
@@ -68,208 +269,126 @@ export default function CareerPathDetails({
 
   const styles = useThemedStyles((t) => ({
     container: {
-      backgroundColor: t.colors.surface,
-      borderRadius: t.borderRadius["2xl"],
-      overflow: "hidden" as const,
-      marginVertical: t.spacing.md,
-      marginHorizontal: t.spacing.sm,
-      ...t.shadows.md,
-      shadowColor: t.colors.shadow,
-    },
-    header: {
-      padding: t.spacing.xl,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
-    },
-    headerTopRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      gap: t.spacing.sm,
-    },
-    title: {
-      fontFamily: t.typography.fontFamily.bold,
-      fontSize: t.typography.size["2xl"],
-      lineHeight: t.typography.lineHeight["2xl"],
-      color: t.colors.text,
       flex: 1,
     },
-    typeBadge: {
-      backgroundColor: t.colors.primaryLight,
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.xs,
-      borderRadius: t.borderRadius.md,
+    scrollContent: {
+      gap: 12,
+      paddingVertical: 12,
     },
-    typeText: {
-      fontFamily: t.typography.fontFamily.semibold,
-      fontSize: t.typography.size.xs,
-      color: t.colors.primary,
-      textTransform: "uppercase" as const,
-    },
-    image: {
-      width: "100%" as const,
-      height: 200,
-    },
-    section: {
-      padding: t.spacing.xl,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
-    },
-    sectionTitleRow: {
-      flexDirection: "row" as const,
+    // Empty state
+    emptyState: {
       alignItems: "center" as const,
-      gap: t.spacing.sm,
-      marginBottom: t.spacing.md,
+      paddingVertical: 16,
     },
-    sectionTitle: {
-      fontFamily: t.typography.fontFamily.semibold,
-      fontSize: t.typography.size.lg,
-      color: t.colors.text,
-    },
-    description: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      lineHeight: t.typography.lineHeight.sm,
-      color: t.colors.textSecondary,
-    },
-    salaryCard: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      backgroundColor: t.colors.primaryLight,
-      paddingHorizontal: t.spacing.lg,
-      paddingVertical: t.spacing.md,
-      borderRadius: t.borderRadius.lg,
-      gap: t.spacing.md,
-    },
-    salaryText: {
-      fontFamily: t.typography.fontFamily.semibold,
-      fontSize: t.typography.size.lg,
-      color: t.colors.primary,
-    },
-    vacancyRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      marginTop: t.spacing.md,
+    emptyIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       backgroundColor: t.colors.surfaceLight,
-      paddingHorizontal: t.spacing.lg,
-      paddingVertical: t.spacing.md,
-      borderRadius: t.borderRadius.lg,
-      gap: t.spacing.md,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginBottom: 8,
     },
-    vacancyText: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      color: t.colors.textSecondary,
-    },
-    requirementRow: {
+    // Requirements bullet
+    bulletRow: {
       flexDirection: "row" as const,
       alignItems: "flex-start" as const,
-      marginBottom: t.spacing.sm,
-      gap: t.spacing.sm,
+      marginBottom: 10,
+      gap: 10,
     },
-    requirementText: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      lineHeight: t.typography.lineHeight.sm,
-      color: t.colors.textSecondary,
+    bulletIcon: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: "rgba(34, 197, 94, 0.15)",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      marginTop: 1,
+    },
+    // Salary boxes
+    salaryContainer: {
+      alignItems: "center" as const,
+    },
+    salaryRow: {
+      flexDirection: "row" as const,
+      alignItems: "stretch" as const,
+      gap: 12,
+      marginTop: 8,
+    },
+    salaryBox: {
       flex: 1,
+      backgroundColor: t.colors.surfaceLight,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: "center" as const,
+      borderWidth: 1,
+      borderColor: t.colors.border,
     },
-    examContainer: {
+    salaryCombined: {
+      backgroundColor: t.colors.surfaceLight,
+      borderRadius: 12,
+      paddingVertical: 20,
+      paddingHorizontal: 24,
+      alignItems: "center" as const,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+    },
+    salaryDivider: {
+      width: 1,
+      backgroundColor: t.colors.border,
+    },
+    // Exam cards
+    examGrid: {
       flexDirection: "row" as const,
       flexWrap: "wrap" as const,
-      gap: t.spacing.sm,
+      gap: 8,
     },
-    examTag: {
+    examCard: {
       backgroundColor: t.colors.surfaceLight,
-      paddingHorizontal: t.spacing.md,
-      paddingVertical: 6,
-      borderRadius: t.borderRadius.full,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderWidth: 1,
       borderColor: t.colors.border,
-    },
-    examText: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.xs,
-      color: t.colors.text,
-    },
-    articleCard: {
-      backgroundColor: t.colors.surfaceLight,
-      borderRadius: t.borderRadius.lg,
-      borderWidth: 1,
-      borderColor: t.colors.border,
-      marginBottom: t.spacing.sm,
-      overflow: "hidden" as const,
-    },
-    articleHeader: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      justifyContent: "space-between" as const,
-      padding: t.spacing.lg,
+      gap: 6,
     },
-    articleTitle: {
-      fontFamily: t.typography.fontFamily.semibold,
-      fontSize: t.typography.size.sm,
-      color: t.colors.text,
-      flex: 1,
+    examCardNA: {
+      backgroundColor: "rgba(34, 197, 94, 0.1)",
+      borderColor: "rgba(34, 197, 94, 0.2)",
     },
-    articleContent: {
-      paddingHorizontal: t.spacing.lg,
-      paddingBottom: t.spacing.lg,
-      borderTopWidth: 1,
-      borderTopColor: t.colors.border,
-      paddingTop: t.spacing.md,
+    // Articles
+    articlesContainer: {
+      gap: 10,
     },
-    articleText: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      lineHeight: t.typography.lineHeight.sm,
-      color: t.colors.textSecondary,
-    },
-    articlesLoading: {
-      paddingVertical: t.spacing.xl,
-      alignItems: "center" as const,
-    },
-    emptyArticles: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      color: t.colors.textMuted,
-      textAlign: "center" as const,
-      paddingVertical: t.spacing.lg,
-    },
-    actionContainer: {
+    // Actions
+    actionsRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      justifyContent: "space-around" as const,
-      paddingVertical: t.spacing.md,
-      paddingHorizontal: t.spacing.lg,
+      justifyContent: "center" as const,
+      gap: 12,
+      marginTop: 8,
     },
-    actionButton: {
+    actionBtn: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      paddingHorizontal: t.spacing.lg,
-      paddingVertical: t.spacing.sm,
-      borderRadius: t.borderRadius.full,
-      borderWidth: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+      borderWidth: 1.5,
       borderColor: t.colors.primary,
-      gap: t.spacing.xs,
+      gap: 6,
     },
-    activeButton: {
+    actionBtnActive: {
       backgroundColor: t.colors.primary,
-    },
-    actionText: {
-      fontFamily: t.typography.fontFamily.regular,
-      fontSize: t.typography.size.sm,
-      color: t.colors.primary,
-    },
-    activeText: {
-      color: "#FFFFFF",
     },
   }));
 
   // Parse requirements
   const requirements = filterOption.requirements
     ? filterOption.requirements
-        .split(/,|\n/)
+        .split(/[,\n]/)
         .map((r) => r.trim())
         .filter(Boolean)
     : [];
@@ -282,8 +401,34 @@ export default function CareerPathDetails({
         .filter(Boolean)
     : [];
 
+  // Check if exams is just "N/A" or similar
+  const isExamsNA =
+    exams.length === 0 ||
+    (exams.length === 1 && exams[0].toLowerCase() === "n/a");
+
+  // Parse salary range (e.g., "3-6 LPA" or "₹3L - ₹6L")
+  const parseSalaryRange = (salary: string) => {
+    // Common patterns: "3-6 LPA", "₹3L - ₹6L", "3 - 6 LPA"
+    const rangeMatch = salary.match(
+      /([₹$]?\d+\.?\d*)\s*[LlKkMm]?\s*[-–to]+\s*([₹$]?\d+\.?\d*)/i
+    );
+    if (rangeMatch) {
+      const from = rangeMatch[1];
+      const to = rangeMatch[2];
+      // Extract unit suffix if present at end
+      const unitMatch = salary.match(/(LPA|L|K|M|lakhs?|crores?)/i);
+      const unit = unitMatch ? unitMatch[1] : "";
+      return { from, to, unit, isRange: true };
+    }
+    return { from: salary, to: null, unit: "", isRange: false };
+  };
+
+  const salaryParsed = filterOption.avgSalary
+    ? parseSalaryRange(filterOption.avgSalary)
+    : null;
+
   const makeStagger = (index: number) =>
-    FadeInDown.delay(index * 80)
+    FadeInDown.delay(index * 100)
       .duration(400)
       .springify()
       .damping(18);
@@ -291,243 +436,298 @@ export default function CareerPathDetails({
   let sectionIndex = 0;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <Animated.View
-        entering={makeStagger(sectionIndex++)}
-        style={styles.header}
-      >
-        <View style={styles.headerTopRow}>
-          <Text style={styles.title}>{filterOption.name}</Text>
-          {filterOption.ranking != null && filterOption.ranking > 0 && (
-            <RankingBadge ranking={filterOption.ranking} />
-          )}
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeText}>
-              {filterOption.type}
-            </Text>
-          </View>
-        </View>
-      </Animated.View>
-
-      {/* Career path image */}
-      {filterOption.image && (
-        <Image
-          source={{ uri: filterOption.image }}
-          style={styles.image}
-          contentFit="cover"
-        />
-      )}
-
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Section 1: Overview */}
-      {filterOption.description && (
-        <Animated.View
-          entering={makeStagger(sectionIndex++)}
-          style={styles.section}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.sectionTitle}>Overview</Text>
-          </View>
-          <Text style={styles.description}>
+      <SectionCard entering={makeStagger(sectionIndex++)}>
+        <SectionHeader
+          icon="information-circle-outline"
+          iconColor={theme.colors.primary}
+          title="Overview"
+        />
+        {filterOption.description ? (
+          <Typography variant="body" color="textSecondary">
             {filterOption.description}
-          </Text>
-        </Animated.View>
-      )}
-
-      {/* Section 2: Salary & Vacancies */}
-      {(filterOption.avgSalary || (filterOption.annualVacancies != null && filterOption.annualVacancies > 0)) && (
-        <Animated.View
-          entering={makeStagger(sectionIndex++)}
-          style={styles.section}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="cash-outline"
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.sectionTitle}>Salary Range</Text>
-          </View>
-          {filterOption.avgSalary && (
-            <View style={styles.salaryCard}>
+          </Typography>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
               <Ionicons
-                name="wallet-outline"
-                size={22}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.salaryText}>
-                {filterOption.avgSalary}
-              </Text>
-            </View>
-          )}
-          {filterOption.annualVacancies != null && filterOption.annualVacancies > 0 && (
-            <View style={styles.vacancyRow}>
-              <Ionicons
-                name="briefcase-outline"
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-              <Text style={styles.vacancyText}>
-                ~{filterOption.annualVacancies.toLocaleString()} vacancies per year
-              </Text>
-            </View>
-          )}
-        </Animated.View>
-      )}
-
-      {/* Section 3: Requirements */}
-      {requirements.length > 0 && (
-        <Animated.View
-          entering={makeStagger(sectionIndex++)}
-          style={styles.section}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="school-outline"
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.sectionTitle}>Requirements</Text>
-          </View>
-          {requirements.map((req, i) => (
-            <View key={i} style={styles.requirementRow}>
-              <Ionicons
-                name="checkmark-circle"
+                name="document-text-outline"
                 size={18}
-                color={theme.colors.success}
+                color={theme.colors.textMuted}
               />
-              <Text style={styles.requirementText}>{req}</Text>
             </View>
-          ))}
-        </Animated.View>
-      )}
+            <Typography variant="caption" color="textMuted">
+              No description available yet
+            </Typography>
+          </View>
+        )}
+      </SectionCard>
 
-      {/* Section 4: Relevant Exams */}
-      {exams.length > 0 && (
-        <Animated.View
-          entering={makeStagger(sectionIndex++)}
-          style={styles.section}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="document-text-outline"
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.sectionTitle}>Relevant Exams</Text>
-          </View>
-          <View style={styles.examContainer}>
-            {exams.map((exam, i) => (
-              <View key={i} style={styles.examTag}>
-                <Text style={styles.examText}>{exam}</Text>
+      {/* Section 2: Requirements */}
+      <SectionCard entering={makeStagger(sectionIndex++)}>
+        <SectionHeader
+          icon="checkmark-circle-outline"
+          iconColor="#22C55E"
+          title="Requirements"
+        />
+        {requirements.length > 0 ? (
+          requirements.map((req, i) => (
+            <View key={i} style={styles.bulletRow}>
+              <View style={styles.bulletIcon}>
+                <Ionicons name="checkmark" size={14} color="#22C55E" />
               </View>
-            ))}
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Section 5: Admin Articles */}
-      <Animated.View
-        entering={makeStagger(sectionIndex++)}
-        style={styles.section}
-      >
-        <View style={styles.sectionTitleRow}>
-          <Ionicons
-            name="book-outline"
-            size={20}
-            color={theme.colors.primary}
-          />
-          <Text style={styles.sectionTitle}>Articles</Text>
-        </View>
-        {articles === undefined ? (
-          <View style={styles.articlesLoading}>
-            <ActivityIndicator color={theme.colors.primary} />
-          </View>
-        ) : articles.length > 0 ? (
-          articles.map((article) => (
-            <Pressable
-              key={article._id}
-              style={styles.articleCard}
-              onPress={() =>
-                setExpandedArticle(
-                  expandedArticle === article._id ? null : article._id,
-                )
-              }
-            >
-              <View style={styles.articleHeader}>
-                <Text style={styles.articleTitle}>
-                  {article.title}
-                </Text>
-                <Ionicons
-                  name={
-                    expandedArticle === article._id
-                      ? "chevron-up"
-                      : "chevron-down"
-                  }
-                  size={18}
-                  color={theme.colors.textMuted}
-                />
-              </View>
-              {expandedArticle === article._id && (
-                <View style={styles.articleContent}>
-                  <Text style={styles.articleText}>
-                    {article.content}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
+              <Typography
+                variant="body"
+                color="textSecondary"
+                style={{ flex: 1 }}
+              >
+                {req}
+              </Typography>
+            </View>
           ))
         ) : (
-          <Text style={styles.emptyArticles}>
-            No articles available yet.
-          </Text>
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name="school-outline"
+                size={18}
+                color={theme.colors.textMuted}
+              />
+            </View>
+            <Typography variant="caption" color="textMuted">
+              No specific requirements listed
+            </Typography>
+          </View>
         )}
-      </Animated.View>
+      </SectionCard>
 
-      {/* Action Buttons */}
+      {/* Section 3: Salary Range */}
+      <SectionCard entering={makeStagger(sectionIndex++)}>
+        <SectionHeader
+          icon="cash-outline"
+          iconColor="#F59E0B"
+          title="Salary Range"
+        />
+        {salaryParsed ? (
+          <View style={styles.salaryContainer}>
+            {salaryParsed.isRange ? (
+              <View style={styles.salaryRow}>
+                <Animated.View
+                  entering={FadeInUp.delay(200).duration(300).springify()}
+                  style={styles.salaryBox}
+                >
+                  <Typography variant="caption" color="textMuted">
+                    From
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    weight="bold"
+                    style={{ marginTop: 4 }}
+                  >
+                    {salaryParsed.from}
+                  </Typography>
+                  {salaryParsed.unit && (
+                    <Typography variant="caption" color="textMuted">
+                      {salaryParsed.unit}
+                    </Typography>
+                  )}
+                </Animated.View>
+                <Animated.View
+                  entering={FadeInUp.delay(300).duration(300).springify()}
+                  style={styles.salaryBox}
+                >
+                  <Typography variant="caption" color="textMuted">
+                    To
+                  </Typography>
+                  <Typography
+                    variant="h2"
+                    weight="bold"
+                    style={{ marginTop: 4 }}
+                  >
+                    {salaryParsed.to}
+                  </Typography>
+                  {salaryParsed.unit && (
+                    <Typography variant="caption" color="textMuted">
+                      {salaryParsed.unit}
+                    </Typography>
+                  )}
+                </Animated.View>
+              </View>
+            ) : (
+              <Animated.View
+                entering={FadeInUp.delay(200).duration(300).springify()}
+                style={styles.salaryCombined}
+              >
+                <Typography variant="h2" weight="bold" align="center">
+                  {filterOption.avgSalary}
+                </Typography>
+              </Animated.View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name="cash-outline"
+                size={18}
+                color={theme.colors.textMuted}
+              />
+            </View>
+            <Typography variant="caption" color="textMuted">
+              Salary data not available
+            </Typography>
+          </View>
+        )}
+        {/* Annual vacancies chip */}
+        {filterOption.annualVacancies != null &&
+          filterOption.annualVacancies > 0 && (
+            <View style={{ marginTop: 12, alignItems: "center" }}>
+              <VacancyChip annualVacancies={filterOption.annualVacancies} />
+            </View>
+          )}
+      </SectionCard>
+
+      {/* Section 4: Exams */}
+      <SectionCard entering={makeStagger(sectionIndex++)}>
+        <SectionHeader
+          icon="document-text-outline"
+          iconColor="#8B5CF6"
+          title="Relevant Exams"
+        />
+        {isExamsNA ? (
+          <View style={[styles.examCard, styles.examCardNA]}>
+            <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
+            <Typography
+              variant="body"
+              weight="medium"
+              style={{ color: "#22C55E" }}
+            >
+              No specific exams required
+            </Typography>
+          </View>
+        ) : exams.length > 0 ? (
+          <View style={styles.examGrid}>
+            {exams.map((exam, i) => (
+              <Animated.View
+                key={i}
+                entering={FadeInUp.delay(150 + i * 50)
+                  .duration(300)
+                  .springify()}
+                style={styles.examCard}
+              >
+                <Ionicons
+                  name="school-outline"
+                  size={14}
+                  color={theme.colors.textSecondary}
+                />
+                <Typography variant="caption">{exam}</Typography>
+              </Animated.View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name="help-circle-outline"
+                size={18}
+                color={theme.colors.textMuted}
+              />
+            </View>
+            <Typography variant="caption" color="textMuted">
+              Exam information not available
+            </Typography>
+          </View>
+        )}
+      </SectionCard>
+
+      {/* Section 5: Career Insights (Admin Articles) */}
+      <SectionCard entering={makeStagger(sectionIndex++)}>
+        <SectionHeader
+          icon="bulb-outline"
+          iconColor={theme.colors.primary}
+          title="Career Insights"
+        />
+        {articles === undefined ? (
+          // Loading skeleton
+          <View style={styles.articlesContainer}>
+            <SkeletonCard height={90} />
+            <SkeletonCard height={90} />
+          </View>
+        ) : articles.length > 0 ? (
+          <View style={styles.articlesContainer}>
+            {articles.map((article) => (
+              <ArticleCard
+                key={article._id}
+                title={article.title}
+                content={article.content}
+                isExpanded={expandedArticle === article._id}
+                onToggle={() =>
+                  setExpandedArticle(
+                    expandedArticle === article._id ? null : article._id
+                  )
+                }
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name="library-outline"
+                size={18}
+                color={theme.colors.textMuted}
+              />
+            </View>
+            <Typography variant="caption" color="textMuted">
+              No articles available yet
+            </Typography>
+          </View>
+        )}
+      </SectionCard>
+
+      {/* Action buttons */}
       <Animated.View
         entering={makeStagger(sectionIndex++)}
-        style={styles.actionContainer}
+        style={styles.actionsRow}
       >
         <Pressable
-          style={[styles.actionButton, isSaved && styles.activeButton]}
+          style={[styles.actionBtn, isSaved && styles.actionBtnActive]}
           onPress={handleSave}
         >
           <Ionicons
             name={isSaved ? "bookmark" : "bookmark-outline"}
-            size={20}
+            size={18}
             color={isSaved ? "#FFFFFF" : theme.colors.primary}
           />
-          <Text style={[styles.actionText, isSaved && styles.activeText]}>
+          <Typography
+            variant="body"
+            weight="medium"
+            style={{ color: isSaved ? "#FFFFFF" : theme.colors.primary }}
+          >
             {isSaved ? "Saved" : "Save"}
-          </Text>
+          </Typography>
         </Pressable>
 
-        <Pressable style={styles.actionButton} onPress={handleShare}>
+        <Pressable style={styles.actionBtn} onPress={handleShare}>
           <Ionicons
             name="share-social-outline"
-            size={20}
+            size={18}
             color={theme.colors.primary}
           />
-          <Text style={styles.actionText}>Share</Text>
-        </Pressable>
-
-        <Pressable style={styles.actionButton}>
-          <Ionicons
-            name="chatbubble-outline"
-            size={20}
-            color={theme.colors.primary}
-          />
-          <Text style={styles.actionText}>
-            {filterOption.comments || 0}
-          </Text>
+          <Typography
+            variant="body"
+            weight="medium"
+            color="primary"
+          >
+            Share
+          </Typography>
         </Pressable>
       </Animated.View>
-    </View>
+    </ScrollView>
   );
 }

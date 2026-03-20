@@ -1,4 +1,4 @@
-import { useTheme } from "@/providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
 import { api } from "@/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
@@ -6,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -20,6 +20,42 @@ import { Typography } from "@/components/ui/Typography";
 // Badge component for unread counts
 const UnreadBadge = ({ count }: { count: number }) => {
   const scale = useSharedValue(0);
+
+  const styles = useThemedStyles(() => ({
+    badgeContainer: {
+      position: "absolute" as const,
+      top: -6,
+      right: -10,
+      zIndex: 10,
+    },
+    badge: {
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: 4,
+      shadowColor: "#EF4444",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.4,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    badgeWide: {
+      minWidth: 22,
+      paddingHorizontal: 5,
+    },
+    badgeExtraWide: {
+      minWidth: 28,
+      paddingHorizontal: 6,
+    },
+    badgeText: {
+      color: "#FFFFFF",
+      fontSize: 10,
+      fontWeight: "700" as const,
+      textAlign: "center" as const,
+    },
+  }));
 
   useEffect(() => {
     scale.value = withSpring(1, {
@@ -35,6 +71,7 @@ const UnreadBadge = ({ count }: { count: number }) => {
   if (count === 0) return null;
 
   const displayCount = count > 99 ? "99+" : count.toString();
+  const badgeColor = "#EF4444";
 
   return (
     <Animated.View
@@ -43,7 +80,7 @@ const UnreadBadge = ({ count }: { count: number }) => {
       style={[styles.badgeContainer, animatedStyle]}
     >
       <LinearGradient
-        colors={["#FF6B6B", "#EE5A5A"]}
+        colors={[badgeColor, badgeColor]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -80,6 +117,24 @@ const TabIcon = ({
   const dotScale = useSharedValue(0);
   const dotOpacity = useSharedValue(0);
   const iconScale = useSharedValue(1);
+
+  const styles = useThemedStyles(() => ({
+    tabIconContainer: {
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 3,
+    },
+    glowDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginTop: 3,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+  }));
 
   // Animate values in useEffect to avoid writing during render
   useEffect(() => {
@@ -245,55 +300,3 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabIconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
-  },
-  glowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 3,
-    // Glow effect
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  badgeContainer: {
-    position: "absolute",
-    top: -6,
-    right: -10,
-    zIndex: 10,
-  },
-  badge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  badgeWide: {
-    minWidth: 22,
-    paddingHorizontal: 5,
-  },
-  badgeExtraWide: {
-    minWidth: 28,
-    paddingHorizontal: 6,
-  },
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-});

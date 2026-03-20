@@ -511,12 +511,12 @@ export default function GroupsScreen() {
     },
     // Sheet styles
     sheetBg: {
-      backgroundColor: "#1E1E1E",
+      backgroundColor: t.colors.surface,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
     },
     sheetHandle: {
-      backgroundColor: "#555",
+      backgroundColor: t.colors.textMuted,
       width: 40,
       height: 4,
     },

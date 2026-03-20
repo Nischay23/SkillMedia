@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, View } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -326,9 +326,13 @@ export default function CareerPathHeroCard({
         <View>
           <View style={styles.topRow}>
             <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
+              <Typography
+                variant="caption"
+                weight="semibold"
+                style={styles.categoryText}
+              >
                 {category}
-              </Text>
+              </Typography>
             </View>
             {ranking != null && ranking > 0 && (
               <RankingBadge ranking={ranking} />
@@ -336,15 +340,21 @@ export default function CareerPathHeroCard({
           </View>
 
           {/* Title + description */}
-          <Text style={styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          <Text
-            style={styles.description}
+          <Typography
+            variant="h2"
+            weight="bold"
             numberOfLines={2}
+            style={styles.title}
+          >
+            {title}
+          </Typography>
+          <Typography
+            variant="body"
+            numberOfLines={2}
+            style={styles.description}
           >
             {description}
-          </Text>
+          </Typography>
 
           {/* Info badges */}
           {infoBadges.length > 0 && (
@@ -356,12 +366,13 @@ export default function CareerPathHeroCard({
                     size={13}
                     color="#FFFFFF"
                   />
-                  <Text
-                    style={styles.infoBadgeText}
+                  <Typography
+                    variant="caption"
                     numberOfLines={1}
+                    style={styles.infoBadgeText}
                   >
                     {b.text}
-                  </Text>
+                  </Typography>
                 </View>
               ))}
             </View>
@@ -398,9 +409,13 @@ export default function CareerPathHeroCard({
             onPress={onDeepDive}
             style={styles.deepDiveButton}
           >
-            <Text style={styles.deepDiveText}>
+            <Typography
+              variant="body"
+              weight="semibold"
+              style={styles.deepDiveText}
+            >
               Deep Dive
-            </Text>
+            </Typography>
             <Ionicons
               name="arrow-forward"
               size={16}
