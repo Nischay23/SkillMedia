@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListTree, FileText, Settings, Users, BookOpen, Users2, Flag } from "lucide-react";
+import { LayoutDashboard, ListTree, FileText, Settings, Users, BookOpen, Users2, Flag, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -13,6 +13,7 @@ const navigation = [
   { name: "Posts", href: "/admin/posts", icon: FileText },
   { name: "Articles", href: "/admin/articles", icon: BookOpen },
   { name: "Groups", href: "/admin/groups", icon: Users2 },
+  { name: "Roadmaps", href: "/admin/roadmaps", icon: Map },
   { name: "Reports", href: "/admin/reports", icon: Flag, hasBadge: true },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Settings", href: "/admin/settings", icon: Settings },

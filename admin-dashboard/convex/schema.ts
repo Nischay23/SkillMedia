@@ -197,11 +197,112 @@ export default defineSchema({
     groupId: v.id("groups"),
     userId: v.id("users"),
     content: v.string(),
-    type: v.union(v.literal("text"), v.literal("announcement")),
+    type: v.union(v.literal("text"), v.literal("announcement"), v.literal("image")),
+    // Image message fields
+    storageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
+    // Reactions
+    reactions: v.optional(v.array(v.object({
+      emoji: v.string(),
+      userId: v.id("users"),
+    }))),
     isPinned: v.optional(v.boolean()),
     isDeleted: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_group", ["groupId"])
     .index("by_group_and_created", ["groupId", "createdAt"]),
+
+  // 12. reports table: Message reports
+  reports: defineTable({
+    reporterId: v.id("users"),
+    messageId: v.id("messages"),
+    groupId: v.id("groups"),
+    reason: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("dismissed"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_status", ["status"])
+    .index("by_message", ["messageId"])
+    .index("by_reporter_and_message", ["reporterId", "messageId"]),
+
+  // ===========================================
+  // PHASE 3: CAREER ROADMAPS
+  // ===========================================
+
+  // 13. roadmaps table: Career learning roadmaps for groups
+  roadmaps: defineTable({
+    groupId: v.id("groups"),
+    filterOptionId: v.optional(v.id("FilterOption")),
+    title: v.string(),
+    description: v.optional(v.string()),
+    totalSteps: v.number(),
+    estimatedDays: v.optional(v.number()),
+    difficulty: v.optional(
+      v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+      ),
+    ),
+    isPublished: v.boolean(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_filter_option", ["filterOptionId"])
+    .index("by_published", ["isPublished"]),
+
+  // 14. milestones table: Major sections within a roadmap
+  milestones: defineTable({
+    roadmapId: v.id("roadmaps"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    order: v.number(),
+    stepCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_roadmap", ["roadmapId"]),
+
+  // 15. roadmapSteps table: Individual learning steps within milestones
+  roadmapSteps: defineTable({
+    milestoneId: v.id("milestones"),
+    roadmapId: v.id("roadmaps"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    order: v.number(),
+    resourceUrl: v.optional(v.string()),
+    contentType: v.optional(
+      v.union(
+        v.literal("video"),
+        v.literal("article"),
+        v.literal("practice"),
+        v.literal("quiz"),
+        v.literal("project"),
+      ),
+    ),
+    estimatedMinutes: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_milestone", ["milestoneId"])
+    .index("by_roadmap", ["roadmapId"]),
+
+  // 16. userRoadmapProgress table: Track user progress on roadmap steps
+  userRoadmapProgress: defineTable({
+    userId: v.id("users"),
+    roadmapId: v.id("roadmaps"),
+    stepId: v.id("roadmapSteps"),
+    completedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_roadmap", ["roadmapId"])
+    .index("by_user_and_roadmap", ["userId", "roadmapId"])
+    .index("by_user_and_step", ["userId", "stepId"]),
 });

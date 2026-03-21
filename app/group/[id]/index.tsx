@@ -1279,6 +1279,14 @@ export default function GroupChatScreen() {
           </View>
         </View>
 
+        {/* Roadmap button */}
+        <Pressable
+          onPress={() => router.push(`/group/${id}/roadmap` as any)}
+          style={[styles.headerButton, { marginRight: 8 }]}
+        >
+          <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
+        </Pressable>
+
         <Pressable
           onPressIn={() => { menuScale.value = withSpring(0.9, { damping: 15 }); }}
           onPressOut={() => { menuScale.value = withSpring(1, { damping: 15 }); }}

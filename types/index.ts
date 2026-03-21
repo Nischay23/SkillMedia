@@ -121,3 +121,101 @@ export type SavedContent = {
   filterOptionId?: Id<"FilterOption">;
   createdAt: number;
 };
+
+// ===========================================
+// PHASE 3: CAREER ROADMAPS TYPES
+// ===========================================
+
+export type RoadmapDifficulty = "beginner" | "intermediate" | "advanced";
+
+export type RoadmapContentType = "video" | "article" | "practice" | "quiz" | "project";
+
+export type Roadmap = {
+  _id: Id<"roadmaps">;
+  groupId: Id<"groups">;
+  filterOptionId?: Id<"FilterOption">;
+  title: string;
+  description?: string;
+  totalSteps: number;
+  estimatedDays?: number;
+  difficulty?: RoadmapDifficulty;
+  isPublished: boolean;
+  createdBy: Id<"users">;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type RoadmapWithDetails = Roadmap & {
+  groupName?: string;
+  filterOptionName?: string;
+  milestones: MilestoneWithSteps[];
+  completedSteps: number;
+  progressPercent: number;
+};
+
+export type Milestone = {
+  _id: Id<"milestones">;
+  roadmapId: Id<"roadmaps">;
+  title: string;
+  description?: string;
+  order: number;
+  stepCount: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type MilestoneWithSteps = Milestone & {
+  steps: RoadmapStepWithProgress[];
+  totalSteps: number;
+  completedSteps: number;
+  isCompleted: boolean;
+};
+
+export type RoadmapStep = {
+  _id: Id<"roadmapSteps">;
+  milestoneId: Id<"milestones">;
+  roadmapId: Id<"roadmaps">;
+  title: string;
+  description?: string;
+  order: number;
+  resourceUrl?: string;
+  contentType?: RoadmapContentType;
+  estimatedMinutes?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type RoadmapStepWithProgress = RoadmapStep & {
+  isCompleted: boolean;
+};
+
+export type UserRoadmapProgress = {
+  _id: Id<"userRoadmapProgress">;
+  userId: Id<"users">;
+  roadmapId: Id<"roadmaps">;
+  stepId: Id<"roadmapSteps">;
+  completedAt: number;
+};
+
+export type RoadmapProgressSummary = {
+  completed: number;
+  total: number;
+  percent: number;
+};
+
+export type MyRoadmapProgress = {
+  roadmapId: string;
+  title: string;
+  groupName: string;
+  completed: number;
+  total: number;
+  percent: number;
+};
+
+export type RoadmapStats = {
+  usersStarted: number;
+  totalGroupMembers: number;
+  avgCompletion: number;
+  totalProgress: number;
+};
+

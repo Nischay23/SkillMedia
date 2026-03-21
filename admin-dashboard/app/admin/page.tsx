@@ -25,12 +25,6 @@ export default function AdminDashboard() {
   const engagementStats = useQuery(api.adminFilters.getEngagementStats);
   const topCareerPaths = useQuery(api.filter.getFilterOptionsWithStats, { limit: 10 });
 
-  // Calculate stats
-  const totalPosts = posts?.length ?? 0;
-  const publishedPosts = posts?.filter(p => p.status === "published").length ?? 0;
-  const draftPosts = posts?.filter(p => p.status === "draft").length ?? 0;
-  const totalFilters = filters?.length ?? 0;
-
   // Loading states
   const postsLoading = posts === undefined;
   const filtersLoading = filters === undefined;
