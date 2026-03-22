@@ -29,9 +29,18 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-type ContentType = "video" | "article" | "practice" | "quiz" | "project";
+type ContentType =
+  | "video"
+  | "article"
+  | "practice"
+  | "quiz"
+  | "project";
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const CONTENT_TYPE_OPTIONS: {
+  value: ContentType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { value: "video", label: "Video", icon: Video },
   { value: "article", label: "Article", icon: FileText },
   { value: "practice", label: "Practice", icon: Code },
@@ -45,39 +54,67 @@ export default function RoadmapEditorPage() {
   const roadmapId = params.id as Id<"roadmaps">;
 
   // State for expanded milestones
-  const [expandedMilestones, setExpandedMilestones] = useState<Set<string>>(new Set());
+  const [expandedMilestones, setExpandedMilestones] =
+    useState<Set<string>>(new Set());
 
   // Modal states
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] =
+    useState(false);
   const [showStepModal, setShowStepModal] = useState(false);
-  const [editingMilestoneId, setEditingMilestoneId] = useState<Id<"milestones"> | null>(null);
-  const [editingStepId, setEditingStepId] = useState<Id<"roadmapSteps"> | null>(null);
-  const [currentMilestoneId, setCurrentMilestoneId] = useState<Id<"milestones"> | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: "milestone" | "step"; id: string } | null>(null);
+  const [editingMilestoneId, setEditingMilestoneId] =
+    useState<Id<"milestones"> | null>(null);
+  const [editingStepId, setEditingStepId] =
+    useState<Id<"roadmapSteps"> | null>(null);
+  const [currentMilestoneId, setCurrentMilestoneId] =
+    useState<Id<"milestones"> | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "milestone" | "step";
+    id: string;
+  } | null>(null);
 
   // Form states
   const [milestoneTitle, setMilestoneTitle] = useState("");
-  const [milestoneDescription, setMilestoneDescription] = useState("");
+  const [milestoneDescription, setMilestoneDescription] =
+    useState("");
   const [stepTitle, setStepTitle] = useState("");
-  const [stepDescription, setStepDescription] = useState("");
-  const [stepResourceUrl, setStepResourceUrl] = useState("");
-  const [stepContentType, setStepContentType] = useState<ContentType | "">("");
-  const [stepEstimatedMinutes, setStepEstimatedMinutes] = useState("");
+  const [stepDescription, setStepDescription] =
+    useState("");
+  const [stepResourceUrl, setStepResourceUrl] =
+    useState("");
+  const [stepContentType, setStepContentType] = useState<
+    ContentType | ""
+  >("");
+  const [stepEstimatedMinutes, setStepEstimatedMinutes] =
+    useState("");
 
   // Saving states
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Queries
-  const roadmap = useQuery(api.roadmaps.getRoadmap, { roadmapId });
-  const milestones = useQuery(api.roadmaps.getMilestones, { roadmapId });
-  const stats = useQuery(api.roadmaps.getRoadmapStats, { roadmapId });
+  const roadmap = useQuery(api.roadmaps.getRoadmap, {
+    roadmapId,
+  });
+  const milestones = useQuery(api.roadmaps.getMilestones, {
+    roadmapId,
+  });
+  const stats = useQuery(api.roadmaps.getRoadmapStats, {
+    roadmapId,
+  });
 
   // Mutations
-  const updateRoadmap = useMutation(api.roadmaps.updateRoadmap);
-  const createMilestone = useMutation(api.roadmaps.createMilestone);
-  const updateMilestone = useMutation(api.roadmaps.updateMilestone);
-  const deleteMilestone = useMutation(api.roadmaps.deleteMilestone);
+  const updateRoadmap = useMutation(
+    api.roadmaps.updateRoadmap,
+  );
+  const createMilestone = useMutation(
+    api.roadmaps.createMilestone,
+  );
+  const updateMilestone = useMutation(
+    api.roadmaps.updateMilestone,
+  );
+  const deleteMilestone = useMutation(
+    api.roadmaps.deleteMilestone,
+  );
   const createStep = useMutation(api.roadmaps.createStep);
   const updateStep = useMutation(api.roadmaps.updateStep);
   const deleteStep = useMutation(api.roadmaps.deleteStep);
@@ -96,7 +133,11 @@ export default function RoadmapEditorPage() {
   };
 
   // Open milestone modal for create/edit
-  const openMilestoneModal = (milestone?: { _id: Id<"milestones">; title: string; description?: string }) => {
+  const openMilestoneModal = (milestone?: {
+    _id: Id<"milestones">;
+    title: string;
+    description?: string;
+  }) => {
     if (milestone) {
       setEditingMilestoneId(milestone._id);
       setMilestoneTitle(milestone.title);
@@ -119,7 +160,7 @@ export default function RoadmapEditorPage() {
       resourceUrl?: string;
       contentType?: string;
       estimatedMinutes?: number;
-    }
+    },
   ) => {
     setCurrentMilestoneId(milestoneId);
     if (step) {
@@ -127,8 +168,12 @@ export default function RoadmapEditorPage() {
       setStepTitle(step.title);
       setStepDescription(step.description ?? "");
       setStepResourceUrl(step.resourceUrl ?? "");
-      setStepContentType((step.contentType as ContentType) ?? "");
-      setStepEstimatedMinutes(step.estimatedMinutes?.toString() ?? "");
+      setStepContentType(
+        (step.contentType as ContentType) ?? "",
+      );
+      setStepEstimatedMinutes(
+        step.estimatedMinutes?.toString() ?? "",
+      );
     } else {
       setEditingStepId(null);
       setStepTitle("");
@@ -149,13 +194,15 @@ export default function RoadmapEditorPage() {
         await updateMilestone({
           milestoneId: editingMilestoneId,
           title: milestoneTitle.trim(),
-          description: milestoneDescription.trim() || undefined,
+          description:
+            milestoneDescription.trim() || undefined,
         });
       } else {
         await createMilestone({
           roadmapId,
           title: milestoneTitle.trim(),
-          description: milestoneDescription.trim() || undefined,
+          description:
+            milestoneDescription.trim() || undefined,
         });
       }
       setShowMilestoneModal(false);
@@ -179,7 +226,9 @@ export default function RoadmapEditorPage() {
           description: stepDescription.trim() || undefined,
           resourceUrl: stepResourceUrl.trim() || undefined,
           contentType: stepContentType || undefined,
-          estimatedMinutes: stepEstimatedMinutes ? parseInt(stepEstimatedMinutes) : undefined,
+          estimatedMinutes: stepEstimatedMinutes
+            ? parseInt(stepEstimatedMinutes)
+            : undefined,
         });
       } else {
         await createStep({
@@ -188,7 +237,9 @@ export default function RoadmapEditorPage() {
           description: stepDescription.trim() || undefined,
           resourceUrl: stepResourceUrl.trim() || undefined,
           contentType: stepContentType || undefined,
-          estimatedMinutes: stepEstimatedMinutes ? parseInt(stepEstimatedMinutes) : undefined,
+          estimatedMinutes: stepEstimatedMinutes
+            ? parseInt(stepEstimatedMinutes)
+            : undefined,
         });
       }
       setShowStepModal(false);
@@ -206,9 +257,13 @@ export default function RoadmapEditorPage() {
     setIsDeleting(true);
     try {
       if (deleteTarget.type === "milestone") {
-        await deleteMilestone({ milestoneId: deleteTarget.id as Id<"milestones"> });
+        await deleteMilestone({
+          milestoneId: deleteTarget.id as Id<"milestones">,
+        });
       } else {
-        await deleteStep({ stepId: deleteTarget.id as Id<"roadmapSteps"> });
+        await deleteStep({
+          stepId: deleteTarget.id as Id<"roadmapSteps">,
+        });
       }
       setDeleteTarget(null);
     } catch (error) {
@@ -223,14 +278,18 @@ export default function RoadmapEditorPage() {
   const handleTogglePublish = async () => {
     if (!roadmap) return;
     try {
-      await updateRoadmap({ roadmapId, isPublished: !roadmap.isPublished });
+      await updateRoadmap({
+        roadmapId,
+        isPublished: !roadmap.isPublished,
+      });
     } catch (error) {
       console.error("Failed to toggle publish:", error);
       alert("Failed to update status");
     }
   };
 
-  const isLoading = roadmap === undefined || milestones === undefined;
+  const isLoading =
+    roadmap === undefined || milestones === undefined;
 
   if (isLoading) {
     return (
@@ -245,8 +304,13 @@ export default function RoadmapEditorPage() {
   if (!roadmap) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <p className="text-lg text-muted-foreground">Roadmap not found</p>
-        <Link href="/admin/roadmaps" className="mt-4 text-primary hover:underline">
+        <p className="text-lg text-muted-foreground">
+          Roadmap not found
+        </p>
+        <Link
+          href="/admin/roadmaps"
+          className="mt-4 text-primary hover:underline"
+        >
           Back to Roadmaps
         </Link>
       </div>
@@ -265,9 +329,12 @@ export default function RoadmapEditorPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{roadmap.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {roadmap.title}
+            </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {roadmap.groupName} • {roadmap.difficulty ?? "No difficulty set"}
+              {roadmap.groupName} •{" "}
+              {roadmap.difficulty ?? "No difficulty set"}
             </p>
           </div>
         </div>
@@ -303,8 +370,12 @@ export default function RoadmapEditorPage() {
               <Target className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{milestones?.length ?? 0}</p>
-              <p className="text-xs text-muted-foreground">Milestones</p>
+              <p className="text-xl font-bold text-foreground">
+                {milestones?.length ?? 0}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Milestones
+              </p>
             </div>
           </div>
         </div>
@@ -314,8 +385,12 @@ export default function RoadmapEditorPage() {
               <BookOpen className="h-4 w-4 text-blue-500" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{roadmap.totalSteps ?? 0}</p>
-              <p className="text-xs text-muted-foreground">Total Steps</p>
+              <p className="text-xl font-bold text-foreground">
+                {roadmap.totalSteps ?? 0}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Total Steps
+              </p>
             </div>
           </div>
         </div>
@@ -325,8 +400,12 @@ export default function RoadmapEditorPage() {
               <Users className="h-4 w-4 text-emerald-500" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{stats?.usersStarted ?? 0}</p>
-              <p className="text-xs text-muted-foreground">Users Started</p>
+              <p className="text-xl font-bold text-foreground">
+                {stats?.usersStarted ?? 0}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Users Started
+              </p>
             </div>
           </div>
         </div>
@@ -336,8 +415,12 @@ export default function RoadmapEditorPage() {
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{stats?.avgCompletion ?? 0}%</p>
-              <p className="text-xs text-muted-foreground">Avg Completion</p>
+              <p className="text-xl font-bold text-foreground">
+                {stats?.avgCompletion ?? 0}%
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Avg Completion
+              </p>
             </div>
           </div>
         </div>
@@ -346,7 +429,9 @@ export default function RoadmapEditorPage() {
       {/* Milestones Section */}
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-semibold text-foreground">Milestones & Steps</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Milestones & Steps
+          </h2>
           <button
             onClick={() => openMilestoneModal()}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -363,19 +448,39 @@ export default function RoadmapEditorPage() {
                 key={milestone._id}
                 milestone={milestone}
                 roadmapId={roadmapId}
-                isExpanded={expandedMilestones.has(milestone._id)}
-                onToggle={() => toggleMilestone(milestone._id)}
+                isExpanded={expandedMilestones.has(
+                  milestone._id,
+                )}
+                onToggle={() =>
+                  toggleMilestone(milestone._id)
+                }
                 onEdit={() => openMilestoneModal(milestone)}
-                onDelete={() => setDeleteTarget({ type: "milestone", id: milestone._id })}
-                onAddStep={() => openStepModal(milestone._id)}
-                onEditStep={(step) => openStepModal(milestone._id, step)}
-                onDeleteStep={(stepId) => setDeleteTarget({ type: "step", id: stepId })}
+                onDelete={() =>
+                  setDeleteTarget({
+                    type: "milestone",
+                    id: milestone._id,
+                  })
+                }
+                onAddStep={() =>
+                  openStepModal(milestone._id)
+                }
+                onEditStep={(step) =>
+                  openStepModal(milestone._id, step)
+                }
+                onDeleteStep={(stepId) =>
+                  setDeleteTarget({
+                    type: "step",
+                    id: stepId,
+                  })
+                }
               />
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-12">
               <Target className="h-12 w-12 text-muted-foreground/50" />
-              <p className="mt-4 text-muted-foreground">No milestones yet</p>
+              <p className="mt-4 text-muted-foreground">
+                No milestones yet
+              </p>
               <button
                 onClick={() => openMilestoneModal()}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
@@ -393,16 +498,22 @@ export default function RoadmapEditorPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
             <h2 className="text-lg font-semibold text-foreground">
-              {editingMilestoneId ? "Edit Milestone" : "Add Milestone"}
+              {editingMilestoneId
+                ? "Edit Milestone"
+                : "Add Milestone"}
             </h2>
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Title
+                </label>
                 <input
                   type="text"
                   value={milestoneTitle}
-                  onChange={(e) => setMilestoneTitle(e.target.value)}
+                  onChange={(e) =>
+                    setMilestoneTitle(e.target.value)
+                  }
                   placeholder="e.g., Phase 1: Foundation"
                   className="input-field"
                 />
@@ -413,7 +524,9 @@ export default function RoadmapEditorPage() {
                 </label>
                 <textarea
                   value={milestoneDescription}
-                  onChange={(e) => setMilestoneDescription(e.target.value)}
+                  onChange={(e) =>
+                    setMilestoneDescription(e.target.value)
+                  }
                   placeholder="Brief description of this milestone..."
                   rows={3}
                   className="input-field resize-none"
@@ -430,10 +543,16 @@ export default function RoadmapEditorPage() {
               </button>
               <button
                 onClick={handleSaveMilestone}
-                disabled={!milestoneTitle.trim() || isSaving}
+                disabled={
+                  !milestoneTitle.trim() || isSaving
+                }
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : editingMilestoneId ? "Update" : "Add"}
+                {isSaving
+                  ? "Saving..."
+                  : editingMilestoneId
+                    ? "Update"
+                    : "Add"}
               </button>
             </div>
           </div>
@@ -450,11 +569,15 @@ export default function RoadmapEditorPage() {
 
             <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Title
+                </label>
                 <input
                   type="text"
                   value={stepTitle}
-                  onChange={(e) => setStepTitle(e.target.value)}
+                  onChange={(e) =>
+                    setStepTitle(e.target.value)
+                  }
                   placeholder="e.g., Learn HTML basics"
                   className="input-field"
                 />
@@ -465,7 +588,9 @@ export default function RoadmapEditorPage() {
                 </label>
                 <textarea
                   value={stepDescription}
-                  onChange={(e) => setStepDescription(e.target.value)}
+                  onChange={(e) =>
+                    setStepDescription(e.target.value)
+                  }
                   placeholder="Instructions or details..."
                   rows={2}
                   className="input-field resize-none"
@@ -477,12 +602,19 @@ export default function RoadmapEditorPage() {
                 </label>
                 <select
                   value={stepContentType}
-                  onChange={(e) => setStepContentType(e.target.value as ContentType | "")}
+                  onChange={(e) =>
+                    setStepContentType(
+                      e.target.value as ContentType | "",
+                    )
+                  }
                   className="input-field"
                 >
                   <option value="">Select type...</option>
                   {CONTENT_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option
+                      key={opt.value}
+                      value={opt.value}
+                    >
                       {opt.label}
                     </option>
                   ))}
@@ -495,7 +627,9 @@ export default function RoadmapEditorPage() {
                 <input
                   type="url"
                   value={stepResourceUrl}
-                  onChange={(e) => setStepResourceUrl(e.target.value)}
+                  onChange={(e) =>
+                    setStepResourceUrl(e.target.value)
+                  }
                   placeholder="https://..."
                   className="input-field"
                 />
@@ -507,7 +641,9 @@ export default function RoadmapEditorPage() {
                 <input
                   type="number"
                   value={stepEstimatedMinutes}
-                  onChange={(e) => setStepEstimatedMinutes(e.target.value)}
+                  onChange={(e) =>
+                    setStepEstimatedMinutes(e.target.value)
+                  }
                   placeholder="30"
                   min="1"
                   className="input-field"
@@ -527,7 +663,11 @@ export default function RoadmapEditorPage() {
                 disabled={!stepTitle.trim() || isSaving}
                 className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : editingStepId ? "Update" : "Add"}
+                {isSaving
+                  ? "Saving..."
+                  : editingStepId
+                    ? "Update"
+                    : "Add"}
               </button>
             </div>
           </div>
@@ -539,7 +679,11 @@ export default function RoadmapEditorPage() {
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title={deleteTarget?.type === "milestone" ? "Delete Milestone" : "Delete Step"}
+        title={
+          deleteTarget?.type === "milestone"
+            ? "Delete Milestone"
+            : "Delete Step"
+        }
         description={
           deleteTarget?.type === "milestone"
             ? "Are you sure you want to delete this milestone? All steps within it will also be deleted."
@@ -589,7 +733,9 @@ function MilestoneItem({
   }) => void;
   onDeleteStep: (stepId: string) => void;
 }) {
-  const steps = useQuery(api.roadmaps.getSteps, { milestoneId: milestone._id });
+  const steps = useQuery(api.roadmaps.getSteps, {
+    milestoneId: milestone._id,
+  });
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -602,7 +748,9 @@ function MilestoneItem({
           {milestone.order}
         </div>
         <div className="flex-1">
-          <h3 className="font-medium text-foreground">{milestone.title}</h3>
+          <h3 className="font-medium text-foreground">
+            {milestone.title}
+          </h3>
           {milestone.description && (
             <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
               {milestone.description}
@@ -651,21 +799,29 @@ function MilestoneItem({
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{step.title}</p>
+                    <p className="font-medium text-foreground truncate">
+                      {step.title}
+                    </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {step.contentType && (
                         <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 capitalize">
                           {step.contentType}
                         </span>
                       )}
-                      {step.estimatedMinutes && <span>{step.estimatedMinutes} min</span>}
+                      {step.estimatedMinutes && (
+                        <span>
+                          {step.estimatedMinutes} min
+                        </span>
+                      )}
                       {step.resourceUrl && (
                         <a
                           href={step.resourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) =>
+                            e.stopPropagation()
+                          }
                         >
                           Link
                         </a>
@@ -688,7 +844,9 @@ function MilestoneItem({
               ))}
             </div>
           ) : (
-            <p className="text-center text-sm text-muted-foreground py-4">No steps in this milestone</p>
+            <p className="text-center text-sm text-muted-foreground py-4">
+              No steps in this milestone
+            </p>
           )}
           <button
             onClick={onAddStep}

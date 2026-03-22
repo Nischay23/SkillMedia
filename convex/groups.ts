@@ -176,12 +176,55 @@ export const getMyGroups = query({
           };
         }
 
+        // Get roadmap progress for this group
+        let roadmapProgress = null;
+        const roadmap = await ctx.db
+          .query("roadmaps")
+          .withIndex("by_group", (q) =>
+            q.eq("groupId", m.groupId),
+          )
+          .filter((q) => q.eq(q.field("isPublished"), true))
+          .first();
+
+        if (roadmap && roadmap.totalSteps > 0) {
+          const userProgress = await ctx.db
+            .query("userRoadmapProgress")
+            .withIndex("by_user_and_roadmap", (q) =>
+              q
+                .eq("userId", user._id)
+                .eq("roadmapId", roadmap._id),
+            )
+            .collect();
+
+          const completedSteps = userProgress.length;
+          const totalSteps = roadmap.totalSteps;
+          const percent =
+            totalSteps > 0
+              ? Math.round((completedSteps / totalSteps) * 100)
+              : 0;
+
+          roadmapProgress = {
+            completedSteps,
+            totalSteps,
+            percent,
+            hasRoadmap: true,
+          };
+        } else if (roadmap) {
+          roadmapProgress = {
+            completedSteps: 0,
+            totalSteps: 0,
+            percent: 0,
+            hasRoadmap: true,
+          };
+        }
+
         return {
           ...group,
           filterOptionName: filterOption?.name ?? "Unknown",
           role: m.role,
           unreadCount: unreadMessages.length,
           lastMessage: lastMessagePreview,
+          roadmapProgress,
         };
       }),
     );

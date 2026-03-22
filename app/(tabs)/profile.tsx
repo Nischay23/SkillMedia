@@ -5,10 +5,13 @@ import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import Animated, {
+  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -26,6 +29,7 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Pressable,
 } from "react-native";
 import {
   useTheme,
@@ -35,6 +39,7 @@ import {
 export default function Profile() {
   const { signOut, userId } = useAuth();
   const { theme, isDark } = useTheme();
+  const router = useRouter();
   const [isEditModalVisible, setIsEditModalVisible] =
     useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -46,6 +51,11 @@ export default function Profile() {
   const currentUser = useQuery(
     api.users.getUserByClerkId,
     userId ? { clerkId: userId } : "skip",
+  );
+
+  // Fetch roadmap progress
+  const roadmapsProgress = useQuery(
+    api.roadmaps.getMyRoadmapsProgress,
   );
 
   const [editedProfile, setEditedProfile] = useState({
@@ -427,7 +437,76 @@ export default function Profile() {
               />
             </TouchableOpacity>
           </View>
+        </View>
 
+        {/* My Roadmaps Section */}
+        {roadmapsProgress && roadmapsProgress.length > 0 && (
+          <Animated.View
+            entering={FadeInDown.duration(400).delay(200)}
+            style={{
+              marginTop: 20,
+              paddingHorizontal: 16,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Ionicons
+                  name="map"
+                  size={18}
+                  color={theme.colors.primary}
+                />
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  color="text"
+                >
+                  My Roadmaps
+                </Typography>
+              </View>
+              <Typography
+                variant="caption"
+                color="textMuted"
+              >
+                {roadmapsProgress.length} active
+              </Typography>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12 }}
+            >
+              {roadmapsProgress.map((progress: any, index: number) => (
+                <RoadmapProgressCard
+                  key={progress.roadmapId}
+                  progress={progress}
+                  index={index}
+                  onPress={() => {
+                    // Navigate to the group's roadmap
+                    if (progress.groupId) {
+                      router.push(`/group/${progress.groupId}/roadmap` as any);
+                    }
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </Animated.View>
+        )}
+
+        <View style={styles.profileInfo}>
           {/* Grid divider */}
           <View style={styles.gridDivider} />
         </View>
@@ -589,6 +668,167 @@ export default function Profile() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+// Roadmap Progress Card Component
+function RoadmapProgressCard({
+  progress,
+  index,
+  onPress,
+}: {
+  progress: {
+    roadmapId: string;
+    title: string;
+    groupName: string;
+    completed: number;
+    total: number;
+    percent: number;
+  };
+  index: number;
+  onPress: () => void;
+}) {
+  const { theme } = useTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
+  // Determine color based on progress
+  const getProgressColor = () => {
+    if (progress.percent >= 75) return theme.colors.success;
+    if (progress.percent >= 40) return theme.colors.warning;
+    return theme.colors.primary;
+  };
+
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(350).delay(index * 80)}
+      style={animatedStyle}
+    >
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={{
+          width: 180,
+          backgroundColor: theme.colors.surface,
+          borderRadius: 16,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        }}
+      >
+        {/* Icon and title */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 12,
+          }}
+        >
+          <LinearGradient
+            colors={["#6C5DD3", "#8676FF"]}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="rocket" size={18} color="#FFFFFF" />
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Typography
+              variant="caption"
+              weight="semibold"
+              color="text"
+              numberOfLines={1}
+            >
+              {progress.title}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              numberOfLines={1}
+              style={{ fontSize: 10 }}
+            >
+              {progress.groupName}
+            </Typography>
+          </View>
+        </View>
+
+        {/* Progress bar */}
+        <View
+          style={{
+            height: 6,
+            backgroundColor: theme.colors.border,
+            borderRadius: 3,
+            overflow: "hidden",
+          }}
+        >
+          <LinearGradient
+            colors={["#6C5DD3", "#8676FF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              height: "100%",
+              width: `${progress.percent}%`,
+              borderRadius: 3,
+            }}
+          />
+        </View>
+
+        {/* Stats */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 10,
+          }}
+        >
+          <Typography variant="caption" color="textMuted" style={{ fontSize: 11 }}>
+            {progress.completed}/{progress.total} steps
+          </Typography>
+          <View
+            style={{
+              backgroundColor:
+                progress.percent >= 75
+                  ? `${theme.colors.success}20`
+                  : progress.percent >= 40
+                    ? `${theme.colors.warning}20`
+                    : `${theme.colors.primary}20`,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 10,
+            }}
+          >
+            <Typography
+              variant="caption"
+              weight="bold"
+              style={{
+                fontSize: 11,
+                color: getProgressColor(),
+              }}
+            >
+              {progress.percent}%
+            </Typography>
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

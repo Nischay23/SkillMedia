@@ -29,6 +29,7 @@ import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as reports from "../reports.js";
+import type * as roadmaps from "../roadmaps.js";
 import type * as savedContent from "../savedContent.js";
 import type * as seedData from "../seedData.js";
 import type * as users from "../users.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   posts: typeof posts;
   pushNotifications: typeof pushNotifications;
   reports: typeof reports;
+  roadmaps: typeof roadmaps;
   savedContent: typeof savedContent;
   seedData: typeof seedData;
   users: typeof users;

@@ -300,27 +300,76 @@ function GroupCard({
               </View>
             )}
 
-            {/* Row 3: Member count */}
+            {/* Row 3: Member count + Roadmap progress */}
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
+                justifyContent: "space-between",
                 marginTop: 6,
               }}
             >
-              <Ionicons
-                name="people-outline"
-                size={12}
-                color={theme.colors.textMuted}
-              />
-              <Typography
-                variant="caption"
-                color="textMuted"
-                style={{ fontSize: 12 }}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
-                {group.memberCount.toLocaleString()} members
-              </Typography>
+                <Ionicons
+                  name="people-outline"
+                  size={12}
+                  color={theme.colors.textMuted}
+                />
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                  style={{ fontSize: 12 }}
+                >
+                  {group.memberCount.toLocaleString()} members
+                </Typography>
+              </View>
+
+              {/* Roadmap progress indicator */}
+              {group.roadmapProgress?.hasRoadmap && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  {/* Mini progress bar */}
+                  <View
+                    style={{
+                      width: 40,
+                      height: 4,
+                      backgroundColor: theme.colors.border,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <LinearGradient
+                      colors={["#6C5DD3", "#8676FF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{
+                        height: "100%",
+                        width: `${group.roadmapProgress.percent}%`,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </View>
+                  <Typography
+                    variant="caption"
+                    color="primary"
+                    weight="semibold"
+                    style={{ fontSize: 10 }}
+                  >
+                    {group.roadmapProgress.percent}%
+                  </Typography>
+                </View>
+              )}
             </View>
           </View>
 

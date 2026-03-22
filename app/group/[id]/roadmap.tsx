@@ -2,13 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Pressable,
   RefreshControl,
   ScrollView,
+  StatusBar,
   View,
 } from "react-native";
 import Animated, {
@@ -19,6 +20,8 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -27,15 +30,25 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 import { useMutation, useQuery } from "convex/react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedPressable =
+  Animated.createAnimatedComponent(Pressable);
 
 // Content type icons
-const CONTENT_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
+const CONTENT_TYPE_ICONS: Record<
+  string,
+  { icon: string; color: string }
+> = {
   video: { icon: "play-circle", color: "#EF4444" },
   article: { icon: "document-text", color: "#3B82F6" },
   practice: { icon: "code-slash", color: "#10B981" },
@@ -91,8 +104,12 @@ const AnimatedCheckbox = ({
           height: 24,
           borderRadius: 6,
           borderWidth: 2,
-          borderColor: isChecked ? theme.colors.primary : theme.colors.border,
-          backgroundColor: isChecked ? theme.colors.primary : "transparent",
+          borderColor: isChecked
+            ? theme.colors.primary
+            : theme.colors.border,
+          backgroundColor: isChecked
+            ? theme.colors.primary
+            : "transparent",
           alignItems: "center",
           justifyContent: "center",
         },
@@ -101,7 +118,11 @@ const AnimatedCheckbox = ({
       disabled={disabled}
     >
       <Animated.View style={animatedCheckStyle}>
-        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+        <Ionicons
+          name="checkmark"
+          size={16}
+          color="#FFFFFF"
+        />
       </Animated.View>
     </AnimatedPressable>
   );
@@ -138,7 +159,12 @@ const ProgressBar = ({
         overflow: "hidden",
       }}
     >
-      <Animated.View style={[{ height: "100%", borderRadius: height / 2 }, animatedStyle]}>
+      <Animated.View
+        style={[
+          { height: "100%", borderRadius: height / 2 },
+          animatedStyle,
+        ]}
+      >
         <LinearGradient
           colors={["#6C5DD3", "#8676FF"]}
           start={{ x: 0, y: 0 }}
@@ -179,7 +205,9 @@ const StepItem = ({
 
   const handleOpenResource = async () => {
     if (step.resourceUrl) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(
+        Haptics.ImpactFeedbackStyle.Light,
+      );
       await Linking.openURL(step.resourceUrl);
     }
   };
@@ -218,7 +246,9 @@ const StepItem = ({
           weight="medium"
           color={step.isCompleted ? "textMuted" : "text"}
           style={{
-            textDecorationLine: step.isCompleted ? "line-through" : "none",
+            textDecorationLine: step.isCompleted
+              ? "line-through"
+              : "none",
           }}
         >
           {step.title}
@@ -236,24 +266,54 @@ const StepItem = ({
         )}
 
         {/* Meta info */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 12 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: 8,
+            gap: 12,
+          }}
+        >
           {contentTypeInfo && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
               <Ionicons
                 name={contentTypeInfo.icon as any}
                 size={14}
                 color={contentTypeInfo.color}
               />
-              <Typography variant="caption" color="textMuted" style={{ textTransform: "capitalize" }}>
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ textTransform: "capitalize" }}
+              >
                 {step.contentType}
               </Typography>
             </View>
           )}
 
           {step.estimatedMinutes && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="time-outline" size={14} color={theme.colors.textMuted} />
-              <Typography variant="caption" color="textMuted">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color={theme.colors.textMuted}
+              />
+              <Typography
+                variant="caption"
+                color="textMuted"
+              >
                 {step.estimatedMinutes} min
               </Typography>
             </View>
@@ -272,7 +332,11 @@ const StepItem = ({
                 borderRadius: 6,
               }}
             >
-              <Ionicons name="open-outline" size={12} color={theme.colors.primary} />
+              <Ionicons
+                name="open-outline"
+                size={12}
+                color={theme.colors.primary}
+              />
               <Typography variant="caption" color="primary">
                 Open
               </Typography>
@@ -322,16 +386,26 @@ const MilestoneCard = ({
   const toggleExpand = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsExpanded(!isExpanded);
-    rotation.value = withSpring(isExpanded ? 0 : 1, { damping: 15 });
+    rotation.value = withSpring(isExpanded ? 0 : 1, {
+      damping: 15,
+    });
   };
 
   const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${interpolate(rotation.value, [0, 1], [0, 180])}deg` }],
+    transform: [
+      {
+        rotate: `${interpolate(rotation.value, [0, 1], [0, 180])}deg`,
+      },
+    ],
   }));
 
   const progressPercent =
     milestone.totalSteps > 0
-      ? Math.round((milestone.completedSteps / milestone.totalSteps) * 100)
+      ? Math.round(
+          (milestone.completedSteps /
+            milestone.totalSteps) *
+            100,
+        )
       : 0;
 
   return (
@@ -395,22 +469,37 @@ const MilestoneCard = ({
               }}
             >
               <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
                   {milestone.isCompleted && (
                     <View
                       style={{
                         width: 20,
                         height: 20,
                         borderRadius: 10,
-                        backgroundColor: theme.colors.success,
+                        backgroundColor:
+                          theme.colors.success,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color="#FFFFFF"
+                      />
                     </View>
                   )}
-                  <Typography variant="h4" weight="semibold" color="text">
+                  <Typography
+                    variant="h4"
+                    weight="semibold"
+                    color="text"
+                  >
                     {milestone.title}
                   </Typography>
                 </View>
@@ -435,18 +524,31 @@ const MilestoneCard = ({
                       marginBottom: 6,
                     }}
                   >
-                    <Typography variant="caption" color="textMuted">
-                      {milestone.completedSteps}/{milestone.totalSteps} steps
+                    <Typography
+                      variant="caption"
+                      color="textMuted"
+                    >
+                      {milestone.completedSteps}/
+                      {milestone.totalSteps} steps
                     </Typography>
-                    <Typography variant="caption" color="primary" weight="semibold">
+                    <Typography
+                      variant="caption"
+                      color="primary"
+                      weight="semibold"
+                    >
                       {progressPercent}%
                     </Typography>
                   </View>
-                  <ProgressBar progress={progressPercent} height={6} />
+                  <ProgressBar
+                    progress={progressPercent}
+                    height={6}
+                  />
                 </View>
               </View>
 
-              <Animated.View style={[{ marginLeft: 12 }, chevronStyle]}>
+              <Animated.View
+                style={[{ marginLeft: 12 }, chevronStyle]}
+              >
                 <Ionicons
                   name="chevron-down"
                   size={24}
@@ -468,16 +570,20 @@ const MilestoneCard = ({
                 }}
               >
                 <View style={{ marginTop: 12 }}>
-                  {milestone.steps.map((step, stepIndex) => (
-                    <StepItem
-                      key={step._id}
-                      step={step}
-                      index={stepIndex}
-                      roadmapId={roadmapId}
-                      onToggle={onToggleStep}
-                      isToggling={togglingStepId === step._id}
-                    />
-                  ))}
+                  {milestone.steps.map(
+                    (step, stepIndex) => (
+                      <StepItem
+                        key={step._id}
+                        step={step}
+                        index={stepIndex}
+                        roadmapId={roadmapId}
+                        onToggle={onToggleStep}
+                        isToggling={
+                          togglingStepId === step._id
+                        }
+                      />
+                    ),
+                  )}
                 </View>
               </Animated.View>
             )}
@@ -492,41 +598,164 @@ const MilestoneCard = ({
 const EmptyState = () => {
   const { theme } = useTheme();
 
+  // Pulsing glow animation
+  const glowScale = useSharedValue(1);
+
+  // Floating icon animation
+  const iconTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    // Pulsing glow
+    glowScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 1200 }),
+        withTiming(1.0, { duration: 1200 })
+      ),
+      -1,
+      true
+    );
+
+    // Floating icon
+    iconTranslateY.value = withRepeat(
+      withSequence(
+        withTiming(-6, { duration: 1000 }),
+        withTiming(0, { duration: 1000 })
+      ),
+      -1,
+      true
+    );
+  }, [glowScale, iconTranslateY]);
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
+  }));
+
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: iconTranslateY.value }],
+  }));
+
   return (
     <Animated.View
-      entering={FadeIn.delay(200)}
+      entering={FadeIn.duration(600).delay(100)}
       style={{
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 32,
-        paddingVertical: 64,
       }}
     >
+      {/* Animated icon section */}
       <View
         style={{
-          width: 80,
-          height: 80,
-          borderRadius: 40,
-          backgroundColor: `${theme.colors.primary}15`,
+          width: 110,
+          height: 110,
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 24,
         }}
       >
-        <Ionicons name="map-outline" size={40} color={theme.colors.primary} />
+        {/* Pulsing glow behind circle */}
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              width: 110,
+              height: 110,
+              borderRadius: 55,
+              backgroundColor: `${theme.colors.primary}15`,
+            },
+            glowAnimatedStyle,
+          ]}
+        />
+
+        {/* Circle container */}
+        <View
+          style={{
+            width: 110,
+            height: 110,
+            borderRadius: 55,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Floating icon */}
+          <Animated.View style={iconAnimatedStyle}>
+            <Ionicons
+              name="map-outline"
+              size={52}
+              color={theme.colors.primary}
+            />
+          </Animated.View>
+        </View>
       </View>
-      <Typography variant="h4" align="center" weight="semibold">
-        No Roadmap Yet
-      </Typography>
-      <Typography
-        variant="body"
-        color="textMuted"
-        align="center"
-        style={{ marginTop: 8 }}
+
+      {/* Text section */}
+      <Animated.View
+        entering={FadeInDown.duration(400).delay(200)}
+        style={{ marginTop: 28, alignItems: "center" }}
       >
-        A learning roadmap for this group hasn't been created yet. Check back later!
-      </Typography>
+        <Typography
+          variant="h2"
+          weight="bold"
+          color="text"
+          align="center"
+        >
+          No Roadmap Yet
+        </Typography>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.duration(400).delay(350)}
+        style={{ marginTop: 10, maxWidth: 240, alignItems: "center" }}
+      >
+        <Typography
+          variant="body"
+          color="textMuted"
+          align="center"
+          style={{ lineHeight: 24 }}
+        >
+          {"The admin hasn't created a roadmap\nfor this group yet.\nCheck back later!"}
+        </Typography>
+      </Animated.View>
+
+      {/* Decorative dots */}
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 8,
+          marginTop: 28,
+        }}
+      >
+        <Animated.View
+          entering={FadeIn.delay(500)}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: theme.colors.primary,
+          }}
+        />
+        <Animated.View
+          entering={FadeIn.delay(600)}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: `${theme.colors.primary}99`,
+          }}
+        />
+        <Animated.View
+          entering={FadeIn.delay(700)}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: `${theme.colors.primary}4D`,
+          }}
+        />
+      </View>
     </Animated.View>
   );
 };
@@ -544,8 +773,15 @@ const LoadingState = () => {
         paddingVertical: 64,
       }}
     >
-      <ActivityIndicator size="large" color={theme.colors.primary} />
-      <Typography variant="body" color="textMuted" style={{ marginTop: 16 }}>
+      <ActivityIndicator
+        size="large"
+        color={theme.colors.primary}
+      />
+      <Typography
+        variant="body"
+        color="textMuted"
+        style={{ marginTop: 16 }}
+      >
         Loading roadmap...
       </Typography>
     </View>
@@ -557,23 +793,18 @@ export default function RoadmapScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id: groupId } = useLocalSearchParams<{ id: string }>();
+  const { id: groupId } = useLocalSearchParams<{
+    id: string;
+  }>();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [togglingStepId, setTogglingStepId] = useState<Id<"roadmapSteps"> | null>(null);
+  const [togglingStepId, setTogglingStepId] =
+    useState<Id<"roadmapSteps"> | null>(null);
 
   const styles = useThemedStyles((t) => ({
     container: {
       flex: 1,
       backgroundColor: t.colors.background,
-    },
-    header: {
-      paddingTop: insets.top + 8,
-      paddingHorizontal: 20,
-      paddingBottom: 16,
-      backgroundColor: t.colors.background,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.border,
     },
     content: {
       flex: 1,
@@ -593,10 +824,12 @@ export default function RoadmapScreen() {
   // Fetch roadmap with details
   const roadmapData = useQuery(
     api.roadmaps.getRoadmapWithDetails,
-    groupId ? { groupId: groupId as Id<"groups"> } : "skip"
+    groupId ? { groupId: groupId as Id<"groups"> } : "skip",
   );
 
-  const toggleStepComplete = useMutation(api.roadmaps.toggleStepComplete);
+  const toggleStepComplete = useMutation(
+    api.roadmaps.toggleStepComplete,
+  );
 
   const handleToggleStep = useCallback(
     async (stepId: Id<"roadmapSteps">) => {
@@ -614,7 +847,7 @@ export default function RoadmapScreen() {
         setTogglingStepId(null);
       }
     },
-    [roadmapData, toggleStepComplete, togglingStepId]
+    [roadmapData, toggleStepComplete, togglingStepId],
   );
 
   const handleRefresh = useCallback(async () => {
@@ -625,35 +858,117 @@ export default function RoadmapScreen() {
 
   const isLoading = roadmapData === undefined;
 
+  // Back button animation
+  const backButtonScale = useSharedValue(1);
+
+  const handleBackPress = () => {
+    backButtonScale.value = withSpring(0.9, { damping: 10 }, () => {
+      backButtonScale.value = withSpring(1, { damping: 12 });
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
+  const backButtonAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: backButtonScale.value }],
+  }));
+
   return (
     <View style={styles.container}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
+
       {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+      <Animated.View
+        entering={FadeInDown.duration(300).delay(50)}
+        style={{
+          backgroundColor: theme.colors.surface,
+          paddingTop: insets.top,
+          paddingHorizontal: 16,
+          paddingBottom: 14,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          {/* Back button */}
+          <AnimatedPressable
+            onPress={handleBackPress}
+            style={[
+              {
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: "rgba(255,255,255,0.08)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.10)",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              },
+              backButtonAnimatedStyle,
+            ]}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color="#FFFFFF"
+            />
+          </AnimatedPressable>
+
+          {/* Text section */}
+          <View style={{ flex: 1 }}>
+            <Typography variant="body" weight="semibold" color="text">
+              Learning Roadmap
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 2 }}
+            >
+              Track your progress
+            </Typography>
+          </View>
+
+          {/* Trophy button */}
           <Pressable
-            onPress={() => router.back()}
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: theme.colors.surface,
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: "rgba(255,255,255,0.08)",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.10)",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+            <Ionicons
+              name="trophy-outline"
+              size={18}
+              color={theme.colors.primary}
+            />
           </Pressable>
-
-          <View style={{ flex: 1 }}>
-            <Typography variant="h4" weight="semibold">
-              Learning Roadmap
-            </Typography>
-            <Typography variant="caption" color="textMuted">
-              Track your progress
-            </Typography>
-          </View>
         </View>
-      </View>
+
+        {/* Bottom accent line */}
+        <LinearGradient
+          colors={["#6C5DD3", "#8676FF", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            height: 1.5,
+            marginTop: 14,
+            marginHorizontal: -16,
+          }}
+        />
+      </Animated.View>
 
       {/* Content */}
       {isLoading ? (
@@ -673,8 +988,18 @@ export default function RoadmapScreen() {
           }
         >
           {/* Progress Header */}
-          <Animated.View entering={FadeInDown.springify()} style={styles.progressHeader}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <Animated.View
+            entering={FadeInDown.springify()}
+            style={styles.progressHeader}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
               <LinearGradient
                 colors={["#6C5DD3", "#8676FF"]}
                 style={{
@@ -685,7 +1010,11 @@ export default function RoadmapScreen() {
                   justifyContent: "center",
                 }}
               >
-                <Ionicons name="rocket" size={24} color="#FFFFFF" />
+                <Ionicons
+                  name="rocket"
+                  size={24}
+                  color="#FFFFFF"
+                />
               </LinearGradient>
 
               <View style={{ flex: 1 }}>
@@ -693,7 +1022,11 @@ export default function RoadmapScreen() {
                   {roadmapData.title}
                 </Typography>
                 {roadmapData.description && (
-                  <Typography variant="caption" color="textMuted" numberOfLines={1}>
+                  <Typography
+                    variant="caption"
+                    color="textMuted"
+                    numberOfLines={1}
+                  >
                     {roadmapData.description}
                   </Typography>
                 )}
@@ -709,16 +1042,31 @@ export default function RoadmapScreen() {
                   marginBottom: 8,
                 }}
               >
-                <Typography variant="body" color="textSecondary">
+                <Typography
+                  variant="body"
+                  color="textSecondary"
+                >
                   Overall Progress
                 </Typography>
-                <Typography variant="body" weight="bold" color="primary">
+                <Typography
+                  variant="body"
+                  weight="bold"
+                  color="primary"
+                >
                   {roadmapData.progressPercent}%
                 </Typography>
               </View>
-              <ProgressBar progress={roadmapData.progressPercent} height={10} />
-              <Typography variant="caption" color="textMuted" style={{ marginTop: 8 }}>
-                {roadmapData.completedSteps} of {roadmapData.totalSteps} steps completed
+              <ProgressBar
+                progress={roadmapData.progressPercent}
+                height={10}
+              />
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ marginTop: 8 }}
+              >
+                {roadmapData.completedSteps} of{" "}
+                {roadmapData.totalSteps} steps completed
               </Typography>
             </View>
 
@@ -733,35 +1081,57 @@ export default function RoadmapScreen() {
                 gap: 16,
               }}
             >
-              <View style={{ flex: 1, alignItems: "center" }}>
-                <Typography variant="h4" weight="bold" color="primary">
+              <View
+                style={{ flex: 1, alignItems: "center" }}
+              >
+                <Typography
+                  variant="h4"
+                  weight="bold"
+                  color="primary"
+                >
                   {roadmapData.milestones.length}
                 </Typography>
-                <Typography variant="caption" color="textMuted">
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
                   Milestones
                 </Typography>
               </View>
-              <View style={{ flex: 1, alignItems: "center" }}>
-                <Typography variant="h4" weight="bold" color="text">
+              <View
+                style={{ flex: 1, alignItems: "center" }}
+              >
+                <Typography
+                  variant="h4"
+                  weight="bold"
+                  color="text"
+                >
                   {roadmapData.totalSteps}
                 </Typography>
-                <Typography variant="caption" color="textMuted">
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
                   Total Steps
                 </Typography>
               </View>
               {roadmapData.difficulty && (
-                <View style={{ flex: 1, alignItems: "center" }}>
+                <View
+                  style={{ flex: 1, alignItems: "center" }}
+                >
                   <View
                     style={{
                       paddingHorizontal: 10,
                       paddingVertical: 4,
                       borderRadius: 8,
                       backgroundColor:
-                        roadmapData.difficulty === "beginner"
+                        roadmapData.difficulty ===
+                        "beginner"
                           ? `${theme.colors.success}20`
-                          : roadmapData.difficulty === "intermediate"
-                          ? `${theme.colors.warning}20`
-                          : `${theme.colors.danger}20`,
+                          : roadmapData.difficulty ===
+                              "intermediate"
+                            ? `${theme.colors.warning}20`
+                            : `${theme.colors.danger}20`,
                     }}
                   >
                     <Typography
@@ -769,18 +1139,24 @@ export default function RoadmapScreen() {
                       weight="semibold"
                       style={{
                         color:
-                          roadmapData.difficulty === "beginner"
+                          roadmapData.difficulty ===
+                          "beginner"
                             ? theme.colors.success
-                            : roadmapData.difficulty === "intermediate"
-                            ? theme.colors.warning
-                            : theme.colors.danger,
+                            : roadmapData.difficulty ===
+                                "intermediate"
+                              ? theme.colors.warning
+                              : theme.colors.danger,
                         textTransform: "capitalize",
                       }}
                     >
                       {roadmapData.difficulty}
                     </Typography>
                   </View>
-                  <Typography variant="caption" color="textMuted" style={{ marginTop: 4 }}>
+                  <Typography
+                    variant="caption"
+                    color="textMuted"
+                    style={{ marginTop: 4 }}
+                  >
                     Difficulty
                   </Typography>
                 </View>
@@ -789,17 +1165,21 @@ export default function RoadmapScreen() {
           </Animated.View>
 
           {/* Milestones Timeline */}
-          <View style={{ paddingBottom: insets.bottom + 20 }}>
-            {roadmapData.milestones.map((milestone, index) => (
-              <MilestoneCard
-                key={milestone._id}
-                milestone={milestone}
-                index={index}
-                roadmapId={roadmapData._id}
-                onToggleStep={handleToggleStep}
-                togglingStepId={togglingStepId}
-              />
-            ))}
+          <View
+            style={{ paddingBottom: insets.bottom + 20 }}
+          >
+            {roadmapData.milestones.map(
+              (milestone, index) => (
+                <MilestoneCard
+                  key={milestone._id}
+                  milestone={milestone}
+                  index={index}
+                  roadmapId={roadmapData._id}
+                  onToggleStep={handleToggleStep}
+                  togglingStepId={togglingStepId}
+                />
+              ),
+            )}
           </View>
         </ScrollView>
       )}

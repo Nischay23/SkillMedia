@@ -14,31 +14,43 @@ export const getAllRoadmaps = query({
     const user = await getAuthenticatedUser(ctx);
     if (!user.isAdmin) throw new Error("Unauthorized");
 
-    const roadmaps = await ctx.db.query("roadmaps").collect();
+    const roadmaps = await ctx.db
+      .query("roadmaps")
+      .collect();
 
     const enriched = await Promise.all(
       roadmaps.map(async (roadmap) => {
         const group = await ctx.db.get(roadmap.groupId);
-        const filterOption = await ctx.db.get(roadmap.filterOptionId);
+        const filterOption = roadmap.filterOptionId
+          ? await ctx.db.get(roadmap.filterOptionId)
+          : null;
 
         // Get milestone count
         const milestones = await ctx.db
           .query("milestones")
-          .withIndex("by_roadmap", (q) => q.eq("roadmapId", roadmap._id))
+          .withIndex("by_roadmap", (q) =>
+            q.eq("roadmapId", roadmap._id),
+          )
           .collect();
 
         // Get step count
         const steps = await ctx.db
           .query("roadmapSteps")
-          .withIndex("by_roadmap", (q) => q.eq("roadmapId", roadmap._id))
+          .withIndex("by_roadmap", (q) =>
+            q.eq("roadmapId", roadmap._id),
+          )
           .collect();
 
         // Get unique users who have progress
         const progress = await ctx.db
           .query("userRoadmapProgress")
-          .withIndex("by_roadmap", (q) => q.eq("roadmapId", roadmap._id))
+          .withIndex("by_roadmap", (q) =>
+            q.eq("roadmapId", roadmap._id),
+          )
           .collect();
-        const uniqueUsers = new Set(progress.map((p) => p.userId)).size;
+        const uniqueUsers = new Set(
+          progress.map((p) => p.userId),
+        ).size;
 
         return {
           ...roadmap,
@@ -48,10 +60,12 @@ export const getAllRoadmaps = query({
           stepCount: steps.length,
           usersStarted: uniqueUsers,
         };
-      })
+      }),
     );
 
-    return enriched.sort((a, b) => b.createdAt - a.createdAt);
+    return enriched.sort(
+      (a, b) => b.createdAt - a.createdAt,
+    );
   },
 });
 
@@ -63,7 +77,9 @@ export const getRoadmap = query({
     if (!roadmap) return null;
 
     const group = await ctx.db.get(roadmap.groupId);
-    const filterOption = await ctx.db.get(roadmap.filterOptionId);
+    const filterOption = roadmap.filterOptionId
+      ? await ctx.db.get(roadmap.filterOptionId)
+      : null;
 
     return {
       ...roadmap,
@@ -79,7 +95,9 @@ export const getRoadmapByGroup = query({
   handler: async (ctx, args) => {
     const roadmap = await ctx.db
       .query("roadmaps")
-      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .withIndex("by_group", (q) =>
+        q.eq("groupId", args.groupId),
+      )
       .filter((q) => q.eq(q.field("isPublished"), true))
       .first();
 
@@ -100,7 +118,9 @@ export const getRoadmapWithDetails = query({
 
     const roadmap = await ctx.db
       .query("roadmaps")
-      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .withIndex("by_group", (q) =>
+        q.eq("groupId", args.groupId),
+      )
       .filter((q) => q.eq(q.field("isPublished"), true))
       .first();
 
@@ -109,11 +129,15 @@ export const getRoadmapWithDetails = query({
     // Get all milestones
     const milestones = await ctx.db
       .query("milestones")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", roadmap._id))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", roadmap._id),
+      )
       .collect();
 
     // Sort by order
-    const sortedMilestones = milestones.sort((a, b) => a.order - b.order);
+    const sortedMilestones = milestones.sort(
+      (a, b) => a.order - b.order,
+    );
 
     // Get user progress if authenticated
     let completedStepIds: Set<string> = new Set();
@@ -121,10 +145,14 @@ export const getRoadmapWithDetails = query({
       const userProgress = await ctx.db
         .query("userRoadmapProgress")
         .withIndex("by_user_and_roadmap", (q) =>
-          q.eq("userId", user._id).eq("roadmapId", roadmap._id)
+          q
+            .eq("userId", user._id)
+            .eq("roadmapId", roadmap._id),
         )
         .collect();
-      completedStepIds = new Set(userProgress.map((p) => p.stepId));
+      completedStepIds = new Set(
+        userProgress.map((p) => p.stepId),
+      );
     }
 
     // Enrich milestones with steps
@@ -132,37 +160,54 @@ export const getRoadmapWithDetails = query({
       sortedMilestones.map(async (milestone) => {
         const steps = await ctx.db
           .query("roadmapSteps")
-          .withIndex("by_milestone", (q) => q.eq("milestoneId", milestone._id))
+          .withIndex("by_milestone", (q) =>
+            q.eq("milestoneId", milestone._id),
+          )
           .collect();
 
-        const sortedSteps = steps.sort((a, b) => a.order - b.order);
+        const sortedSteps = steps.sort(
+          (a, b) => a.order - b.order,
+        );
 
         const enrichedSteps = sortedSteps.map((step) => ({
           ...step,
           isCompleted: completedStepIds.has(step._id),
         }));
 
-        const completedCount = enrichedSteps.filter((s) => s.isCompleted).length;
+        const completedCount = enrichedSteps.filter(
+          (s) => s.isCompleted,
+        ).length;
 
         return {
           ...milestone,
           steps: enrichedSteps,
           totalSteps: enrichedSteps.length,
           completedSteps: completedCount,
-          isCompleted: completedCount === enrichedSteps.length && enrichedSteps.length > 0,
+          isCompleted:
+            completedCount === enrichedSteps.length &&
+            enrichedSteps.length > 0,
         };
-      })
+      }),
     );
 
-    const totalSteps = enrichedMilestones.reduce((acc, m) => acc + m.totalSteps, 0);
-    const completedSteps = enrichedMilestones.reduce((acc, m) => acc + m.completedSteps, 0);
+    const totalSteps = enrichedMilestones.reduce(
+      (acc, m) => acc + m.totalSteps,
+      0,
+    );
+    const completedSteps = enrichedMilestones.reduce(
+      (acc, m) => acc + m.completedSteps,
+      0,
+    );
 
     return {
       ...roadmap,
       milestones: enrichedMilestones,
       totalSteps,
       completedSteps,
-      progressPercent: totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0,
+      progressPercent:
+        totalSteps > 0
+          ? Math.round((completedSteps / totalSteps) * 100)
+          : 0,
     };
   },
 });
@@ -174,7 +219,11 @@ export const createRoadmap = mutation({
     title: v.string(),
     description: v.optional(v.string()),
     difficulty: v.optional(
-      v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))
+      v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+      ),
     ),
     estimatedDays: v.optional(v.number()),
   },
@@ -211,7 +260,11 @@ export const updateRoadmap = mutation({
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     difficulty: v.optional(
-      v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))
+      v.union(
+        v.literal("beginner"),
+        v.literal("intermediate"),
+        v.literal("advanced"),
+      ),
     ),
     estimatedDays: v.optional(v.number()),
     isPublished: v.optional(v.boolean()),
@@ -247,7 +300,9 @@ export const deleteRoadmap = mutation({
     // Delete all progress
     const progress = await ctx.db
       .query("userRoadmapProgress")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
     for (const p of progress) {
       await ctx.db.delete(p._id);
@@ -256,7 +311,9 @@ export const deleteRoadmap = mutation({
     // Delete all steps
     const steps = await ctx.db
       .query("roadmapSteps")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
     for (const step of steps) {
       await ctx.db.delete(step._id);
@@ -265,7 +322,9 @@ export const deleteRoadmap = mutation({
     // Delete all milestones
     const milestones = await ctx.db
       .query("milestones")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
     for (const milestone of milestones) {
       await ctx.db.delete(milestone._id);
@@ -286,7 +345,9 @@ export const getMilestones = query({
   handler: async (ctx, args) => {
     const milestones = await ctx.db
       .query("milestones")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
 
     return milestones.sort((a, b) => a.order - b.order);
@@ -307,9 +368,14 @@ export const createMilestone = mutation({
     // Get current max order
     const existingMilestones = await ctx.db
       .query("milestones")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
-    const maxOrder = existingMilestones.reduce((max, m) => Math.max(max, m.order), 0);
+    const maxOrder = existingMilestones.reduce(
+      (max, m) => Math.max(max, m.order),
+      0,
+    );
 
     const milestoneId = await ctx.db.insert("milestones", {
       roadmapId: args.roadmapId,
@@ -322,7 +388,9 @@ export const createMilestone = mutation({
     });
 
     // Update roadmap timestamp
-    await ctx.db.patch(args.roadmapId, { updatedAt: Date.now() });
+    await ctx.db.patch(args.roadmapId, {
+      updatedAt: Date.now(),
+    });
 
     return milestoneId;
   },
@@ -369,14 +437,21 @@ export const deleteMilestone = mutation({
     // Delete all steps in this milestone
     const steps = await ctx.db
       .query("roadmapSteps")
-      .withIndex("by_milestone", (q) => q.eq("milestoneId", args.milestoneId))
+      .withIndex("by_milestone", (q) =>
+        q.eq("milestoneId", args.milestoneId),
+      )
       .collect();
 
     for (const step of steps) {
       // Delete progress for each step
       const progress = await ctx.db
         .query("userRoadmapProgress")
-        .withIndex("by_user_and_step", (q) => q.eq("userId", step._id as unknown as Id<"users">))
+        .withIndex("by_user_and_step", (q) =>
+          q.eq(
+            "userId",
+            step._id as unknown as Id<"users">,
+          ),
+        )
         .collect();
       for (const p of progress) {
         if (p.stepId === step._id) {
@@ -390,7 +465,9 @@ export const deleteMilestone = mutation({
     await ctx.db.delete(args.milestoneId);
 
     // Update roadmap timestamp
-    await ctx.db.patch(milestone.roadmapId, { updatedAt: Date.now() });
+    await ctx.db.patch(milestone.roadmapId, {
+      updatedAt: Date.now(),
+    });
   },
 });
 
@@ -404,7 +481,9 @@ export const getSteps = query({
   handler: async (ctx, args) => {
     const steps = await ctx.db
       .query("roadmapSteps")
-      .withIndex("by_milestone", (q) => q.eq("milestoneId", args.milestoneId))
+      .withIndex("by_milestone", (q) =>
+        q.eq("milestoneId", args.milestoneId),
+      )
       .collect();
 
     return steps.sort((a, b) => a.order - b.order);
@@ -424,8 +503,8 @@ export const createStep = mutation({
         v.literal("article"),
         v.literal("practice"),
         v.literal("quiz"),
-        v.literal("project")
-      )
+        v.literal("project"),
+      ),
     ),
     estimatedMinutes: v.optional(v.number()),
   },
@@ -439,9 +518,14 @@ export const createStep = mutation({
     // Get current max order
     const existingSteps = await ctx.db
       .query("roadmapSteps")
-      .withIndex("by_milestone", (q) => q.eq("milestoneId", args.milestoneId))
+      .withIndex("by_milestone", (q) =>
+        q.eq("milestoneId", args.milestoneId),
+      )
       .collect();
-    const maxOrder = existingSteps.reduce((max, s) => Math.max(max, s.order), 0);
+    const maxOrder = existingSteps.reduce(
+      (max, s) => Math.max(max, s.order),
+      0,
+    );
 
     const stepId = await ctx.db.insert("roadmapSteps", {
       milestoneId: args.milestoneId,
@@ -488,8 +572,8 @@ export const updateStep = mutation({
         v.literal("article"),
         v.literal("practice"),
         v.literal("quiz"),
-        v.literal("project")
-      )
+        v.literal("project"),
+      ),
     ),
     estimatedMinutes: v.optional(v.number()),
     order: v.optional(v.number()),
@@ -527,7 +611,9 @@ export const deleteStep = mutation({
     // Delete progress for this step
     const progress = await ctx.db
       .query("userRoadmapProgress")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", step.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", step.roadmapId),
+      )
       .collect();
     for (const p of progress) {
       if (p.stepId === args.stepId) {
@@ -575,7 +661,7 @@ export const toggleStepComplete = mutation({
     const existing = await ctx.db
       .query("userRoadmapProgress")
       .withIndex("by_user_and_step", (q) =>
-        q.eq("userId", user._id).eq("stepId", args.stepId)
+        q.eq("userId", user._id).eq("stepId", args.stepId),
       )
       .first();
 
@@ -605,7 +691,9 @@ export const getUserProgress = query({
     const progress = await ctx.db
       .query("userRoadmapProgress")
       .withIndex("by_user_and_roadmap", (q) =>
-        q.eq("userId", user._id).eq("roadmapId", args.roadmapId)
+        q
+          .eq("userId", user._id)
+          .eq("roadmapId", args.roadmapId),
       )
       .collect();
 
@@ -625,13 +713,16 @@ export const getRoadmapProgressSummary = query({
     const progress = await ctx.db
       .query("userRoadmapProgress")
       .withIndex("by_user_and_roadmap", (q) =>
-        q.eq("userId", user._id).eq("roadmapId", args.roadmapId)
+        q
+          .eq("userId", user._id)
+          .eq("roadmapId", args.roadmapId),
       )
       .collect();
 
     const completed = progress.length;
     const total = roadmap.totalSteps;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const percent =
+      total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return { completed, total, percent };
   },
@@ -658,21 +749,31 @@ export const getMyRoadmapsProgress = query({
 
     // Get roadmap details
     const results = await Promise.all(
-      Array.from(progressByRoadmap.entries()).map(async ([roadmapId, completed]) => {
-        const roadmap = await ctx.db.get(roadmapId as Id<"roadmaps">);
-        if (!roadmap || !roadmap.isPublished) return null;
+      Array.from(progressByRoadmap.entries()).map(
+        async ([roadmapId, completed]) => {
+          const roadmap = await ctx.db.get(
+            roadmapId as Id<"roadmaps">,
+          );
+          if (!roadmap || !roadmap.isPublished) return null;
 
-        const group = await ctx.db.get(roadmap.groupId);
+          const group = await ctx.db.get(roadmap.groupId);
 
-        return {
-          roadmapId,
-          title: roadmap.title,
-          groupName: group?.name ?? "Unknown",
-          completed,
-          total: roadmap.totalSteps,
-          percent: roadmap.totalSteps > 0 ? Math.round((completed / roadmap.totalSteps) * 100) : 0,
-        };
-      })
+          return {
+            roadmapId,
+            groupId: roadmap.groupId,
+            title: roadmap.title,
+            groupName: group?.name ?? "Unknown",
+            completed,
+            total: roadmap.totalSteps,
+            percent:
+              roadmap.totalSteps > 0
+                ? Math.round(
+                    (completed / roadmap.totalSteps) * 100,
+                  )
+                : 0,
+          };
+        },
+      ),
     );
 
     return results.filter(Boolean);
@@ -692,11 +793,15 @@ export const getRoadmapStats = query({
     // Get all progress for this roadmap
     const allProgress = await ctx.db
       .query("userRoadmapProgress")
-      .withIndex("by_roadmap", (q) => q.eq("roadmapId", args.roadmapId))
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
       .collect();
 
     // Get unique users who have progress
-    const usersWithProgress = new Set(allProgress.map((p) => p.userId));
+    const usersWithProgress = new Set(
+      allProgress.map((p) => p.userId),
+    );
 
     // Calculate average completion
     const progressByUser = new Map<string, number>();
@@ -705,13 +810,20 @@ export const getRoadmapStats = query({
       progressByUser.set(p.userId, count + 1);
     }
 
-    const completionRates = Array.from(progressByUser.values()).map(
-      (completed) => (roadmap.totalSteps > 0 ? (completed / roadmap.totalSteps) * 100 : 0)
+    const completionRates = Array.from(
+      progressByUser.values(),
+    ).map((completed) =>
+      roadmap.totalSteps > 0
+        ? (completed / roadmap.totalSteps) * 100
+        : 0,
     );
 
     const avgCompletion =
       completionRates.length > 0
-        ? Math.round(completionRates.reduce((a, b) => a + b, 0) / completionRates.length)
+        ? Math.round(
+            completionRates.reduce((a, b) => a + b, 0) /
+              completionRates.length,
+          )
         : 0;
 
     // Get group member count for context
@@ -733,17 +845,24 @@ export const getGroupsForRoadmap = query({
     const user = await getAuthenticatedUser(ctx);
     if (!user.isAdmin) throw new Error("Unauthorized");
 
-    const groups = await ctx.db.query("groups").filter((q) => q.eq(q.field("isActive"), true)).collect();
+    const groups = await ctx.db
+      .query("groups")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
 
     // Check which groups already have a roadmap
     const groupsWithRoadmaps = await Promise.all(
       groups.map(async (group) => {
         const roadmap = await ctx.db
           .query("roadmaps")
-          .withIndex("by_group", (q) => q.eq("groupId", group._id))
+          .withIndex("by_group", (q) =>
+            q.eq("groupId", group._id),
+          )
           .first();
 
-        const filterOption = await ctx.db.get(group.filterOptionId);
+        const filterOption = await ctx.db.get(
+          group.filterOptionId,
+        );
 
         return {
           _id: group._id,
@@ -752,9 +871,11 @@ export const getGroupsForRoadmap = query({
           hasRoadmap: !!roadmap,
           roadmapId: roadmap?._id ?? null,
         };
-      })
+      }),
     );
 
-    return groupsWithRoadmaps.sort((a, b) => a.name.localeCompare(b.name));
+    return groupsWithRoadmaps.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
   },
 });

@@ -29,7 +29,7 @@ export default defineSchema({
       v.literal("sector"),
       v.literal("subSector"),
       v.literal("branch"),
-      v.literal("role")
+      v.literal("role"),
     ),
     parentId: v.optional(v.id("FilterOption")),
 
@@ -41,8 +41,8 @@ export default defineSchema({
     image: v.optional(v.string()), // An image for the path/sector
 
     // Ranking & vacancy data
-    ranking: v.optional(v.number()),           // Position by job demand (1 = highest)
-    annualVacancies: v.optional(v.number()),   // Approximate openings per year
+    ranking: v.optional(v.number()), // Position by job demand (1 = highest)
+    annualVacancies: v.optional(v.number()), // Approximate openings per year
 
     // Engagement counters for the career path definition
     likes: v.optional(v.number()),
@@ -64,7 +64,7 @@ export default defineSchema({
     // Status workflow
     status: v.union(
       v.literal("draft"),
-      v.literal("published")
+      v.literal("published"),
     ),
     publishedAt: v.optional(v.number()), // When first published
 
@@ -126,7 +126,7 @@ export default defineSchema({
     type: v.union(
       v.literal("like"),
       v.literal("comment"),
-      v.literal("follow")
+      v.literal("follow"),
     ),
     communityPostId: v.optional(v.id("communityPosts")),
     filterOptionId: v.optional(v.id("FilterOption")),
@@ -156,11 +156,11 @@ export default defineSchema({
 
   // 8. adminArticles table: Admin-posted articles/tips linked to career paths
   adminArticles: defineTable({
-    filterOptionId: v.id("FilterOption"),     // Which career path this belongs to
-    title: v.string(),                        // Article title
-    content: v.string(),                      // Article body (markdown)
-    authorId: v.id("users"),                  // Admin who wrote it
-    order: v.optional(v.number()),            // Display order
+    filterOptionId: v.id("FilterOption"), // Which career path this belongs to
+    title: v.string(), // Article title
+    content: v.string(), // Article body (markdown)
+    authorId: v.id("users"), // Admin who wrote it
+    order: v.optional(v.number()), // Display order
     isPublished: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -197,21 +197,32 @@ export default defineSchema({
     groupId: v.id("groups"),
     userId: v.id("users"),
     content: v.string(),
-    type: v.union(v.literal("text"), v.literal("announcement"), v.literal("image")),
+    type: v.union(
+      v.literal("text"),
+      v.literal("announcement"),
+      v.literal("image"),
+    ),
     // Image message fields
     storageId: v.optional(v.id("_storage")),
     imageUrl: v.optional(v.string()),
     // Reactions
-    reactions: v.optional(v.array(v.object({
-      emoji: v.string(),
-      userId: v.id("users"),
-    }))),
+    reactions: v.optional(
+      v.array(
+        v.object({
+          emoji: v.string(),
+          userId: v.id("users"),
+        }),
+      ),
+    ),
     isPinned: v.optional(v.boolean()),
     isDeleted: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_group", ["groupId"])
-    .index("by_group_and_created", ["groupId", "createdAt"]),
+    .index("by_group_and_created", [
+      "groupId",
+      "createdAt",
+    ]),
 
   // 12. reports table: Message reports
   reports: defineTable({
@@ -229,7 +240,10 @@ export default defineSchema({
     .index("by_group", ["groupId"])
     .index("by_status", ["status"])
     .index("by_message", ["messageId"])
-    .index("by_reporter_and_message", ["reporterId", "messageId"]),
+    .index("by_reporter_and_message", [
+      "reporterId",
+      "messageId",
+    ]),
 
   // ===========================================
   // PHASE 3: CAREER ROADMAPS

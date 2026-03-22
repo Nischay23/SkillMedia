@@ -19,7 +19,9 @@ export const getAllRoadmaps = query({
     const enriched = await Promise.all(
       roadmaps.map(async (roadmap) => {
         const group = await ctx.db.get(roadmap.groupId);
-        const filterOption = await ctx.db.get(roadmap.filterOptionId);
+        const filterOption = roadmap.filterOptionId
+          ? await ctx.db.get(roadmap.filterOptionId)
+          : null;
 
         // Get milestone count
         const milestones = await ctx.db
@@ -63,7 +65,9 @@ export const getRoadmap = query({
     if (!roadmap) return null;
 
     const group = await ctx.db.get(roadmap.groupId);
-    const filterOption = await ctx.db.get(roadmap.filterOptionId);
+    const filterOption = roadmap.filterOptionId
+      ? await ctx.db.get(roadmap.filterOptionId)
+      : null;
 
     return {
       ...roadmap,

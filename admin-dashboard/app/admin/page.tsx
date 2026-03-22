@@ -20,10 +20,18 @@ import Link from "next/link";
 
 export default function AdminDashboard() {
   // Fetch data from Convex
-  const posts = useQuery(api.communityPosts.getCommunityPosts, { statusFilter: "all" });
+  const posts = useQuery(
+    api.communityPosts.getCommunityPosts,
+    { statusFilter: "all" },
+  );
   const filters = useQuery(api.filter.getAllFilterOptions);
-  const engagementStats = useQuery(api.adminFilters.getEngagementStats);
-  const topCareerPaths = useQuery(api.filter.getFilterOptionsWithStats, { limit: 10 });
+  const engagementStats = useQuery(
+    api.adminFilters.getEngagementStats,
+  );
+  const topCareerPaths = useQuery(
+    api.filter.getFilterOptionsWithStats,
+    { limit: 10 },
+  );
 
   // Loading states
   const postsLoading = posts === undefined;
@@ -35,7 +43,9 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          Dashboard
+        </h1>
         <p className="mt-1 text-muted-foreground">
           Welcome to the Skills App Admin Dashboard
         </p>
@@ -143,26 +153,32 @@ export default function AdminDashboard() {
                     </td>
                   </tr>
                 ))
-              ) : topCareerPaths && topCareerPaths.length > 0 ? (
+              ) : topCareerPaths &&
+                topCareerPaths.length > 0 ? (
                 topCareerPaths.map((path, index) => (
-                  <tr key={path._id} className="transition-colors hover:bg-muted/50">
+                  <tr
+                    key={path._id}
+                    className="transition-colors hover:bg-muted/50"
+                  >
                     <td className="px-6 py-4">
                       <div
                         className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                           index === 0
                             ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white"
                             : index === 1
-                            ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
-                            : index === 2
-                            ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
-                            : "bg-muted text-muted-foreground"
+                              ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
+                              : index === 2
+                                ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
+                                : "bg-muted text-muted-foreground"
                         }`}
                       >
                         {index + 1}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">{path.name}</p>
+                      <p className="font-medium text-foreground">
+                        {path.name}
+                      </p>
                       {path.parentPath && (
                         <p className="mt-0.5 text-xs text-muted-foreground truncate max-w-[200px]">
                           {path.parentPath}
@@ -197,9 +213,14 @@ export default function AdminDashboard() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-8 text-center"
+                  >
                     <p className="text-muted-foreground">
-                      No engagement data yet. Career paths will appear here once users interact with them.
+                      No engagement data yet. Career paths
+                      will appear here once users interact
+                      with them.
                     </p>
                   </td>
                 </tr>
@@ -213,7 +234,9 @@ export default function AdminDashboard() {
       <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Quick Actions
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Common admin tasks
             </p>
@@ -230,8 +253,12 @@ export default function AdminDashboard() {
               <Plus className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-foreground">Create New Post</p>
-              <p className="text-xs text-muted-foreground">Add content to the app</p>
+              <p className="font-medium text-foreground">
+                Create New Post
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Add content to the app
+              </p>
             </div>
             <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
@@ -245,8 +272,12 @@ export default function AdminDashboard() {
               <ListTree className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-foreground">Manage Filters</p>
-              <p className="text-xs text-muted-foreground">Categories, Skills, Paths</p>
+              <p className="font-medium text-foreground">
+                Manage Filters
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Categories, Skills, Paths
+              </p>
             </div>
             <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
@@ -260,8 +291,12 @@ export default function AdminDashboard() {
               <Settings className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-foreground">Manage Posts</p>
-              <p className="text-xs text-muted-foreground">Edit, Delete, Review</p>
+              <p className="font-medium text-foreground">
+                Manage Posts
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Edit, Delete, Review
+              </p>
             </div>
             <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
           </Link>
@@ -273,7 +308,9 @@ export default function AdminDashboard() {
         {/* Recent Posts */}
         <div className="rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Recent Posts</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Recent Posts
+            </h2>
             <Link
               href="/admin/posts"
               className="text-sm text-primary hover:underline"
@@ -285,7 +322,10 @@ export default function AdminDashboard() {
             {postsLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-lg bg-background p-3"
+                >
                   <div className="h-10 w-10 animate-pulse rounded bg-muted" />
                   <div className="flex-1 space-y-2">
                     <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
@@ -307,7 +347,10 @@ export default function AdminDashboard() {
                       {post.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {post.status === "published" ? "Published" : "Draft"} • {post.user?.username || "Unknown"}
+                      {post.status === "published"
+                        ? "Published"
+                        : "Draft"}{" "}
+                      • {post.user?.username || "Unknown"}
                     </p>
                   </div>
                   <span
@@ -332,7 +375,9 @@ export default function AdminDashboard() {
         {/* Filter Categories Overview */}
         <div className="rounded-xl border border-border bg-surface p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Filter Categories</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Filter Categories
+            </h2>
             <Link
               href="/admin/filters"
               className="text-sm text-primary hover:underline"
@@ -344,7 +389,10 @@ export default function AdminDashboard() {
             {filtersLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-lg bg-background p-3">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-lg bg-background p-3"
+                >
                   <div className="h-10 w-10 animate-pulse rounded bg-muted" />
                   <div className="flex-1 space-y-2">
                     <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
@@ -359,7 +407,7 @@ export default function AdminDashboard() {
                 .slice(0, 5)
                 .map((filter) => {
                   const childCount = filters.filter(
-                    (f) => f.parentId === filter._id
+                    (f) => f.parentId === filter._id,
                   ).length;
                   return (
                     <div
