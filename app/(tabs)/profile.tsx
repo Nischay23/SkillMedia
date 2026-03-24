@@ -58,6 +58,9 @@ export default function Profile() {
     api.roadmaps.getMyRoadmapsProgress,
   );
 
+  // Fetch streak data
+  const streakData = useQuery(api.streaks.getStreak);
+
   const [editedProfile, setEditedProfile] = useState({
     fullname: currentUser?.fullname || "",
     bio: currentUser?.bio || "",
@@ -388,6 +391,68 @@ export default function Profile() {
               </View>
             </View>
           </View>
+
+          {/* Streak Badge */}
+          {streakData && streakData.currentStreak > 0 && (
+            <Animated.View
+              entering={FadeInDown.duration(300).delay(100)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginTop: 12,
+                gap: 8,
+              }}
+            >
+              <LinearGradient
+                colors={["#F97316", "#FB923C"]}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  gap: 6,
+                }}
+              >
+                <Typography style={{ fontSize: 16 }}>🔥</Typography>
+                <Typography
+                  variant="caption"
+                  weight="bold"
+                  style={{ color: "#FFFFFF" }}
+                >
+                  {streakData.currentStreak} day streak
+                </Typography>
+              </LinearGradient>
+              {streakData.longestStreak > streakData.currentStreak && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: theme.colors.surface,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    gap: 4,
+                  }}
+                >
+                  <Ionicons
+                    name="trophy"
+                    size={14}
+                    color={theme.colors.warning}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="textMuted"
+                    style={{ fontSize: 11 }}
+                  >
+                    Best: {streakData.longestStreak}
+                  </Typography>
+                </View>
+              )}
+            </Animated.View>
+          )}
 
           {/* Name + Bio */}
           <Typography

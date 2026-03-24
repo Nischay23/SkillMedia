@@ -879,3 +879,66 @@ export const getGroupsForRoadmap = query({
     );
   },
 });
+
+// Get leaderboard for a roadmap
+export const getLeaderboard = query({
+  args: { roadmapId: v.id("roadmaps") },
+  handler: async (ctx, args) => {
+    const roadmap = await ctx.db.get(args.roadmapId);
+    if (!roadmap) return [];
+
+    // Get all progress for this roadmap
+    const allProgress = await ctx.db
+      .query("userRoadmapProgress")
+      .withIndex("by_roadmap", (q) =>
+        q.eq("roadmapId", args.roadmapId),
+      )
+      .collect();
+
+    // Group progress by user
+    const progressByUser = new Map<string, number>();
+    for (const p of allProgress) {
+      const count = progressByUser.get(p.userId) || 0;
+      progressByUser.set(p.userId, count + 1);
+    }
+
+    // Get user details and build leaderboard
+    const leaderboard = await Promise.all(
+      Array.from(progressByUser.entries()).map(
+        async ([oduserId, completedCount]) => {
+          const userId = oduserId as Id<"users">;
+          const user = await ctx.db.get(userId);
+          if (!user) return null;
+
+          const progressPercent =
+            roadmap.totalSteps > 0
+              ? Math.round((completedCount / roadmap.totalSteps) * 100)
+              : 0;
+
+          return {
+            oduserId,
+            fullname: user.fullname,
+            username: user.username,
+            profileImage: user.image || user.profileImage,
+            completedCount,
+            progressPercent,
+          };
+        },
+      ),
+    );
+
+    // Filter null and sort by progress descending
+    return leaderboard
+      .filter(Boolean)
+      .sort((a, b) => (b?.progressPercent ?? 0) - (a?.progressPercent ?? 0))
+      .slice(0, 20)
+      .map((item) => ({
+        userId: item!.oduserId,
+        fullname: item!.fullname,
+        username: item!.username,
+        profileImage: item!.profileImage,
+        completedCount: item!.completedCount,
+        progressPercent: item!.progressPercent,
+      }));
+  },
+});

@@ -2,7 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -11,12 +16,15 @@ import {
   ScrollView,
   StatusBar,
   View,
+  Modal,
+  Share,
 } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
   FadeInRight,
   FadeOut,
+  ZoomIn,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -26,6 +34,12 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetFlatList,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
 
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
@@ -128,7 +142,7 @@ const AnimatedCheckbox = ({
   );
 };
 
-// Progress Bar Component
+// Progress Bar Component - FIXED with overshootClamping
 const ProgressBar = ({
   progress,
   height = 8,
@@ -137,13 +151,22 @@ const ProgressBar = ({
   height?: number;
 }) => {
   const { theme } = useTheme();
-  const animatedWidth = useSharedValue(0);
+  const animatedWidth = useSharedValue(progress);
+  const isFirstRender = useRef(true);
 
   React.useEffect(() => {
-    animatedWidth.value = withSpring(progress, {
-      damping: 15,
-      stiffness: 100,
-    });
+    if (isFirstRender.current) {
+      // Instant set on first render
+      animatedWidth.value = progress;
+      isFirstRender.current = false;
+    } else {
+      // Animate subsequent changes with overshootClamping
+      animatedWidth.value = withSpring(progress, {
+        damping: 20,
+        stiffness: 180,
+        overshootClamping: true,
+      });
+    }
   }, [progress, animatedWidth]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -174,6 +197,19 @@ const ProgressBar = ({
       </Animated.View>
     </View>
   );
+};
+
+// Format estimated time helper
+const formatEstimatedTime = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMins = minutes % 60;
+  if (remainingMins === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${remainingMins}m`;
 };
 
 // Step Item Component
@@ -217,13 +253,12 @@ const StepItem = ({
       entering={FadeInRight.delay(index * 50).springify()}
       style={{
         flexDirection: "row",
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        padding: 12,
         backgroundColor: step.isCompleted
           ? `${theme.colors.success}10`
           : theme.colors.surface,
         borderRadius: 12,
-        marginBottom: 8,
+        marginBottom: 6,
         borderWidth: 1,
         borderColor: step.isCompleted
           ? `${theme.colors.success}30`
@@ -231,7 +266,7 @@ const StepItem = ({
       }}
     >
       {/* Checkbox */}
-      <View style={{ marginRight: 12, paddingTop: 2 }}>
+      <View style={{ marginRight: 10, paddingTop: 2 }}>
         <AnimatedCheckbox
           isChecked={step.isCompleted}
           onToggle={() => onToggle(step._id)}
@@ -265,13 +300,14 @@ const StepItem = ({
           </Typography>
         )}
 
-        {/* Meta info */}
+        {/* Meta info row */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             marginTop: 8,
             gap: 12,
+            flexWrap: "wrap",
           }}
         >
           {contentTypeInfo && (
@@ -297,27 +333,31 @@ const StepItem = ({
             </View>
           )}
 
-          {step.estimatedMinutes && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <Ionicons
-                name="time-outline"
-                size={14}
-                color={theme.colors.textMuted}
-              />
-              <Typography
-                variant="caption"
-                color="textMuted"
+          {/* Estimated time - always show if exists */}
+          {step.estimatedMinutes &&
+            step.estimatedMinutes > 0 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
-                {step.estimatedMinutes} min
-              </Typography>
-            </View>
-          )}
+                <Ionicons
+                  name="time-outline"
+                  size={12}
+                  color={theme.colors.textMuted}
+                />
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
+                  {formatEstimatedTime(
+                    step.estimatedMinutes,
+                  )}
+                </Typography>
+              </View>
+            )}
 
           {step.resourceUrl && (
             <Pressable
@@ -412,23 +452,29 @@ const MilestoneCard = ({
     <Animated.View
       entering={FadeInDown.delay(index * 100).springify()}
       style={{
-        marginBottom: 16,
+        marginBottom: 14,
       }}
     >
       {/* Timeline connector */}
       <View style={{ flexDirection: "row" }}>
         {/* Timeline dot and line */}
-        <View style={{ alignItems: "center", width: 32 }}>
-          {/* Dot */}
+        <View
+          style={{
+            alignItems: "center",
+            width: 26,
+            marginLeft: 16,
+          }}
+        >
+          {/* Dot - smaller size */}
           <View
             style={{
-              width: 16,
-              height: 16,
-              borderRadius: 8,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
               backgroundColor: milestone.isCompleted
                 ? theme.colors.success
                 : theme.colors.primary,
-              borderWidth: 3,
+              borderWidth: 2,
               borderColor: milestone.isCompleted
                 ? `${theme.colors.success}30`
                 : `${theme.colors.primary}30`,
@@ -446,7 +492,13 @@ const MilestoneCard = ({
         </View>
 
         {/* Card */}
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View
+          style={{
+            flex: 1,
+            marginLeft: 10,
+            marginRight: 12,
+          }}
+        >
           <Pressable
             onPress={toggleExpand}
             style={{
@@ -462,7 +514,7 @@ const MilestoneCard = ({
             {/* Header */}
             <View
               style={{
-                padding: 16,
+                padding: 14,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -479,9 +531,9 @@ const MilestoneCard = ({
                   {milestone.isCompleted && (
                     <View
                       style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
                         backgroundColor:
                           theme.colors.success,
                         alignItems: "center",
@@ -490,7 +542,7 @@ const MilestoneCard = ({
                     >
                       <Ionicons
                         name="checkmark"
-                        size={14}
+                        size={12}
                         color="#FFFFFF"
                       />
                     </View>
@@ -516,7 +568,7 @@ const MilestoneCard = ({
                 )}
 
                 {/* Progress info */}
-                <View style={{ marginTop: 12 }}>
+                <View style={{ marginTop: 10 }}>
                   <View
                     style={{
                       flexDirection: "row",
@@ -541,17 +593,17 @@ const MilestoneCard = ({
                   </View>
                   <ProgressBar
                     progress={progressPercent}
-                    height={6}
+                    height={5}
                   />
                 </View>
               </View>
 
               <Animated.View
-                style={[{ marginLeft: 12 }, chevronStyle]}
+                style={[{ marginLeft: 10 }, chevronStyle]}
               >
                 <Ionicons
                   name="chevron-down"
-                  size={24}
+                  size={22}
                   color={theme.colors.textMuted}
                 />
               </Animated.View>
@@ -563,13 +615,13 @@ const MilestoneCard = ({
                 entering={FadeIn.duration(200)}
                 exiting={FadeOut.duration(150)}
                 style={{
-                  paddingHorizontal: 12,
-                  paddingBottom: 12,
+                  paddingHorizontal: 10,
+                  paddingBottom: 10,
                   borderTopWidth: 1,
                   borderTopColor: theme.colors.border,
                 }}
               >
-                <View style={{ marginTop: 12 }}>
+                <View style={{ marginTop: 10 }}>
                   {milestone.steps.map(
                     (step, stepIndex) => (
                       <StepItem
@@ -609,20 +661,20 @@ const EmptyState = () => {
     glowScale.value = withRepeat(
       withSequence(
         withTiming(1.15, { duration: 1200 }),
-        withTiming(1.0, { duration: 1200 })
+        withTiming(1.0, { duration: 1200 }),
       ),
       -1,
-      true
+      true,
     );
 
     // Floating icon
     iconTranslateY.value = withRepeat(
       withSequence(
         withTiming(-6, { duration: 1000 }),
-        withTiming(0, { duration: 1000 })
+        withTiming(0, { duration: 1000 }),
       ),
       -1,
-      true
+      true,
     );
   }, [glowScale, iconTranslateY]);
 
@@ -708,7 +760,11 @@ const EmptyState = () => {
 
       <Animated.View
         entering={FadeInDown.duration(400).delay(350)}
-        style={{ marginTop: 10, maxWidth: 240, alignItems: "center" }}
+        style={{
+          marginTop: 10,
+          maxWidth: 240,
+          alignItems: "center",
+        }}
       >
         <Typography
           variant="body"
@@ -716,7 +772,9 @@ const EmptyState = () => {
           align="center"
           style={{ lineHeight: 24 }}
         >
-          {"The admin hasn't created a roadmap\nfor this group yet.\nCheck back later!"}
+          {
+            "The admin hasn't created a roadmap\nfor this group yet.\nCheck back later!"
+          }
         </Typography>
       </Animated.View>
 
@@ -800,6 +858,12 @@ export default function RoadmapScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [togglingStepId, setTogglingStepId] =
     useState<Id<"roadmapSteps"> | null>(null);
+  const [showCelebration, setShowCelebration] =
+    useState(false);
+  const celebrationShownRef = useRef(false);
+
+  // Leaderboard sheet ref
+  const leaderboardSheetRef = useRef<BottomSheet>(null);
 
   const styles = useThemedStyles((t) => ({
     container: {
@@ -808,14 +872,14 @@ export default function RoadmapScreen() {
     },
     content: {
       flex: 1,
-      paddingHorizontal: 20,
     },
     progressHeader: {
       backgroundColor: t.colors.surface,
       borderRadius: 20,
-      padding: 20,
-      marginTop: 20,
-      marginBottom: 24,
+      padding: 16,
+      marginTop: 12,
+      marginHorizontal: 12,
+      marginBottom: 14,
       borderWidth: 1,
       borderColor: t.colors.border,
     },
@@ -827,9 +891,35 @@ export default function RoadmapScreen() {
     groupId ? { groupId: groupId as Id<"groups"> } : "skip",
   );
 
+  // Fetch leaderboard
+  const leaderboard = useQuery(
+    api.roadmaps.getLeaderboard,
+    roadmapData?._id
+      ? { roadmapId: roadmapData._id }
+      : "skip",
+  );
+
   const toggleStepComplete = useMutation(
     api.roadmaps.toggleStepComplete,
   );
+
+  // Celebration trigger
+  useEffect(() => {
+    if (
+      roadmapData?.progressPercent === 100 &&
+      roadmapData?.completedSteps > 0 &&
+      !celebrationShownRef.current
+    ) {
+      // Small delay so progress bar animation finishes first
+      setTimeout(() => {
+        setShowCelebration(true);
+        celebrationShownRef.current = true;
+      }, 800);
+    }
+  }, [
+    roadmapData?.progressPercent,
+    roadmapData?.completedSteps,
+  ]);
 
   const handleToggleStep = useCallback(
     async (stepId: Id<"roadmapSteps">) => {
@@ -862,9 +952,15 @@ export default function RoadmapScreen() {
   const backButtonScale = useSharedValue(1);
 
   const handleBackPress = () => {
-    backButtonScale.value = withSpring(0.9, { damping: 10 }, () => {
-      backButtonScale.value = withSpring(1, { damping: 12 });
-    });
+    backButtonScale.value = withSpring(
+      0.9,
+      { damping: 10 },
+      () => {
+        backButtonScale.value = withSpring(1, {
+          damping: 12,
+        });
+      },
+    );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
@@ -872,6 +968,35 @@ export default function RoadmapScreen() {
   const backButtonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: backButtonScale.value }],
   }));
+
+  // Leaderboard sheet handlers
+  const handleOpenLeaderboard = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    leaderboardSheetRef.current?.snapToIndex(0);
+  };
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.6}
+      />
+    ),
+    [],
+  );
+
+  // Share achievement handler
+  const handleShareAchievement = async () => {
+    try {
+      await Share.share({
+        message: `I just completed the "${roadmapData?.title}" roadmap on SkillMedia! #SkillMedia #CareerGoals`,
+      });
+    } catch (error) {
+      console.error("Share error:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -881,14 +1006,14 @@ export default function RoadmapScreen() {
         barStyle="light-content"
       />
 
-      {/* Header */}
+      {/* Header - uses background color, not surface */}
       <Animated.View
         entering={FadeInDown.duration(300).delay(50)}
         style={{
-          backgroundColor: theme.colors.surface,
-          paddingTop: insets.top,
+          backgroundColor: theme.colors.background,
+          paddingTop: 12, // Reduced spacing
           paddingHorizontal: 16,
-          paddingBottom: 14,
+          paddingBottom: 0, // Reduced spacing
         }}
       >
         <View
@@ -924,7 +1049,11 @@ export default function RoadmapScreen() {
 
           {/* Text section */}
           <View style={{ flex: 1 }}>
-            <Typography variant="body" weight="semibold" color="text">
+            <Typography
+              variant="body"
+              weight="semibold"
+              color="text"
+            >
               Learning Roadmap
             </Typography>
             <Typography
@@ -938,6 +1067,7 @@ export default function RoadmapScreen() {
 
           {/* Trophy button */}
           <Pressable
+            onPress={handleOpenLeaderboard}
             style={{
               width: 38,
               height: 38,
@@ -964,9 +1094,9 @@ export default function RoadmapScreen() {
           end={{ x: 1, y: 0 }}
           style={{
             height: 1.5,
-            marginTop: 14,
+            marginTop: 10,
             marginHorizontal: -16,
-          }}
+          }} // Reduced marginTop
         />
       </Animated.View>
 
@@ -979,6 +1109,10 @@ export default function RoadmapScreen() {
         <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingTop: 8,
+            paddingBottom: insets.bottom + 84,
+          }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -997,22 +1131,22 @@ export default function RoadmapScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 12,
-                marginBottom: 16,
+                marginBottom: 14,
               }}
             >
               <LinearGradient
                 colors={["#6C5DD3", "#8676FF"]}
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 14,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 <Ionicons
                   name="rocket"
-                  size={24}
+                  size={22}
                   color="#FFFFFF"
                 />
               </LinearGradient>
@@ -1070,19 +1204,23 @@ export default function RoadmapScreen() {
               </Typography>
             </View>
 
-            {/* Stats Row */}
+            {/* Stats Row - tighter spacing */}
             <View
               style={{
                 flexDirection: "row",
-                marginTop: 16,
-                paddingTop: 16,
+                marginTop: 12,
+                paddingTop: 12,
                 borderTopWidth: 1,
                 borderTopColor: theme.colors.border,
-                gap: 16,
+                gap: 12,
               }}
             >
               <View
-                style={{ flex: 1, alignItems: "center" }}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  paddingHorizontal: 8,
+                }}
               >
                 <Typography
                   variant="h4"
@@ -1099,7 +1237,11 @@ export default function RoadmapScreen() {
                 </Typography>
               </View>
               <View
-                style={{ flex: 1, alignItems: "center" }}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  paddingHorizontal: 8,
+                }}
               >
                 <Typography
                   variant="h4"
@@ -1117,7 +1259,11 @@ export default function RoadmapScreen() {
               </View>
               {roadmapData.difficulty && (
                 <View
-                  style={{ flex: 1, alignItems: "center" }}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    paddingHorizontal: 8,
+                  }}
                 >
                   <View
                     style={{
@@ -1165,9 +1311,7 @@ export default function RoadmapScreen() {
           </Animated.View>
 
           {/* Milestones Timeline */}
-          <View
-            style={{ paddingBottom: insets.bottom + 20 }}
-          >
+          <View style={{ marginHorizontal: 0 }}>
             {roadmapData.milestones.map(
               (milestone, index) => (
                 <MilestoneCard
@@ -1183,6 +1327,370 @@ export default function RoadmapScreen() {
           </View>
         </ScrollView>
       )}
+
+      {/* Leaderboard Bottom Sheet */}
+      <BottomSheet
+        ref={leaderboardSheetRef}
+        index={-1}
+        snapPoints={["60%", "85%"]} // Added a taller snap point option
+        enableDynamicSizing={false}
+        enablePanDownToClose
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{
+          backgroundColor: theme.colors.surface,
+        }} // Fixed hardcoded color
+        handleIndicatorStyle={{
+          backgroundColor: theme.colors.textMuted,
+          width: 40,
+        }}
+      >
+        {/* CRITICAL FIX: Use BottomSheetView with flex: 1 */}
+        <BottomSheetView
+          style={{ flex: 1, paddingHorizontal: 20 }}
+        >
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              paddingBottom: 14,
+              borderBottomWidth: 1,
+              borderBottomColor: theme.colors.border,
+            }}
+          >
+            <Ionicons
+              name="trophy"
+              size={22}
+              color="#F59E0B"
+            />
+            <Typography variant="body" weight="bold">
+              Leaderboard
+            </Typography>
+          </View>
+
+          {/* Empty state or List */}
+          {!leaderboard || leaderboard.length === 0 ? (
+            <View
+              style={{
+                alignItems: "center",
+                paddingVertical: 40,
+                gap: 12,
+              }}
+            >
+              <Ionicons
+                name="trophy-outline"
+                size={48}
+                color={theme.colors.textMuted}
+              />
+              <Typography variant="body" color="textMuted">
+                No data yet
+              </Typography>
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ textAlign: "center" }}
+              >
+                Complete steps to appear on the leaderboard
+              </Typography>
+            </View>
+          ) : (
+            <BottomSheetFlatList
+              data={leaderboard}
+              keyExtractor={(item) => item.userId}
+              contentContainerStyle={{
+                paddingBottom: insets.bottom + 20,
+              }}
+              renderItem={({ item, index }) => (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    gap: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.colors.border,
+                  }}
+                >
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    style={{
+                      width: 24,
+                      textAlign: "center",
+                      color:
+                        index === 0
+                          ? "#F59E0B"
+                          : index === 1
+                            ? "#9CA3AF"
+                            : index === 2
+                              ? "#CD7F32"
+                              : theme.colors.textMuted,
+                    }}
+                  >
+                    {index + 1}
+                  </Typography>
+                  {/* Avatar */}
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor:
+                        theme.colors.background, // Fixed background
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {item.profileImage ? (
+                      <Image
+                        source={{ uri: item.profileImage }}
+                        style={{ width: 36, height: 36 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <Typography
+                        variant="caption"
+                        weight="bold"
+                      >
+                        {(item.fullname || "?")[0]}
+                      </Typography>
+                    )}
+                  </View>
+                  <Typography
+                    variant="body"
+                    style={{ flex: 1 }}
+                    numberOfLines={1}
+                  >
+                    {item.fullname ||
+                      item.username ||
+                      "User"}
+                  </Typography>
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    color="primary"
+                  >
+                    {item.progressPercent}%
+                  </Typography>
+                </View>
+              )}
+            />
+          )}
+        </BottomSheetView>
+      </BottomSheet>
+
+      {/* Celebration Modal */}
+      <Modal
+        visible={showCelebration}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.75)",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+          }}
+        >
+          <Animated.View
+            entering={ZoomIn.duration(500)
+              .springify()
+              .damping(14)}
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderRadius: 28,
+              padding: 32,
+              width: "100%",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              overflow: "hidden", // Keeps fireworks inside the card aesthetic
+            }}
+          >
+            {/* Background Aesthetic Glow */}
+            <Animated.View
+              entering={FadeIn.duration(1000).delay(300)}
+              style={{
+                position: "absolute",
+                width: 200,
+                height: 200,
+                borderRadius: 100,
+                backgroundColor: `${theme.colors.primary}15`,
+                top: -50,
+              }}
+            />
+
+            {/* Aesthetic Fireworks Burst */}
+            <View
+              style={{
+                position: "absolute",
+                top: 80,
+                left: "50%",
+              }}
+            >
+              {[...Array(12)].map((_, i) => {
+                const angle = (i * 30 * Math.PI) / 180;
+                const colors = [
+                  "#6C5DD3",
+                  "#22C55E",
+                  "#F59E0B",
+                  "#EF4444",
+                  "#8B5CF6",
+                  "#38BDF8",
+                ];
+                return (
+                  <Animated.View
+                    key={i}
+                    entering={ZoomIn.duration(600)
+                      .delay(200)
+                      .springify()}
+                    style={{
+                      position: "absolute",
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor:
+                        colors[i % colors.length],
+                      transform: [
+                        {
+                          translateX: Math.cos(angle) * 80,
+                        },
+                        {
+                          translateY: Math.sin(angle) * 80,
+                        },
+                      ],
+                      opacity: 0.8,
+                    }}
+                  />
+                );
+              })}
+            </View>
+
+            {/* Animated checkmark circle */}
+            <Animated.View
+              entering={ZoomIn.duration(600)
+                .delay(100)
+                .springify()
+                .stiffness(200)}
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 44,
+                backgroundColor: "#22C55E",
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: "#22C55E",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+                elevation: 10,
+              }}
+            >
+              <Ionicons
+                name="checkmark"
+                size={44}
+                color="white"
+              />
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(400)}
+            >
+              <Typography
+                variant="h2"
+                weight="bold"
+                style={{
+                  marginTop: 24,
+                  textAlign: "center",
+                }}
+              >
+                Roadmap Complete!
+              </Typography>
+              <Typography
+                variant="body"
+                color="textMuted"
+                style={{
+                  marginTop: 10,
+                  textAlign: "center",
+                  lineHeight: 22,
+                }}
+              >
+                You have completed all steps in this
+                roadmap. Amazing work!
+              </Typography>
+            </Animated.View>
+
+            {/* Share Achievement button */}
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(500)}
+              style={{ width: "100%", marginTop: 28 }}
+            >
+              <Pressable
+                onPress={handleShareAchievement}
+                style={({ pressed }) => ({
+                  height: 52,
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  transform: [
+                    { scale: pressed ? 0.96 : 1 },
+                  ],
+                })}
+              >
+                <LinearGradient
+                  colors={["#6C5DD3", "#8676FF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "row",
+                    gap: 8,
+                  }}
+                >
+                  <Ionicons
+                    name="share-social-outline"
+                    size={18}
+                    color="white"
+                  />
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    style={{ color: "white" }}
+                  >
+                    Share Achievement
+                  </Typography>
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
+
+            {/* Close button */}
+            <Animated.View
+              entering={FadeIn.duration(400).delay(600)}
+            >
+              <Pressable
+                onPress={() => setShowCelebration(false)}
+                style={{
+                  marginTop: 16,
+                  paddingVertical: 10,
+                }}
+              >
+                <Typography
+                  variant="body"
+                  color="textMuted"
+                >
+                  Close
+                </Typography>
+              </Pressable>
+            </Animated.View>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }

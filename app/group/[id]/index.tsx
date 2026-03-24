@@ -1287,6 +1287,14 @@ export default function GroupChatScreen() {
           <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
         </Pressable>
 
+        {/* Quiz button */}
+        <Pressable
+          onPress={() => router.push(`/group/${id}/quiz` as any)}
+          style={[styles.headerButton, { marginRight: 8 }]}
+        >
+          <Ionicons name="school-outline" size={18} color={theme.colors.primary} />
+        </Pressable>
+
         <Pressable
           onPressIn={() => { menuScale.value = withSpring(0.9, { damping: 15 }); }}
           onPressOut={() => { menuScale.value = withSpring(1, { damping: 15 }); }}
