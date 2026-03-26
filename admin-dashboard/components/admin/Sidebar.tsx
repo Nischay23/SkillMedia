@@ -1,21 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  ListTree,
-  FileText,
-  Settings,
-  Users,
-  BookOpen,
-  Users2,
-  Flag,
-  Map,
-} from "lucide-react";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import {
+  BookOpen,
+  FileText,
+  Flag,
+  HelpCircle,
+  LayoutDashboard,
+  ListTree,
+  Map,
+  Settings,
+  Trophy,
+  Users,
+  Users2,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   {
@@ -36,6 +38,16 @@ const navigation = [
   },
   { name: "Groups", href: "/admin/groups", icon: Users2 },
   { name: "Roadmaps", href: "/admin/roadmaps", icon: Map },
+  {
+    name: "Quizzes",
+    href: "/admin/quizzes",
+    icon: HelpCircle,
+  },
+  {
+    name: "Challenges",
+    href: "/admin/challenges",
+    icon: Trophy,
+  },
   {
     name: "Reports",
     href: "/admin/reports",

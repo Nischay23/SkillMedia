@@ -24,9 +24,13 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useQuery } from "convex/react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedPressable =
+  Animated.createAnimatedComponent(Pressable);
 
 // Medal colors
 const medalColors = {
@@ -48,7 +52,11 @@ function Podium({ leaders }: { leaders: any[] }) {
 
   if (leaders.length < 3) return null;
 
-  const [second, first, third] = [leaders[1], leaders[0], leaders[2]];
+  const [second, first, third] = [
+    leaders[1],
+    leaders[0],
+    leaders[2],
+  ];
 
   const renderPodiumPlace = (
     entry: any,
@@ -56,21 +64,34 @@ function Podium({ leaders }: { leaders: any[] }) {
     height: number,
   ) => {
     const colors = {
-      1: { gradient: ["#FFD700", "#FFA500"], bg: "#FFD70030" },
-      2: { gradient: ["#C0C0C0", "#A0A0A0"], bg: "#C0C0C030" },
-      3: { gradient: ["#CD7F32", "#8B4513"], bg: "#CD7F3230" },
+      1: {
+        gradient: ["#FFD700", "#FFA500"],
+        bg: "#FFD70030",
+      },
+      2: {
+        gradient: ["#C0C0C0", "#A0A0A0"],
+        bg: "#C0C0C030",
+      },
+      3: {
+        gradient: ["#CD7F32", "#8B4513"],
+        bg: "#CD7F3230",
+      },
     };
 
     return (
       <Animated.View
-        entering={FadeInDown.duration(500).delay(position * 100)}
+        entering={FadeInDown.duration(500).delay(
+          position * 100,
+        )}
         style={{
           flex: 1,
           alignItems: "center",
         }}
       >
         {/* Avatar with crown for 1st */}
-        <View style={{ marginBottom: 8, position: "relative" }}>
+        <View
+          style={{ marginBottom: 8, position: "relative" }}
+        >
           {position === 1 && (
             <View
               style={{
@@ -81,7 +102,9 @@ function Podium({ leaders }: { leaders: any[] }) {
                 zIndex: 10,
               }}
             >
-              <Typography style={{ fontSize: 24 }}>👑</Typography>
+              <Typography style={{ fontSize: 24 }}>
+                👑
+              </Typography>
             </View>
           )}
           <View
@@ -103,7 +126,12 @@ function Podium({ leaders }: { leaders: any[] }) {
               />
             ) : (
               <LinearGradient
-                colors={colors[position].gradient as [string, string]}
+                colors={
+                  colors[position].gradient as [
+                    string,
+                    string,
+                  ]
+                }
                 style={{
                   width: "100%",
                   height: "100%",
@@ -116,7 +144,8 @@ function Podium({ leaders }: { leaders: any[] }) {
                   weight="bold"
                   style={{ color: "#FFFFFF" }}
                 >
-                  {entry?.fullname?.[0]?.toUpperCase() ?? "?"}
+                  {entry?.fullname?.[0]?.toUpperCase() ??
+                    "?"}
                 </Typography>
               </LinearGradient>
             )}
@@ -141,7 +170,9 @@ function Podium({ leaders }: { leaders: any[] }) {
 
         {/* Podium stand */}
         <LinearGradient
-          colors={colors[position].gradient as [string, string]}
+          colors={
+            colors[position].gradient as [string, string]
+          }
           style={{
             width: "100%",
             height,
@@ -323,7 +354,9 @@ function LeaderboardRow({
                   gap: 4,
                 }}
               >
-                <Typography style={{ fontSize: 12 }}>🔥</Typography>
+                <Typography style={{ fontSize: 12 }}>
+                  🔥
+                </Typography>
                 <Typography
                   variant="caption"
                   style={{ color: "#F97316" }}
@@ -337,7 +370,11 @@ function LeaderboardRow({
 
         {/* Score */}
         <View style={{ alignItems: "flex-end" }}>
-          <Typography variant="body" weight="bold" color="primary">
+          <Typography
+            variant="body"
+            weight="bold"
+            color="primary"
+          >
             {entry.totalScore}
           </Typography>
           <Typography variant="caption" color="textMuted">
@@ -408,26 +445,40 @@ export default function LeaderboardScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id: groupId } = useLocalSearchParams<{ id: string }>();
+  const { id: groupId } = useLocalSearchParams<{
+    id: string;
+  }>();
 
-  const [period, setPeriod] = useState<"week" | "month" | "allTime">("week");
+  const [period, setPeriod] = useState<
+    "week" | "month" | "allTime"
+  >("week");
 
   const leaderboard = useQuery(
     api.leaderboard.getGroupLeaderboard,
-    groupId ? { groupId: groupId as Id<"groups">, period } : "skip",
+    groupId
+      ? { groupId: groupId as Id<"groups">, period }
+      : "skip",
   );
 
   const userRank = useQuery(
     api.leaderboard.getUserRank,
-    groupId ? { groupId: groupId as Id<"groups">, period } : "skip",
+    groupId
+      ? { groupId: groupId as Id<"groups">, period }
+      : "skip",
   );
 
   const backButtonScale = useSharedValue(1);
 
   const handleBackPress = () => {
-    backButtonScale.value = withSpring(0.9, { damping: 10 }, () => {
-      backButtonScale.value = withSpring(1, { damping: 12 });
-    });
+    backButtonScale.value = withSpring(
+      0.9,
+      { damping: 10 },
+      () => {
+        backButtonScale.value = withSpring(1, {
+          damping: 12,
+        });
+      },
+    );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
@@ -440,7 +491,12 @@ export default function LeaderboardScreen() {
   const hasData = leaderboard && leaderboard.length > 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <StatusBar
         translucent
         backgroundColor="transparent"
@@ -480,19 +536,32 @@ export default function LeaderboardScreen() {
               backButtonAnimatedStyle,
             ]}
           >
-            <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color="#FFFFFF"
+            />
           </AnimatedPressable>
 
-          <View style={{ flex: 1 }}>
-            <Typography variant="body" weight="semibold" color="text">
-              Leaderboard
-            </Typography>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Ionicons
+              name="trophy"
+              size={22}
+              color="#F59E0B"
+            />
             <Typography
-              variant="caption"
-              color="textMuted"
-              style={{ marginTop: 2 }}
+              variant="body"
+              weight="semibold"
+              color="text"
             >
-              Top performers
+              Leaderboard
             </Typography>
           </View>
 
@@ -506,7 +575,11 @@ export default function LeaderboardScreen() {
                 borderRadius: 12,
               }}
             >
-              <Typography variant="caption" weight="bold" color="primary">
+              <Typography
+                variant="caption"
+                weight="bold"
+                color="primary"
+              >
                 #{userRank.rank}
               </Typography>
             </View>
@@ -514,11 +587,11 @@ export default function LeaderboardScreen() {
         </View>
 
         <LinearGradient
-          colors={["#6C5DD3", "#8676FF", "transparent"]}
+          colors={["#F59E0B", "#FBBF24", "transparent"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{
-            height: 1.5,
+            height: 2,
             marginTop: 14,
             marginHorizontal: -16,
           }}
@@ -558,7 +631,10 @@ export default function LeaderboardScreen() {
               variant="caption"
               weight="semibold"
               style={{
-                color: period === item.key ? "#FFFFFF" : theme.colors.textMuted,
+                color:
+                  period === item.key
+                    ? "#FFFFFF"
+                    : theme.colors.textMuted,
               }}
             >
               {item.label}
@@ -576,8 +652,15 @@ export default function LeaderboardScreen() {
             justifyContent: "center",
           }}
         >
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Typography variant="body" color="textMuted" style={{ marginTop: 16 }}>
+          <ActivityIndicator
+            size="large"
+            color={theme.colors.primary}
+          />
+          <Typography
+            variant="body"
+            color="textMuted"
+            style={{ marginTop: 16 }}
+          >
             Loading leaderboard...
           </Typography>
         </View>
@@ -592,17 +675,21 @@ export default function LeaderboardScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Top 3 Podium */}
-          {leaderboard.length >= 3 && <Podium leaders={leaderboard.slice(0, 3)} />}
+          {leaderboard.length >= 3 && (
+            <Podium leaders={leaderboard.slice(0, 3)} />
+          )}
 
           {/* Rest of leaderboard */}
           <View style={{ paddingHorizontal: 16 }}>
-            {leaderboard.slice(3).map((entry: any, index: number) => (
-              <LeaderboardRow
-                key={entry.userId}
-                entry={entry}
-                index={index}
-              />
-            ))}
+            {leaderboard
+              .slice(3)
+              .map((entry: any, index: number) => (
+                <LeaderboardRow
+                  key={entry.userId}
+                  entry={entry}
+                  index={index}
+                />
+              ))}
           </View>
         </ScrollView>
       )}

@@ -325,72 +325,46 @@ export default defineSchema({
     groupId: v.id("groups"),
     title: v.string(),
     description: v.optional(v.string()),
-    type: v.union(
-      v.literal("daily"),
-      v.literal("weekly"),
-      v.literal("test_series"),
-    ),
-    timeLimit: v.optional(v.number()), // Total time in seconds (for test series)
-    perQuestionTime: v.optional(v.number()), // Time per question in seconds
-    totalQuestions: v.number(),
-    scheduledAt: v.optional(v.number()), // When quiz becomes available
-    expiresAt: v.optional(v.number()), // When quiz is no longer available
+    timeLimit: v.optional(v.number()),
+    passingScore: v.optional(v.number()),
     isPublished: v.boolean(),
     createdBy: v.id("users"),
     createdAt: v.number(),
-  })
-    .index("by_group", ["groupId"])
-    .index("by_group_and_type", ["groupId", "type"])
-    .index("by_scheduled", ["scheduledAt"]),
+  }).index("by_group", ["groupId"]),
 
   // 18. questions table: Quiz questions
   questions: defineTable({
     quizId: v.id("quizzes"),
     text: v.string(),
-    type: v.union(
-      v.literal("mcq_single"),
-      v.literal("mcq_multiple"),
-      v.literal("true_false"),
-      v.literal("fill_blank"),
-    ),
-    options: v.optional(v.array(v.string())),
-    correctAnswer: v.union(v.string(), v.array(v.string())),
+    options: v.array(v.string()),
+    correctIndex: v.number(),
     explanation: v.optional(v.string()),
     order: v.number(),
-    points: v.optional(v.number()),
-    imageUrl: v.optional(v.string()),
   }).index("by_quiz", ["quizId"]),
 
   // 19. quizAttempts table: User quiz attempts and scores
   quizAttempts: defineTable({
-    userId: v.id("users"),
     quizId: v.id("quizzes"),
-    answers: v.array(
-      v.object({
-        questionId: v.id("questions"),
-        selectedAnswer: v.union(v.string(), v.array(v.string())),
-        isCorrect: v.boolean(),
-        timeTaken: v.optional(v.number()),
-      }),
-    ),
+    userId: v.id("users"),
+    answers: v.array(v.number()),
     score: v.number(),
-    totalPoints: v.number(),
-    percentage: v.number(),
-    timeTaken: v.number(),
+    totalQuestions: v.number(),
+    timeTaken: v.optional(v.number()),
     completedAt: v.number(),
   })
-    .index("by_user", ["userId"])
     .index("by_quiz", ["quizId"])
-    .index("by_user_and_quiz", ["userId", "quizId"]),
+    .index("by_user", ["userId"])
+    .index("by_quiz_and_user", ["quizId", "userId"]),
 
-  // 20. challenges table: Weekly challenges for groups
+  // 20. challenges table: Group challenges
   challenges: defineTable({
     groupId: v.id("groups"),
     title: v.string(),
-    description: v.string(),
-    type: v.literal("weekly"),
-    deadline: v.number(),
-    submissionFormat: v.optional(v.string()),
+    description: v.optional(v.string()),
+    type: v.union(v.literal("quiz"), v.literal("steps"), v.literal("streak")),
+    targetValue: v.number(),
+    startDate: v.number(),
+    endDate: v.number(),
     isActive: v.boolean(),
     createdBy: v.id("users"),
     createdAt: v.number(),
@@ -398,22 +372,21 @@ export default defineSchema({
 
   // 21. challengeSubmissions table: User challenge submissions
   challengeSubmissions: defineTable({
-    userId: v.id("users"),
     challengeId: v.id("challenges"),
-    content: v.string(),
-    linkUrl: v.optional(v.string()),
-    imageUrl: v.optional(v.string()),
-    submittedAt: v.number(),
+    userId: v.id("users"),
+    value: v.number(),
+    completedAt: v.optional(v.number()),
+    isCompleted: v.boolean(),
   })
     .index("by_challenge", ["challengeId"])
-    .index("by_user_and_challenge", ["userId", "challengeId"]),
+    .index("by_user", ["userId"]),
 
   // 22. streaks table: User activity streaks
   streaks: defineTable({
     userId: v.id("users"),
     currentStreak: v.number(),
     longestStreak: v.number(),
-    lastActivityDate: v.string(), // "YYYY-MM-DD" format
-    totalQuizzesTaken: v.optional(v.number()),
+    lastActiveDate: v.string(),
+    totalActiveDays: v.number(),
   }).index("by_user", ["userId"]),
 });

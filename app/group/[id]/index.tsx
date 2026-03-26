@@ -1439,7 +1439,7 @@ export default function GroupChatScreen() {
 
       {/* Menu Bottom Sheet (iOS only) */}
       {menuOpen && Platform.OS === "ios" && (
-        <BottomSheet ref={menuRef} index={0} snapPoints={["28%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) setMenuOpen(false); }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
+        <BottomSheet ref={menuRef} index={0} snapPoints={["48%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) setMenuOpen(false); }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
           <BottomSheetView>
             <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/members` as any); }} style={styles.menuItem}>
               <Ionicons name="people-outline" size={20} color={theme.colors.primary} />
@@ -1448,6 +1448,18 @@ export default function GroupChatScreen() {
             <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/info` as any); }} style={styles.menuItem}>
               <Ionicons name="information-circle-outline" size={20} color={theme.colors.primary} />
               <Typography variant="body" color="text">Group Info</Typography>
+            </Pressable>
+            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/quiz` as any); }} style={styles.menuItem}>
+              <Ionicons name="help-circle-outline" size={20} color={theme.colors.primary} />
+              <Typography variant="body" color="text">Quizzes</Typography>
+            </Pressable>
+            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/challenges` as any); }} style={styles.menuItem}>
+              <Ionicons name="trophy-outline" size={20} color={theme.colors.primary} />
+              <Typography variant="body" color="text">Challenges</Typography>
+            </Pressable>
+            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/leaderboard` as any); }} style={styles.menuItem}>
+              <Ionicons name="podium-outline" size={20} color={theme.colors.primary} />
+              <Typography variant="body" color="text">Leaderboard</Typography>
             </Pressable>
             <Pressable onPress={handleLeave} style={styles.menuItem}>
               <Ionicons name="exit-outline" size={20} color="#EF4444" />

@@ -30,8 +30,8 @@ export default function PostsPage() {
     statusFilter: statusFilter,
   });
 
-  // Delete mutation
-  const deletePost = useMutation(api.communityPosts.adminDeleteCommunityPost);
+  // Delete mutation (bulkDeletePosts with single ID for admin)
+  const deletePost = useMutation(api.communityPosts.bulkDeletePosts);
 
   // Filter posts by search query
   const filteredPosts = posts?.filter((post) => {
@@ -50,7 +50,7 @@ export default function PostsPage() {
 
     setIsDeleting(true);
     try {
-      await deletePost({ postId: deletePostId });
+      await deletePost({ postIds: [deletePostId] });
       setDeletePostId(null);
     } catch (error) {
       console.error("Failed to delete post:", error);

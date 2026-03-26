@@ -300,7 +300,7 @@ function GroupCard({
               </View>
             )}
 
-            {/* Row 3: Member count + Roadmap progress */}
+            {/* Row 3: Member count + Quiz count + Roadmap progress */}
             <View
               style={{
                 flexDirection: "row",
@@ -313,21 +313,58 @@ function GroupCard({
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 4,
+                  gap: 10,
                 }}
               >
-                <Ionicons
-                  name="people-outline"
-                  size={12}
-                  color={theme.colors.textMuted}
-                />
-                <Typography
-                  variant="caption"
-                  color="textMuted"
-                  style={{ fontSize: 12 }}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
                 >
-                  {group.memberCount.toLocaleString()} members
-                </Typography>
+                  <Ionicons
+                    name="people-outline"
+                    size={12}
+                    color={theme.colors.textMuted}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="textMuted"
+                    style={{ fontSize: 12 }}
+                  >
+                    {group.memberCount.toLocaleString()} members
+                  </Typography>
+                </View>
+
+                {/* Quiz count badge */}
+                {group.quizCount > 0 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      backgroundColor: theme.colors.primary + "18",
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      borderRadius: 10,
+                    }}
+                  >
+                    <Ionicons
+                      name="help-circle-outline"
+                      size={12}
+                      color={theme.colors.primary}
+                    />
+                    <Typography
+                      variant="caption"
+                      color="primary"
+                      weight="semibold"
+                      style={{ fontSize: 11 }}
+                    >
+                      {group.quizCount} {group.quizCount === 1 ? "quiz" : "quizzes"}
+                    </Typography>
+                  </View>
+                )}
               </View>
 
               {/* Roadmap progress indicator */}

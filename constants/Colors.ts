@@ -38,6 +38,12 @@ export const Colors = {
     // Overlay and shadows
     overlay: "rgba(0, 0, 0, 0.5)",
     shadow: "rgba(108, 93, 211, 0.1)",
+
+    // Basic colors
+    white: "#FFFFFF",
+    black: "#000000",
+    grey: "#9E9E9E",
+    gray: "#9E9E9E",
   },
 
   dark: {
@@ -77,6 +83,12 @@ export const Colors = {
     // Overlay and shadows
     overlay: "rgba(0, 0, 0, 0.8)",
     shadow: "rgba(160, 166, 255, 0.15)",
+
+    // Basic colors
+    white: "#FFFFFF",
+    black: "#000000",
+    grey: "#9E9E9E",
+    gray: "#9E9E9E",
   },
 };
 

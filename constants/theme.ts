@@ -25,6 +25,7 @@ const { width, height } = Dimensions.get("window");
 const typography = {
   fontFamily: {
     regular: "Poppins-Regular",
+    medium: "Poppins-SemiBold",
     semibold: "Poppins-SemiBold",
     bold: "Poppins-Bold",
   },
@@ -172,6 +173,11 @@ export const createTheme = (
       info: colors.info,
       overlay: colors.overlay,
       shadow: colors.shadow,
+      // Basic colors
+      white: colors.white,
+      black: colors.black,
+      grey: colors.grey,
+      gray: colors.gray,
       // New color mappings from the modern palette
       primaryLight: colors.primaryLight,
       primaryDark: colors.primaryDark,

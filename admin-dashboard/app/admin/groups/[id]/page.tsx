@@ -1,28 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
 import {
-  ArrowLeft,
-  Users2,
-  MessageSquare,
   AlertTriangle,
-  Send,
-  Trash2,
-  Shield,
-  UserMinus,
-  Pin,
-  Megaphone,
+  ArrowLeft,
   CheckCircle,
-  XCircle,
   Clock,
   Image as ImageIcon,
+  Megaphone,
+  MessageSquare,
+  Pin,
+  Send,
+  Trash2,
+  UserMinus,
+  Users2,
+  XCircle,
 } from "lucide-react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
 type TabType = "messages" | "members" | "reports";
 
@@ -31,27 +30,53 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const groupId = params.id as Id<"groups">;
 
-  const [activeTab, setActiveTab] = useState<TabType>("messages");
-  const [announcementText, setAnnouncementText] = useState("");
+  const [activeTab, setActiveTab] =
+    useState<TabType>("messages");
+  const [announcementText, setAnnouncementText] =
+    useState("");
   const [isSending, setIsSending] = useState(false);
-  const [deleteMessageId, setDeleteMessageId] = useState<Id<"messages"> | null>(null);
-  const [removeMemberId, setRemoveMemberId] = useState<Id<"users"> | null>(null);
+  const [deleteMessageId, setDeleteMessageId] =
+    useState<Id<"messages"> | null>(null);
+  const [removeMemberId, setRemoveMemberId] =
+    useState<Id<"users"> | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
   // Queries
-  const group = useQuery(api.groups.getGroupById, { groupId });
-  const messages = useQuery(api.messages.getMessagesForAdmin, { groupId, limit: 100 });
-  const members = useQuery(api.groups.getGroupMembers, { groupId });
-  const reports = useQuery(api.reports.getReportsForGroup, { groupId, status: "all" });
+  const group = useQuery(api.groups.getGroupById, {
+    groupId,
+  });
+  const messages = useQuery(
+    api.messages.getMessagesForAdmin,
+    { groupId, limit: 100 },
+  );
+  const members = useQuery(api.groups.getGroupMembers, {
+    groupId,
+  });
+  const reports = useQuery(api.reports.getReportsForGroup, {
+    groupId,
+    status: "all",
+  });
 
   // Mutations
-  const sendAnnouncement = useMutation(api.messages.sendAdminAnnouncement);
-  const deleteMessage = useMutation(api.messages.adminDeleteMessage);
-  const removeMember = useMutation(api.groups.removeGroupMember);
-  const updateRole = useMutation(api.groups.updateMemberRole);
-  const dismissReport = useMutation(api.reports.dismissReport);
-  const deleteReportedMessage = useMutation(api.reports.deleteReportedMessage);
+  const sendAnnouncement = useMutation(
+    api.messages.sendAdminAnnouncement,
+  );
+  const deleteMessage = useMutation(
+    api.messages.adminDeleteMessage,
+  );
+  const removeMember = useMutation(
+    api.groups.removeGroupMember,
+  );
+  const updateRole = useMutation(
+    api.groups.updateMemberRole,
+  );
+  const dismissReport = useMutation(
+    api.reports.dismissReport,
+  );
+  const deleteReportedMessage = useMutation(
+    api.reports.deleteReportedMessage,
+  );
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -75,7 +100,10 @@ export default function GroupDetailPage() {
     if (!announcementText.trim()) return;
     setIsSending(true);
     try {
-      await sendAnnouncement({ groupId, content: announcementText });
+      await sendAnnouncement({
+        groupId,
+        content: announcementText,
+      });
       setAnnouncementText("");
     } catch (error) {
       console.error("Failed to send announcement:", error);
@@ -103,7 +131,10 @@ export default function GroupDetailPage() {
     if (!removeMemberId) return;
     setIsRemoving(true);
     try {
-      await removeMember({ groupId, userId: removeMemberId });
+      await removeMember({
+        groupId,
+        userId: removeMemberId,
+      });
       setRemoveMemberId(null);
     } catch (error) {
       console.error("Failed to remove member:", error);
@@ -113,7 +144,10 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleRoleChange = async (userId: Id<"users">, newRole: "admin" | "moderator" | "member") => {
+  const handleRoleChange = async (
+    userId: Id<"users">,
+    newRole: "admin" | "moderator" | "member",
+  ) => {
     try {
       await updateRole({ groupId, userId, role: newRole });
     } catch (error) {
@@ -122,7 +156,9 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleDismissReport = async (reportId: Id<"reports">) => {
+  const handleDismissReport = async (
+    reportId: Id<"reports">,
+  ) => {
     try {
       await dismissReport({ reportId });
     } catch (error) {
@@ -131,7 +167,10 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleDeleteReportedMessage = async (reportId: Id<"reports">, messageId: Id<"messages">) => {
+  const handleDeleteReportedMessage = async (
+    reportId: Id<"reports">,
+    messageId: Id<"messages">,
+  ) => {
     try {
       await deleteReportedMessage({ reportId, messageId });
     } catch (error) {
@@ -141,12 +180,35 @@ export default function GroupDetailPage() {
   };
 
   const isLoading = group === undefined;
-  const pendingReportsCount = reports?.filter((r) => r.status === "pending").length ?? 0;
+  const pendingReportsCount =
+    reports?.filter(
+      (r: { status: string }) => r.status === "pending",
+    ).length ?? 0;
 
-  const tabs: { id: TabType; label: string; icon: React.ComponentType<{ className?: string }>; count?: number }[] = [
-    { id: "messages", label: "Messages", icon: MessageSquare, count: messages?.length },
-    { id: "members", label: "Members", icon: Users2, count: members?.length },
-    { id: "reports", label: "Reports", icon: AlertTriangle, count: pendingReportsCount },
+  const tabs: {
+    id: TabType;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    count?: number;
+  }[] = [
+    {
+      id: "messages",
+      label: "Messages",
+      icon: MessageSquare,
+      count: messages?.length,
+    },
+    {
+      id: "members",
+      label: "Members",
+      icon: Users2,
+      count: members?.length,
+    },
+    {
+      id: "reports",
+      label: "Reports",
+      icon: AlertTriangle,
+      count: pendingReportsCount,
+    },
   ];
 
   if (isLoading) {
@@ -164,8 +226,13 @@ export default function GroupDetailPage() {
   if (!group) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-muted-foreground">Group not found</p>
-        <Link href="/admin/groups" className="mt-4 text-primary hover:underline">
+        <p className="text-muted-foreground">
+          Group not found
+        </p>
+        <Link
+          href="/admin/groups"
+          className="mt-4 text-primary hover:underline"
+        >
           Back to Groups
         </Link>
       </div>
@@ -187,8 +254,12 @@ export default function GroupDetailPage() {
             {group.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-            <p className="text-sm text-muted-foreground">{group.filterOptionName}</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {group.name}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {group.filterOptionName}
+            </p>
           </div>
         </div>
         <span
@@ -206,8 +277,12 @@ export default function GroupDetailPage() {
               <Users2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{group.memberCount}</p>
-              <p className="text-xs text-muted-foreground">Members</p>
+              <p className="text-xl font-bold text-foreground">
+                {group.memberCount}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Members
+              </p>
             </div>
           </div>
         </div>
@@ -217,8 +292,12 @@ export default function GroupDetailPage() {
               <MessageSquare className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{messages?.length ?? 0}</p>
-              <p className="text-xs text-muted-foreground">Messages</p>
+              <p className="text-xl font-bold text-foreground">
+                {messages?.length ?? 0}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Messages
+              </p>
             </div>
           </div>
         </div>
@@ -228,8 +307,12 @@ export default function GroupDetailPage() {
               <AlertTriangle className="h-5 w-5 text-amber-500" />
             </div>
             <div>
-              <p className="text-xl font-bold text-foreground">{pendingReportsCount}</p>
-              <p className="text-xs text-muted-foreground">Pending Reports</p>
+              <p className="text-xl font-bold text-foreground">
+                {pendingReportsCount}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pending Reports
+              </p>
             </div>
           </div>
         </div>
@@ -239,15 +322,21 @@ export default function GroupDetailPage() {
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Megaphone className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Send Announcement</h3>
+          <h3 className="font-semibold text-foreground">
+            Send Announcement
+          </h3>
         </div>
         <div className="flex gap-3">
           <input
             type="text"
             placeholder="Type your announcement message..."
             value={announcementText}
-            onChange={(e) => setAnnouncementText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendAnnouncement()}
+            onChange={(e) =>
+              setAnnouncementText(e.target.value)
+            }
+            onKeyDown={(e) =>
+              e.key === "Enter" && handleSendAnnouncement()
+            }
             className="input-field flex-1"
           />
           <button
@@ -279,7 +368,8 @@ export default function GroupDetailPage() {
               {tab.count !== undefined && tab.count > 0 && (
                 <span
                   className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${
-                    tab.id === "reports" && pendingReportsCount > 0
+                    tab.id === "reports" &&
+                    pendingReportsCount > 0
                       ? "bg-amber-500/20 text-amber-500"
                       : "bg-muted text-muted-foreground"
                   }`}
@@ -298,15 +388,15 @@ export default function GroupDetailPage() {
         {activeTab === "messages" && (
           <div className="space-y-2">
             {messages && messages.length > 0 ? (
-              messages.map((msg) => (
+              messages.map((msg: any) => (
                 <div
                   key={msg._id}
                   className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
                     msg.isDeleted
                       ? "border-border/50 bg-muted/30"
                       : msg.pendingReportsCount > 0
-                      ? "border-amber-500/30 bg-amber-500/5"
-                      : "border-border bg-card hover:bg-muted/50"
+                        ? "border-amber-500/30 bg-amber-500/5"
+                        : "border-border bg-card hover:bg-muted/50"
                   }`}
                 >
                   {/* Avatar */}
@@ -318,7 +408,9 @@ export default function GroupDetailPage() {
                     />
                   ) : (
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                      {msg.sender?.fullname?.charAt(0).toUpperCase() || "?"}
+                      {msg.sender?.fullname
+                        ?.charAt(0)
+                        .toUpperCase() || "?"}
                     </div>
                   )}
 
@@ -343,14 +435,18 @@ export default function GroupDetailPage() {
                       )}
                       {msg.pendingReportsCount > 0 && (
                         <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-500">
-                          {msg.pendingReportsCount} report{msg.pendingReportsCount > 1 ? "s" : ""}
+                          {msg.pendingReportsCount} report
+                          {msg.pendingReportsCount > 1
+                            ? "s"
+                            : ""}
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground ml-auto">
                         {formatDate(msg.createdAt)}
                       </span>
                     </div>
-                    {msg.type === "image" && msg.imageUrl ? (
+                    {msg.type === "image" &&
+                    msg.imageUrl ? (
                       <div className="mt-2">
                         <img
                           src={msg.imageUrl}
@@ -358,11 +454,15 @@ export default function GroupDetailPage() {
                           className="max-h-48 rounded-lg object-cover"
                         />
                         {msg.content && (
-                          <p className="mt-1 text-sm text-foreground">{msg.content}</p>
+                          <p className="mt-1 text-sm text-foreground">
+                            {msg.content}
+                          </p>
                         )}
                       </div>
                     ) : (
-                      <p className={`mt-1 text-sm ${msg.isDeleted ? "text-muted-foreground italic" : "text-foreground"}`}>
+                      <p
+                        className={`mt-1 text-sm ${msg.isDeleted ? "text-muted-foreground italic" : "text-foreground"}`}
+                      >
                         {msg.content}
                       </p>
                     )}
@@ -371,7 +471,9 @@ export default function GroupDetailPage() {
                   {/* Actions */}
                   {!msg.isDeleted && (
                     <button
-                      onClick={() => setDeleteMessageId(msg._id)}
+                      onClick={() =>
+                        setDeleteMessageId(msg._id)
+                      }
                       className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-error-muted hover:text-error"
                       title="Delete Message"
                     >
@@ -383,7 +485,9 @@ export default function GroupDetailPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-3 text-muted-foreground">No messages yet</p>
+                <p className="mt-3 text-muted-foreground">
+                  No messages yet
+                </p>
               </div>
             )}
           </div>
@@ -411,8 +515,11 @@ export default function GroupDetailPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {members && members.length > 0 ? (
-                  members.map((member) => (
-                    <tr key={member._id} className="transition-colors hover:bg-muted/50">
+                  members.map((member: any) => (
+                    <tr
+                      key={member._id}
+                      className="transition-colors hover:bg-muted/50"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {member.profileImage ? (
@@ -423,12 +530,18 @@ export default function GroupDetailPage() {
                             />
                           ) : (
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                              {member.fullname.charAt(0).toUpperCase()}
+                              {member.fullname
+                                .charAt(0)
+                                .toUpperCase()}
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-foreground">{member.fullname}</p>
-                            <p className="text-xs text-muted-foreground">@{member.username}</p>
+                            <p className="font-medium text-foreground">
+                              {member.fullname}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </p>
                           </div>
                           {member.isAdmin && (
                             <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
@@ -443,14 +556,23 @@ export default function GroupDetailPage() {
                           onChange={(e) =>
                             handleRoleChange(
                               member._id,
-                              e.target.value as "admin" | "moderator" | "member"
+                              e.target.value as
+                                | "admin"
+                                | "moderator"
+                                | "member",
                             )
                           }
                           className="input-field w-auto text-sm py-1"
                         >
-                          <option value="admin">Admin</option>
-                          <option value="moderator">Moderator</option>
-                          <option value="member">Member</option>
+                          <option value="admin">
+                            Admin
+                          </option>
+                          <option value="moderator">
+                            Moderator
+                          </option>
+                          <option value="member">
+                            Member
+                          </option>
                         </select>
                       </td>
                       <td className="px-4 py-3">
@@ -460,7 +582,9 @@ export default function GroupDetailPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
-                          onClick={() => setRemoveMemberId(member._id)}
+                          onClick={() =>
+                            setRemoveMemberId(member._id)
+                          }
                           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-error-muted hover:text-error"
                           title="Remove Member"
                         >
@@ -471,9 +595,14 @@ export default function GroupDetailPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center">
+                    <td
+                      colSpan={4}
+                      className="px-4 py-12 text-center"
+                    >
                       <Users2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                      <p className="mt-3 text-muted-foreground">No members found</p>
+                      <p className="mt-3 text-muted-foreground">
+                        No members found
+                      </p>
                     </td>
                   </tr>
                 )}
@@ -486,15 +615,15 @@ export default function GroupDetailPage() {
         {activeTab === "reports" && (
           <div className="space-y-3">
             {reports && reports.length > 0 ? (
-              reports.map((report) => (
+              reports.map((report: any) => (
                 <div
                   key={report._id}
                   className={`rounded-xl border p-4 transition-colors ${
                     report.status === "pending"
                       ? "border-amber-500/30 bg-amber-500/5"
                       : report.status === "reviewed"
-                      ? "border-emerald-500/30 bg-emerald-500/5"
-                      : "border-border bg-card"
+                        ? "border-emerald-500/30 bg-emerald-500/5"
+                        : "border-border bg-card"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -526,23 +655,31 @@ export default function GroupDetailPage() {
 
                       {/* Reporter Info */}
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">Reported by:</span>
+                        <span className="text-muted-foreground">
+                          Reported by:
+                        </span>
                         <span className="font-medium text-foreground">
-                          {report.reporter?.fullname || "Unknown"}
+                          {report.reporter?.fullname ||
+                            "Unknown"}
                         </span>
                       </div>
 
                       {/* Reported User Info */}
                       <div className="flex items-center gap-2 text-sm mt-1">
-                        <span className="text-muted-foreground">Message from:</span>
+                        <span className="text-muted-foreground">
+                          Message from:
+                        </span>
                         <span className="font-medium text-foreground">
-                          {report.reportedUser?.fullname || "Unknown"}
+                          {report.reportedUser?.fullname ||
+                            "Unknown"}
                         </span>
                       </div>
 
                       {/* Reason */}
                       <div className="mt-3">
-                        <p className="text-xs text-muted-foreground uppercase mb-1">Reason</p>
+                        <p className="text-xs text-muted-foreground uppercase mb-1">
+                          Reason
+                        </p>
                         <p className="text-sm text-foreground bg-muted/50 rounded-lg p-2">
                           {report.reason}
                         </p>
@@ -551,9 +688,12 @@ export default function GroupDetailPage() {
                       {/* Reported Message */}
                       {report.message && (
                         <div className="mt-3">
-                          <p className="text-xs text-muted-foreground uppercase mb-1">Reported Message</p>
+                          <p className="text-xs text-muted-foreground uppercase mb-1">
+                            Reported Message
+                          </p>
                           <div className="bg-muted/50 rounded-lg p-2 border-l-2 border-amber-500">
-                            {report.message.type === "image" ? (
+                            {report.message.type ===
+                            "image" ? (
                               <span className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <ImageIcon className="h-4 w-4" />
                                 Image message
@@ -563,7 +703,9 @@ export default function GroupDetailPage() {
                                 [Message deleted]
                               </span>
                             ) : (
-                              <p className="text-sm text-foreground">{report.message.content}</p>
+                              <p className="text-sm text-foreground">
+                                {report.message.content}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -575,7 +717,10 @@ export default function GroupDetailPage() {
                       <div className="flex flex-col gap-2">
                         <button
                           onClick={() =>
-                            handleDeleteReportedMessage(report._id, report.messageId)
+                            handleDeleteReportedMessage(
+                              report._id,
+                              report.messageId,
+                            )
                           }
                           className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700"
                         >
@@ -583,7 +728,9 @@ export default function GroupDetailPage() {
                           Delete Msg
                         </button>
                         <button
-                          onClick={() => handleDismissReport(report._id)}
+                          onClick={() =>
+                            handleDismissReport(report._id)
+                          }
                           className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                           <XCircle className="h-3 w-3" />
@@ -597,7 +744,9 @@ export default function GroupDetailPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <AlertTriangle className="h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-3 text-muted-foreground">No reports for this group</p>
+                <p className="mt-3 text-muted-foreground">
+                  No reports for this group
+                </p>
               </div>
             )}
           </div>

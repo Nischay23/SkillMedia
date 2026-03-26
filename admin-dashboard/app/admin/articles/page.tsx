@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { ArticleEditor } from "@/components/admin/ArticleEditor";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { ArticleEditor } from "@/components/admin/ArticleEditor";
+import { useMutation, useQuery } from "convex/react";
 import {
-  Plus,
-  Trash2,
-  Edit,
-  Search,
   BookOpen,
+  Edit,
   Eye,
   EyeOff,
+  Plus,
+  Search,
+  Trash2,
 } from "lucide-react";
+import { useState } from "react";
 
 export default function ArticlesPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [deleteArticleId, setDeleteArticleId] = useState<Id<"adminArticles"> | null>(null);
+  const [deleteArticleId, setDeleteArticleId] =
+    useState<Id<"adminArticles"> | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Editor state
@@ -34,37 +35,69 @@ export default function ArticlesPage() {
   } | null>(null);
 
   // Filter option selector for new articles
-  const [selectedFilterId, setSelectedFilterId] = useState<Id<"FilterOption"> | "">("");
+  const [selectedFilterId, setSelectedFilterId] = useState<
+    Id<"FilterOption"> | ""
+  >("");
 
   // Fetch data
-  const articles = useQuery(api.adminArticles.getAllArticles);
+  const articles = useQuery(
+    api.adminArticles.getAllArticles,
+  );
   const filters = useQuery(api.filter.getAllFilterOptions);
 
   // Delete mutation
-  const deleteArticle = useMutation(api.adminArticles.deleteArticle);
+  const deleteArticle = useMutation(
+    api.adminArticles.deleteArticle,
+  );
+
+  // Article type from query (matches Convex return type)
+  type Article = {
+    _id: Id<"adminArticles">;
+    _creationTime: number;
+    title: string;
+    content: string;
+    filterOptionId: Id<"FilterOption">;
+    filterOptionName: string;
+    isPublished: boolean;
+    order?: number;
+    createdAt: number;
+    updatedAt: number;
+    authorId: Id<"users">;
+  };
 
   // Filter articles by search
-  const filteredArticles = articles?.filter((article) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      article.title.toLowerCase().includes(query) ||
-      article.content.toLowerCase().includes(query) ||
-      article.filterOptionName.toLowerCase().includes(query)
-    );
-  });
+  const filteredArticles = articles?.filter(
+    (article: Article) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        article.title.toLowerCase().includes(query) ||
+        article.content.toLowerCase().includes(query) ||
+        article.filterOptionName
+          .toLowerCase()
+          .includes(query)
+      );
+    },
+  );
 
   // Group articles by career path
+  type ArticleAccumulator = Record<
+    string,
+    { name: string; articles: Article[] }
+  >;
   const groupedArticles = filteredArticles?.reduce(
-    (acc, article) => {
+    (acc: ArticleAccumulator, article: Article) => {
       const key = article.filterOptionId;
       if (!acc[key]) {
-        acc[key] = { name: article.filterOptionName, articles: [] };
+        acc[key] = {
+          name: article.filterOptionName,
+          articles: [],
+        };
       }
       acc[key].articles.push(article);
       return acc;
     },
-    {} as Record<string, { name: string; articles: typeof filteredArticles }>
+    {} as ArticleAccumulator,
   );
 
   const handleDelete = async () => {
@@ -82,7 +115,9 @@ export default function ArticlesPage() {
 
   const handleNewArticle = () => {
     if (!selectedFilterId) return;
-    const filterName = filters?.find((f) => f._id === selectedFilterId)?.name ?? "Unknown";
+    const filterName =
+      filters?.find((f) => f._id === selectedFilterId)
+        ?.name ?? "Unknown";
     setEditingArticle(null);
     setEditorOpen(true);
     // Store the selected filter info for the editor
@@ -90,7 +125,9 @@ export default function ArticlesPage() {
     setEditorOpen(true);
   };
 
-  const handleEditArticle = (article: NonNullable<typeof filteredArticles>[number]) => {
+  const handleEditArticle = (
+    article: NonNullable<typeof filteredArticles>[number],
+  ) => {
     setEditingArticle({
       _id: article._id,
       title: article.title,
@@ -112,7 +149,10 @@ export default function ArticlesPage() {
     });
   };
 
-  const truncate = (text: string, maxLength: number = 100) => {
+  const truncate = (
+    text: string,
+    maxLength: number = 100,
+  ) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength).trim() + "...";
   };
@@ -124,7 +164,9 @@ export default function ArticlesPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Articles</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Articles
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Manage admin articles linked to career paths
           </p>
@@ -134,7 +176,11 @@ export default function ArticlesPage() {
         <div className="flex items-center gap-2">
           <select
             value={selectedFilterId}
-            onChange={(e) => setSelectedFilterId(e.target.value as Id<"FilterOption"> | "")}
+            onChange={(e) =>
+              setSelectedFilterId(
+                e.target.value as Id<"FilterOption"> | "",
+              )
+            }
             className="input-field w-auto max-w-[200px]"
           >
             <option value="">Select career path...</option>
@@ -176,7 +222,10 @@ export default function ArticlesPage() {
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-6">
+            <div
+              key={i}
+              className="animate-pulse rounded-xl border border-border bg-card p-6"
+            >
               <div className="h-5 w-48 rounded bg-muted mb-4" />
               <div className="space-y-3">
                 <div className="h-4 w-full rounded bg-muted" />
@@ -185,16 +234,28 @@ export default function ArticlesPage() {
             </div>
           ))}
         </div>
-      ) : groupedArticles && Object.keys(groupedArticles).length > 0 ? (
+      ) : groupedArticles &&
+        Object.keys(groupedArticles).length > 0 ? (
         <div className="space-y-6">
-          {Object.entries(groupedArticles).map(([filterOptionId, group]) => (
-            <div key={filterOptionId} className="rounded-xl border border-border bg-card overflow-hidden">
+          {(
+            Object.entries(groupedArticles) as [
+              string,
+              { name: string; articles: Article[] },
+            ][]
+          ).map(([filterOptionId, group]) => (
+            <div
+              key={filterOptionId}
+              className="rounded-xl border border-border bg-card overflow-hidden"
+            >
               {/* Group Header */}
               <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-6 py-3">
                 <BookOpen className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-foreground">{group.name}</h3>
+                <h3 className="font-semibold text-foreground">
+                  {group.name}
+                </h3>
                 <span className="rounded-full bg-primary-muted px-2 py-0.5 text-xs font-medium text-primary">
-                  {group.articles.length} article{group.articles.length !== 1 ? "s" : ""}
+                  {group.articles.length} article
+                  {group.articles.length !== 1 ? "s" : ""}
                 </span>
               </div>
 
@@ -207,14 +268,18 @@ export default function ArticlesPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">{article.title}</p>
+                        <p className="font-medium text-foreground">
+                          {article.title}
+                        </p>
                         {article.isPublished ? (
                           <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-500">
-                            <Eye className="h-3 w-3" /> Published
+                            <Eye className="h-3 w-3" />{" "}
+                            Published
                           </span>
                         ) : (
                           <span className="flex items-center gap-1 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs text-yellow-500">
-                            <EyeOff className="h-3 w-3" /> Draft
+                            <EyeOff className="h-3 w-3" />{" "}
+                            Draft
                           </span>
                         )}
                       </div>
@@ -222,22 +287,28 @@ export default function ArticlesPage() {
                         {truncate(article.content)}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Created {formatDate(article.createdAt)}
-                        {article.order != null && ` · Order: ${article.order}`}
+                        Created{" "}
+                        {formatDate(article.createdAt)}
+                        {article.order != null &&
+                          ` · Order: ${article.order}`}
                       </p>
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleEditArticle(article)}
+                        onClick={() =>
+                          handleEditArticle(article)
+                        }
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
                         title="Edit"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => setDeleteArticleId(article._id)}
+                        onClick={() =>
+                          setDeleteArticleId(article._id)
+                        }
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-error-muted hover:text-error"
                         title="Delete"
                       >
@@ -256,10 +327,13 @@ export default function ArticlesPage() {
             <BookOpen className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-muted-foreground">
-            {searchQuery ? "No articles match your search" : "No articles yet"}
+            {searchQuery
+              ? "No articles match your search"
+              : "No articles yet"}
           </p>
           <p className="text-sm text-muted-foreground">
-            Select a career path above and create your first article
+            Select a career path above and create your first
+            article
           </p>
         </div>
       )}
@@ -273,10 +347,14 @@ export default function ArticlesPage() {
             setEditingArticle(null);
           }}
           onSuccess={() => {}}
-          filterOptionId={(editingArticle?.filterOptionId ?? selectedFilterId) as Id<"FilterOption">}
+          filterOptionId={
+            (editingArticle?.filterOptionId ??
+              selectedFilterId) as Id<"FilterOption">
+          }
           filterOptionName={
             editingArticle?.filterOptionName ??
-            filters?.find((f) => f._id === selectedFilterId)?.name ??
+            filters?.find((f) => f._id === selectedFilterId)
+              ?.name ??
             "Unknown"
           }
           article={editingArticle}

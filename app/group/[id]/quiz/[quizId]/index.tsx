@@ -6,18 +6,17 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  ScrollView,
   StatusBar,
-  TextInput,
   View,
 } from "react-native";
 import Animated, {
   FadeIn,
-  FadeInRight,
-  FadeOut,
-  runOnJS,
+  FadeInDown,
+  FadeInUp,
+  ZoomIn,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -32,60 +31,26 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// Timer Bar Component
-function TimerBar({
-  totalTime,
-  timeLeft,
-  isRunning,
-}: {
-  totalTime: number;
-  timeLeft: number;
-  isRunning: boolean;
-}) {
-  const { theme } = useTheme();
-  const progress = timeLeft / totalTime;
-  const isWarning = progress <= 0.25;
-  const isCritical = progress <= 0.1;
+// Answer Option Labels
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
-  return (
-    <View
-      style={{
-        height: 6,
-        backgroundColor: theme.colors.border,
-        borderRadius: 3,
-        overflow: "hidden",
-        marginBottom: 16,
-      }}
-    >
-      <Animated.View
-        style={{
-          height: "100%",
-          width: `${progress * 100}%`,
-          borderRadius: 3,
-          backgroundColor: isCritical
-            ? "#EF4444"
-            : isWarning
-              ? "#F97316"
-              : theme.colors.primary,
-        }}
-      />
-    </View>
-  );
-}
-
-// MCQ Option Component
-function MCQOption({
+// Answer Option Component
+function AnswerOption({
   option,
   index,
   isSelected,
-  isMultiple,
+  showResult,
+  isCorrect,
+  isUserAnswer,
   onSelect,
   disabled,
 }: {
   option: string;
   index: number;
   isSelected: boolean;
-  isMultiple: boolean;
+  showResult: boolean;
+  isCorrect: boolean;
+  isUserAnswer: boolean;
   onSelect: () => void;
   disabled: boolean;
 }) {
@@ -97,72 +62,80 @@ function MCQOption({
   }));
 
   const handlePress = () => {
-    if (disabled) return;
-    scale.value = withSequence(
-      withSpring(0.95, { damping: 10 }),
-      withSpring(1, { damping: 10 }),
-    );
+    if (disabled || showResult) return;
+    scale.value = withSpring(0.98, { damping: 15 }, () => {
+      scale.value = withSpring(1, { damping: 15 });
+    });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelect();
   };
 
-  const letters = ["A", "B", "C", "D", "E", "F"];
+  // Determine colors based on state
+  let backgroundColor = theme.colors.surface;
+  let borderColor = theme.colors.border;
+  let circleBackground = theme.colors.border;
+  let circleContent: React.ReactNode = (
+    <Typography variant="caption" weight="semibold" style={{ color: theme.colors.textMuted }}>
+      {OPTION_LABELS[index]}
+    </Typography>
+  );
+
+  if (showResult) {
+    if (isCorrect) {
+      backgroundColor = "#22C55E15";
+      borderColor = "#22C55E";
+      circleBackground = "#22C55E";
+      circleContent = <Ionicons name="checkmark" size={16} color="#FFFFFF" />;
+    } else if (isUserAnswer && !isCorrect) {
+      backgroundColor = "#EF444415";
+      borderColor = "#EF4444";
+      circleBackground = "#EF4444";
+      circleContent = <Ionicons name="close" size={16} color="#FFFFFF" />;
+    }
+  } else if (isSelected) {
+    backgroundColor = `${theme.colors.primary}10`;
+    borderColor = theme.colors.primary;
+    circleBackground = theme.colors.primary;
+    circleContent = (
+      <Typography variant="caption" weight="semibold" style={{ color: "#FFFFFF" }}>
+        {OPTION_LABELS[index]}
+      </Typography>
+    );
+  }
 
   return (
-    <Animated.View entering={FadeInRight.duration(300).delay(index * 50)} style={animatedStyle}>
+    <Animated.View style={animatedStyle}>
       <Pressable
         onPress={handlePress}
-        disabled={disabled}
+        disabled={disabled || showResult}
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: isSelected
-            ? `${theme.colors.primary}15`
-            : theme.colors.surface,
-          borderRadius: 16,
+          gap: 12,
+          backgroundColor,
+          borderRadius: 14,
           padding: 16,
-          marginBottom: 12,
+          marginBottom: 10,
           borderWidth: 2,
-          borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+          borderColor,
         }}
       >
-        {/* Letter badge */}
+        {/* Circle with letter */}
         <View
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: isSelected
-              ? theme.colors.primary
-              : theme.colors.border,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: circleBackground,
             alignItems: "center",
             justifyContent: "center",
-            marginRight: 14,
           }}
         >
-          {isSelected ? (
-            <Ionicons
-              name={isMultiple ? "checkmark" : "checkmark"}
-              size={20}
-              color="#FFFFFF"
-            />
-          ) : (
-            <Typography
-              variant="body"
-              weight="semibold"
-              style={{ color: theme.colors.textMuted }}
-            >
-              {letters[index]}
-            </Typography>
-          )}
+          {circleContent}
         </View>
 
         {/* Option text */}
-        <Typography
-          variant="body"
-          color={isSelected ? "text" : "textMuted"}
-          style={{ flex: 1 }}
-        >
+        <Typography variant="body" color="text" style={{ flex: 1 }}>
           {option}
         </Typography>
       </Pressable>
@@ -170,73 +143,265 @@ function MCQOption({
   );
 }
 
-// True/False Button Component
-function TrueFalseButton({
-  value,
-  isSelected,
-  onSelect,
-  disabled,
+// Results Screen Component
+function ResultsScreen({
+  score,
+  totalQuestions,
+  correctAnswers,
+  passed,
+  timeTaken,
+  questions,
+  userAnswers,
+  passingScore,
+  onViewLeaderboard,
+  onRetake,
+  onBack,
 }: {
-  value: boolean;
-  isSelected: boolean;
-  onSelect: () => void;
-  disabled: boolean;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: boolean[];
+  passed: boolean;
+  timeTaken: number;
+  questions: { text: string; options: string[]; correctIndex: number; explanation?: string }[];
+  userAnswers: number[];
+  passingScore?: number;
+  onViewLeaderboard: () => void;
+  onRetake: () => void;
+  onBack: () => void;
 }) {
   const { theme } = useTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = () => {
-    if (disabled) return;
-    scale.value = withSequence(
-      withSpring(0.95, { damping: 10 }),
-      withSpring(1, { damping: 10 }),
-    );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSelect();
-  };
-
-  const color = value ? "#22C55E" : "#EF4444";
+  const insets = useSafeAreaInsets();
+  const percentage = Math.round((score / totalQuestions) * 100);
 
   return (
-    <AnimatedPressable
-      onPress={handlePress}
-      disabled={disabled}
-      style={[
-        {
-          flex: 1,
-          backgroundColor: isSelected ? `${color}20` : theme.colors.surface,
-          borderRadius: 16,
-          paddingVertical: 24,
-          alignItems: "center",
-          justifyContent: "center",
-          borderWidth: 2,
-          borderColor: isSelected ? color : theme.colors.border,
-        },
-        animatedStyle,
-      ]}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      contentContainerStyle={{
+        paddingHorizontal: 20,
+        paddingTop: 40,
+        paddingBottom: insets.bottom + 40,
+      }}
+      showsVerticalScrollIndicator={false}
     >
-      <Ionicons
-        name={value ? "checkmark-circle" : "close-circle"}
-        size={32}
-        color={isSelected ? color : theme.colors.textMuted}
-      />
-      <Typography
-        variant="body"
-        weight="semibold"
-        style={{ color: isSelected ? color : theme.colors.textMuted, marginTop: 8 }}
+      {/* Score Circle */}
+      <Animated.View
+        entering={ZoomIn.duration(500).springify()}
+        style={{ alignItems: "center", marginBottom: 24 }}
       >
-        {value ? "True" : "False"}
-      </Typography>
-    </AnimatedPressable>
+        <LinearGradient
+          colors={passed ? ["#22C55E", "#16A34A"] : ["#EF4444", "#DC2626"]}
+          style={{
+            width: 120,
+            height: 120,
+            borderRadius: 60,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="h1" weight="bold" style={{ color: "#FFFFFF" }}>
+            {percentage}%
+          </Typography>
+        </LinearGradient>
+
+        <Animated.View entering={FadeInUp.delay(300).duration(300)}>
+          <Typography
+            variant="h3"
+            weight="bold"
+            style={{
+              color: passed ? "#22C55E" : "#EF4444",
+              marginTop: 16,
+            }}
+          >
+            {passed ? "Passed!" : "Try Again"}
+          </Typography>
+        </Animated.View>
+      </Animated.View>
+
+      {/* Stats Row */}
+      <Animated.View
+        entering={FadeInUp.delay(400).duration(300)}
+        style={{
+          flexDirection: "row",
+          backgroundColor: theme.colors.surface,
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 24,
+        }}
+      >
+        {/* Correct */}
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Typography variant="h4" weight="bold" color="text">
+            {score}/{totalQuestions}
+          </Typography>
+          <Typography variant="caption" color="textMuted">
+            Correct
+          </Typography>
+        </View>
+
+        {/* Divider */}
+        <View style={{ width: 1, backgroundColor: theme.colors.border }} />
+
+        {/* Time */}
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Typography variant="h4" weight="bold" color="text">
+            {Math.floor(timeTaken / 60)}:{(timeTaken % 60).toString().padStart(2, "0")}
+          </Typography>
+          <Typography variant="caption" color="textMuted">
+            Time
+          </Typography>
+        </View>
+
+        {/* Divider */}
+        <View style={{ width: 1, backgroundColor: theme.colors.border }} />
+
+        {/* Passing Score */}
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Typography variant="h4" weight="bold" color="text">
+            {passingScore ?? 0}
+          </Typography>
+          <Typography variant="caption" color="textMuted">
+            To Pass
+          </Typography>
+        </View>
+      </Animated.View>
+
+      {/* Review Section */}
+      <Animated.View entering={FadeInUp.delay(500).duration(300)}>
+        <Typography variant="body" weight="semibold" color="text" style={{ marginBottom: 12 }}>
+          Review Answers
+        </Typography>
+
+        {questions.map((question, qIndex) => {
+          const isCorrect = correctAnswers[qIndex];
+          const userAnswerIndex = userAnswers[qIndex];
+
+          return (
+            <View
+              key={qIndex}
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 12,
+                borderLeftWidth: 4,
+                borderLeftColor: isCorrect ? "#22C55E" : "#EF4444",
+              }}
+            >
+              {/* Question header */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <Ionicons
+                  name={isCorrect ? "checkmark-circle" : "close-circle"}
+                  size={20}
+                  color={isCorrect ? "#22C55E" : "#EF4444"}
+                />
+                <Typography variant="caption" color="textMuted">
+                  Question {qIndex + 1}
+                </Typography>
+              </View>
+
+              {/* Question text */}
+              <Typography variant="body" color="text" style={{ marginBottom: 8 }}>
+                {question.text}
+              </Typography>
+
+              {/* Your answer */}
+              {!isCorrect && userAnswerIndex !== undefined && (
+                <View style={{ flexDirection: "row", gap: 4, marginBottom: 4 }}>
+                  <Typography variant="caption" color="textMuted">
+                    Your answer:
+                  </Typography>
+                  <Typography variant="caption" style={{ color: "#EF4444" }}>
+                    {question.options[userAnswerIndex] ?? "No answer"}
+                  </Typography>
+                </View>
+              )}
+
+              {/* Correct answer */}
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                <Typography variant="caption" color="textMuted">
+                  Correct:
+                </Typography>
+                <Typography variant="caption" style={{ color: "#22C55E" }}>
+                  {question.options[question.correctIndex]}
+                </Typography>
+              </View>
+
+              {/* Explanation */}
+              {question.explanation && (
+                <View
+                  style={{
+                    backgroundColor: `${theme.colors.primary}10`,
+                    borderRadius: 8,
+                    padding: 10,
+                    marginTop: 10,
+                  }}
+                >
+                  <Typography variant="caption" color="textMuted">
+                    {question.explanation}
+                  </Typography>
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </Animated.View>
+
+      {/* Action Buttons */}
+      <Animated.View entering={FadeInUp.delay(600).duration(300)} style={{ marginTop: 16 }}>
+        {/* View Leaderboard */}
+        <Pressable
+          onPress={onViewLeaderboard}
+          style={{
+            borderWidth: 1.5,
+            borderColor: theme.colors.primary,
+            borderRadius: 14,
+            height: 50,
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Typography variant="body" weight="semibold" color="primary">
+            View Leaderboard
+          </Typography>
+        </Pressable>
+
+        {/* Retake Quiz */}
+        <Pressable onPress={onRetake}>
+          <LinearGradient
+            colors={["#6C5DD3", "#8676FF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              borderRadius: 14,
+              height: 50,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
+              Retake Quiz
+            </Typography>
+          </LinearGradient>
+        </Pressable>
+
+        {/* Back */}
+        <Pressable
+          onPress={onBack}
+          style={{ alignItems: "center", paddingVertical: 12 }}
+        >
+          <Typography variant="body" color="textMuted">
+            Back to Quizzes
+          </Typography>
+        </Pressable>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
-// Main Take Quiz Screen
-export default function TakeQuizScreen() {
+// Main Quiz Attempt Screen
+export default function QuizAttemptScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -246,179 +411,151 @@ export default function TakeQuizScreen() {
   }>();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<string, string | string[]>>(new Map());
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [userAnswers, setUserAnswers] = useState<number[]>([]);
+  const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fillBlankText, setFillBlankText] = useState("");
+  const [quizResult, setQuizResult] = useState<{
+    score: number;
+    totalQuestions: number;
+    correctAnswers: boolean[];
+    passed: boolean;
+  } | null>(null);
+
   const startTimeRef = useRef(Date.now());
-  const questionStartTimeRef = useRef(Date.now());
+  const progressWidth = useSharedValue(0);
 
   const quiz = useQuery(
-    api.quizzes.getQuizWithQuestions,
-    quizId ? { quizId: quizId as Id<"quizzes"> } : "skip",
+    api.quizzes.getQuizById,
+    quizId ? { quizId: quizId as Id<"quizzes"> } : "skip"
   );
 
-  const submitAttempt = useMutation(api.quizAttempts.submitAttempt);
+  const submitQuiz = useMutation(api.quizzes.submitQuiz);
 
-  // Get current question
-  const currentQuestion = quiz?.questions?.[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === (quiz?.questions?.length ?? 1) - 1;
+  const questions = quiz?.questions ?? [];
+  const currentQuestion = questions[currentQuestionIndex];
+  const totalQuestions = questions.length;
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
 
   // Initialize timer
   useEffect(() => {
-    if (quiz) {
-      if (quiz.timeLimit) {
-        setTimeLeft(quiz.timeLimit);
-      } else if (quiz.perQuestionTime) {
-        setTimeLeft(quiz.perQuestionTime);
-      }
-      startTimeRef.current = Date.now();
-      questionStartTimeRef.current = Date.now();
+    if (quiz?.timeLimit) {
+      setTimeLeft(quiz.timeLimit);
     }
   }, [quiz]);
 
   // Timer countdown
   useEffect(() => {
-    if (timeLeft <= 0 || !quiz || quiz.alreadyAttempted) return;
+    if (!quiz?.timeLimit || timeLeft <= 0 || quizResult) return;
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Time's up!
-          if (quiz.perQuestionTime && !isLastQuestion) {
-            // Move to next question
-            handleNext(true);
-            return quiz.perQuestionTime;
-          } else {
-            // Submit quiz
-            handleSubmit();
-            return 0;
-          }
+          handleTimeUp();
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLeft, quiz, isLastQuestion]);
+  }, [quiz?.timeLimit, timeLeft, quizResult]);
 
-  // Handle selecting an answer
-  const handleSelectAnswer = useCallback(
-    (answer: string) => {
-      if (!currentQuestion) return;
+  // Update progress bar
+  useEffect(() => {
+    const progress = totalQuestions > 0 ? (currentQuestionIndex / totalQuestions) * 100 : 0;
+    progressWidth.value = withTiming(progress, { duration: 300 });
+  }, [currentQuestionIndex, totalQuestions]);
 
-      setAnswers((prev) => {
-        const newAnswers = new Map(prev);
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
 
-        if (currentQuestion.type === "mcq_multiple") {
-          const current = (newAnswers.get(currentQuestion._id) as string[]) || [];
-          if (current.includes(answer)) {
-            newAnswers.set(
-              currentQuestion._id,
-              current.filter((a) => a !== answer),
-            );
-          } else {
-            newAnswers.set(currentQuestion._id, [...current, answer]);
-          }
-        } else {
-          newAnswers.set(currentQuestion._id, answer);
-        }
+  // Handle time up
+  const handleTimeUp = useCallback(async () => {
+    // Submit with current answers
+    const finalAnswers = [...userAnswers];
+    while (finalAnswers.length < totalQuestions) {
+      finalAnswers.push(-1); // Mark as unanswered
+    }
+    await handleSubmitQuiz(finalAnswers);
+  }, [userAnswers, totalQuestions]);
 
-        return newAnswers;
-      });
-    },
-    [currentQuestion],
-  );
-
-  // Handle fill in blank answer
-  const handleFillBlank = useCallback(() => {
-    if (!currentQuestion || !fillBlankText.trim()) return;
-    setAnswers((prev) => {
-      const newAnswers = new Map(prev);
-      newAnswers.set(currentQuestion._id, fillBlankText.trim());
-      return newAnswers;
-    });
-    setFillBlankText("");
-  }, [currentQuestion, fillBlankText]);
+  // Handle answer selection
+  const handleSelectAnswer = (index: number) => {
+    if (showResult || isSubmitting) return;
+    setSelectedAnswer(index);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   // Handle next question
-  const handleNext = useCallback(
-    (timedOut = false) => {
-      if (!quiz) return;
+  const handleNext = useCallback(async () => {
+    if (selectedAnswer === null) {
+      Alert.alert("Select an answer", "Please select an answer before continuing.");
+      return;
+    }
 
-      // Save fill blank answer if present
-      if (currentQuestion?.type === "fill_blank" && fillBlankText.trim()) {
-        handleFillBlank();
-      }
+    // Show result briefly
+    setShowResult(true);
+    Haptics.notificationAsync(
+      selectedAnswer === currentQuestion?.correctIndex
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Error
+    );
 
-      if (isLastQuestion) {
-        handleSubmit();
-      } else {
-        setCurrentQuestionIndex((prev) => prev + 1);
-        questionStartTimeRef.current = Date.now();
-        if (quiz.perQuestionTime) {
-          setTimeLeft(quiz.perQuestionTime);
-        }
-        setFillBlankText("");
+    // Wait for result animation
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const newAnswers = [...userAnswers, selectedAnswer];
+    setUserAnswers(newAnswers);
+
+    if (isLastQuestion) {
+      // Submit quiz
+      await handleSubmitQuiz(newAnswers);
+    } else {
+      // Move to next question
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+    }
+  }, [selectedAnswer, currentQuestion, isLastQuestion, userAnswers]);
+
+  // Submit quiz
+  const handleSubmitQuiz = useCallback(
+    async (answers: number[]) => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+
+      const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+      try {
+        const result = await submitQuiz({
+          quizId: quizId as Id<"quizzes">,
+          answers,
+          timeTaken,
+        });
+
+        setQuizResult(result);
+      } catch (error) {
+        console.error("Failed to submit quiz:", error);
+        Alert.alert("Error", "Failed to submit quiz. Please try again.");
+        setIsSubmitting(false);
       }
     },
-    [quiz, isLastQuestion, currentQuestion, fillBlankText],
+    [quizId, submitQuiz, isSubmitting]
   );
-
-  // Handle submit
-  const handleSubmit = useCallback(async () => {
-    if (!quiz || isSubmitting) return;
-
-    setIsSubmitting(true);
-
-    // Build answers array
-    const answersArray: {
-      questionId: Id<"questions">;
-      selectedAnswer: string | string[];
-      timeTaken?: number;
-    }[] = [];
-
-    for (const question of quiz.questions) {
-      const answer = answers.get(question._id);
-      answersArray.push({
-        questionId: question._id as Id<"questions">,
-        selectedAnswer: answer ?? "",
-      });
-    }
-
-    const totalTimeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
-
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const result = await submitAttempt({
-        quizId: quizId as Id<"quizzes">,
-        answers: answersArray,
-        timeTaken: totalTimeTaken,
-      });
-
-      // Navigate to results
-      router.replace(`/group/${groupId}/quiz/${quizId}/results` as any);
-    } catch (error) {
-      console.error("Failed to submit quiz:", error);
-      Alert.alert("Error", "Failed to submit quiz. Please try again.");
-      setIsSubmitting(false);
-    }
-  }, [quiz, answers, isSubmitting, quizId, groupId, router, submitAttempt]);
 
   // Handle exit confirmation
   const handleExit = () => {
-    Alert.alert(
-      "Exit Quiz?",
-      "Your progress will be lost. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Exit",
-          style: "destructive",
-          onPress: () => router.back(),
-        },
-      ],
-    );
+    Alert.alert("Exit Quiz?", "Your progress will be lost. Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Exit",
+        style: "destructive",
+        onPress: () => router.back(),
+      },
+    ]);
   };
 
   // Loading state
@@ -440,69 +577,42 @@ export default function TakeQuizScreen() {
     );
   }
 
-  // Already attempted state
-  if (quiz.alreadyAttempted) {
+  // Results state
+  if (quizResult) {
+    const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 32,
+      <ResultsScreen
+        score={quizResult.score}
+        totalQuestions={quizResult.totalQuestions}
+        correctAnswers={quizResult.correctAnswers}
+        passed={quizResult.passed}
+        timeTaken={timeTaken}
+        questions={questions}
+        userAnswers={userAnswers}
+        passingScore={quiz.passingScore}
+        onViewLeaderboard={() =>
+          router.push(`/group/${groupId}/leaderboard` as any)
+        }
+        onRetake={() => {
+          setCurrentQuestionIndex(0);
+          setSelectedAnswer(null);
+          setUserAnswers([]);
+          setShowResult(false);
+          setQuizResult(null);
+          setIsSubmitting(false);
+          startTimeRef.current = Date.now();
+          if (quiz.timeLimit) setTimeLeft(quiz.timeLimit);
         }}
-      >
-        <View
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: 50,
-            backgroundColor: `${theme.colors.primary}15`,
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 24,
-          }}
-        >
-          <Ionicons name="checkmark-done" size={48} color={theme.colors.primary} />
-        </View>
-        <Typography variant="h3" weight="bold" color="text" align="center">
-          Already Completed
-        </Typography>
-        <Typography
-          variant="body"
-          color="textMuted"
-          align="center"
-          style={{ marginTop: 12, marginBottom: 24 }}
-        >
-          You scored {quiz.previousAttempt?.percentage}% on this quiz
-        </Typography>
-        <Pressable
-          onPress={() => router.replace(`/group/${groupId}/quiz/${quizId}/results` as any)}
-          style={{
-            backgroundColor: theme.colors.primary,
-            paddingHorizontal: 32,
-            paddingVertical: 14,
-            borderRadius: 16,
-          }}
-        >
-          <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
-            View Results
-          </Typography>
-        </Pressable>
-      </View>
+        onBack={() => router.back()}
+      />
     );
   }
 
-  const totalTime = quiz.timeLimit || quiz.perQuestionTime || 30;
-  const currentAnswer = answers.get(currentQuestion?._id ?? "");
+  const isTimeCritical = quiz.timeLimit && timeLeft < 30;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="light-content"
-      />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       {/* Header */}
       <View
@@ -510,7 +620,7 @@ export default function TakeQuizScreen() {
           backgroundColor: theme.colors.surface,
           paddingTop: insets.top,
           paddingHorizontal: 16,
-          paddingBottom: 16,
+          paddingBottom: 12,
         }}
       >
         <View
@@ -536,236 +646,144 @@ export default function TakeQuizScreen() {
             <Ionicons name="close" size={20} color="#FFFFFF" />
           </Pressable>
 
-          {/* Progress */}
-          <View style={{ alignItems: "center" }}>
-            <Typography variant="caption" color="textMuted">
-              Question
-            </Typography>
-            <Typography variant="body" weight="bold" color="text">
-              {currentQuestionIndex + 1} / {quiz.questions.length}
-            </Typography>
-          </View>
+          {/* Question counter */}
+          <Typography variant="body" weight="semibold" color="text">
+            Question {currentQuestionIndex + 1} of {totalQuestions}
+          </Typography>
 
           {/* Timer */}
-          <View
-            style={{
-              backgroundColor:
-                timeLeft <= 10
-                  ? "#EF444420"
-                  : timeLeft <= 30
-                    ? "#F9731620"
-                    : `${theme.colors.primary}20`,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-            }}
-          >
-            <Typography
-              variant="body"
-              weight="bold"
+          {quiz.timeLimit ? (
+            <View
               style={{
-                color:
-                  timeLeft <= 10
-                    ? "#EF4444"
-                    : timeLeft <= 30
-                      ? "#F97316"
-                      : theme.colors.primary,
+                backgroundColor: isTimeCritical ? "#EF444420" : `${theme.colors.primary}20`,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
               }}
             >
-              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
-            </Typography>
-          </View>
+              <Typography
+                variant="body"
+                weight="bold"
+                style={{ color: isTimeCritical ? "#EF4444" : theme.colors.primary }}
+              >
+                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+              </Typography>
+            </View>
+          ) : (
+            <View style={{ width: 38 }} />
+          )}
         </View>
 
-        {/* Timer bar */}
-        <TimerBar totalTime={totalTime} timeLeft={timeLeft} isRunning={true} />
-
-        {/* Progress dots */}
+        {/* Progress bar */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
+            height: 4,
+            backgroundColor: theme.colors.border,
+            borderRadius: 2,
+            overflow: "hidden",
           }}
         >
-          {quiz.questions.map((_: any, index: number) => (
-            <View
-              key={index}
-              style={{
-                width: index === currentQuestionIndex ? 20 : 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor:
-                  index < currentQuestionIndex
-                    ? theme.colors.primary
-                    : index === currentQuestionIndex
-                      ? theme.colors.primary
-                      : theme.colors.border,
-              }}
+          <Animated.View style={[progressAnimatedStyle, { height: "100%" }]}>
+            <LinearGradient
+              colors={["#6C5DD3", "#8676FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ flex: 1, borderRadius: 2 }}
             />
-          ))}
+          </Animated.View>
         </View>
       </View>
 
       {/* Question Content */}
       {currentQuestion && (
         <Animated.View
-          key={currentQuestion._id}
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
+          key={currentQuestionIndex}
+          entering={FadeInDown.duration(300)}
           style={{
             flex: 1,
-            padding: 20,
+            paddingHorizontal: 16,
+            paddingTop: 20,
           }}
         >
-          {/* Question text */}
+          {/* Question Card */}
           <View
             style={{
               backgroundColor: theme.colors.surface,
               borderRadius: 20,
-              padding: 20,
-              marginBottom: 24,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
+              padding: 24,
+              marginBottom: 20,
             }}
           >
-            <Typography variant="h4" weight="semibold" color="text">
+            <Typography
+              variant="h3"
+              weight="bold"
+              color="text"
+              style={{ lineHeight: 30 }}
+            >
               {currentQuestion.text}
             </Typography>
-            {currentQuestion.type === "mcq_multiple" && (
-              <Typography
-                variant="caption"
-                color="textMuted"
-                style={{ marginTop: 8 }}
-              >
-                Select all that apply
-              </Typography>
-            )}
           </View>
 
-          {/* Answer options */}
-          {currentQuestion.type === "mcq_single" ||
-          currentQuestion.type === "mcq_multiple" ? (
-            <View>
-              {currentQuestion.options?.map((option: string, index: number) => (
-                <MCQOption
-                  key={option}
-                  option={option}
-                  index={index}
-                  isSelected={
-                    currentQuestion.type === "mcq_multiple"
-                      ? ((currentAnswer as string[]) || []).includes(option)
-                      : currentAnswer === option
-                  }
-                  isMultiple={currentQuestion.type === "mcq_multiple"}
-                  onSelect={() => handleSelectAnswer(option)}
-                  disabled={isSubmitting}
-                />
-              ))}
-            </View>
-          ) : currentQuestion.type === "true_false" ? (
-            <View style={{ flexDirection: "row", gap: 16 }}>
-              <TrueFalseButton
-                value={true}
-                isSelected={currentAnswer === "true"}
-                onSelect={() => handleSelectAnswer("true")}
+          {/* Answer Options */}
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {currentQuestion.options.map((option, index) => (
+              <AnswerOption
+                key={index}
+                option={option}
+                index={index}
+                isSelected={selectedAnswer === index}
+                showResult={showResult}
+                isCorrect={currentQuestion.correctIndex === index}
+                isUserAnswer={selectedAnswer === index}
+                onSelect={() => handleSelectAnswer(index)}
                 disabled={isSubmitting}
               />
-              <TrueFalseButton
-                value={false}
-                isSelected={currentAnswer === "false"}
-                onSelect={() => handleSelectAnswer("false")}
-                disabled={isSubmitting}
-              />
-            </View>
-          ) : currentQuestion.type === "fill_blank" ? (
-            <View>
-              <TextInput
-                style={{
-                  backgroundColor: theme.colors.surface,
-                  borderRadius: 16,
-                  padding: 16,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.text,
-                  fontSize: 16,
-                }}
-                placeholder="Type your answer..."
-                placeholderTextColor={theme.colors.textMuted}
-                value={fillBlankText || (currentAnswer as string) || ""}
-                onChangeText={setFillBlankText}
-                returnKeyType="done"
-                onSubmitEditing={handleFillBlank}
-              />
-              {(fillBlankText || currentAnswer) && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 12,
-                    gap: 8,
-                  }}
-                >
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={theme.colors.primary}
-                  />
-                  <Typography variant="caption" color="primary">
-                    Answer recorded
-                  </Typography>
-                </View>
-              )}
-            </View>
-          ) : null}
+            ))}
+          </ScrollView>
         </Animated.View>
       )}
 
-      {/* Bottom action area */}
-      <View
-        style={{
-          padding: 20,
-          paddingBottom: insets.bottom + 20,
-          backgroundColor: theme.colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.border,
-        }}
-      >
-        <Pressable
-          onPress={() => handleNext()}
-          disabled={isSubmitting}
-          style={{ opacity: isSubmitting ? 0.5 : 1 }}
+      {/* Next Button */}
+      {selectedAnswer !== null && !showResult && (
+        <Animated.View
+          entering={FadeInUp.duration(250)}
+          style={{
+            padding: 16,
+            paddingBottom: insets.bottom + 16,
+          }}
         >
-          <LinearGradient
-            colors={["#6C5DD3", "#8676FF"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              height: 54,
-              borderRadius: 16,
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "row",
-              gap: 8,
-            }}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
-                  {isLastQuestion ? "Submit Quiz" : "Next Question"}
-                </Typography>
-                <Ionicons
-                  name={isLastQuestion ? "checkmark-done" : "arrow-forward"}
-                  size={20}
-                  color="#FFFFFF"
-                />
-              </>
-            )}
-          </LinearGradient>
-        </Pressable>
-      </View>
+          <Pressable onPress={handleNext} disabled={isSubmitting}>
+            <LinearGradient
+              colors={["#6C5DD3", "#8676FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                height: 50,
+                borderRadius: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+                gap: 8,
+              }}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
+                    {isLastQuestion ? "Submit Quiz" : "Next Question"}
+                  </Typography>
+                  <Ionicons
+                    name={isLastQuestion ? "checkmark-done" : "arrow-forward"}
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                </>
+              )}
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      )}
     </View>
   );
 }

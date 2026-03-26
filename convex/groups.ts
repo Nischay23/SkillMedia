@@ -218,6 +218,13 @@ export const getMyGroups = query({
           };
         }
 
+        // Get quiz count for this group
+        const quizzes = await ctx.db
+          .query("quizzes")
+          .withIndex("by_group", (q) => q.eq("groupId", m.groupId))
+          .filter((q) => q.eq(q.field("isPublished"), true))
+          .collect();
+
         return {
           ...group,
           filterOptionName: filterOption?.name ?? "Unknown",
@@ -225,6 +232,7 @@ export const getMyGroups = query({
           unreadCount: unreadMessages.length,
           lastMessage: lastMessagePreview,
           roadmapProgress,
+          quizCount: quizzes.length,
         };
       }),
     );

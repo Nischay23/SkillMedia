@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StatusBar,
   View,
 } from "react-native";
@@ -15,67 +15,24 @@ import Animated, {
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
-  withSequence,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import {
-  useTheme,
-  useThemedStyles,
-} from "@/providers/ThemeProvider";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// Quiz type colors and badges
-const quizTypeConfig = {
-  daily: {
-    color: "#22C55E",
-    bgColor: "#22C55E20",
-    label: "Daily",
-    icon: "sunny" as const,
-  },
-  weekly: {
-    color: "#3B82F6",
-    bgColor: "#3B82F620",
-    label: "Weekly",
-    icon: "calendar" as const,
-  },
-  test_series: {
-    color: "#F97316",
-    bgColor: "#F9731620",
-    label: "Mock Test",
-    icon: "school" as const,
-  },
-};
-
 // Format time duration
 const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min`;
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-};
-
-// Format countdown
-const formatCountdown = (ms: number) => {
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    return `${days}d ${hours % 24}h`;
-  }
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m ${seconds}s`;
-  return `${seconds}s`;
 };
 
 // Quiz Card Component
@@ -84,13 +41,21 @@ function QuizCard({
   index,
   onPress,
 }: {
-  quiz: any;
+  quiz: {
+    _id: string;
+    title: string;
+    description?: string;
+    timeLimit?: number;
+    passingScore?: number;
+    questionCount: number;
+    attemptCount: number;
+    bestScore: number | null;
+  };
   index: number;
   onPress: () => void;
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
-  const config = quizTypeConfig[quiz.type as keyof typeof quizTypeConfig];
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -105,118 +70,84 @@ function QuizCard({
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
-  const isCompleted = !!quiz.attempt;
-  const isLocked = quiz.isScheduled;
-  const isExpired = quiz.isExpired;
+  const hasAttempted = quiz.bestScore !== null;
+  const passed = quiz.passingScore !== undefined && quiz.bestScore !== null && quiz.bestScore >= quiz.passingScore;
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(400).delay(index * 80)}
+      entering={FadeInDown.duration(400).delay(index * 70)}
       style={animatedStyle}
     >
       <Pressable
-        onPressIn={!isLocked ? handlePressIn : undefined}
-        onPressOut={!isLocked ? handlePressOut : undefined}
-        onPress={!isLocked ? onPress : undefined}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
         style={{
           backgroundColor: theme.colors.surface,
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 14,
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 12,
           borderWidth: 1,
-          borderColor: isLocked ? theme.colors.border : theme.colors.border,
-          opacity: isLocked || isExpired ? 0.7 : 1,
+          borderColor: theme.colors.border,
         }}
       >
-        {/* Header: Type badge + Title */}
+        {/* Top row: Title + Time limit chip */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "flex-start",
             justifyContent: "space-between",
+            gap: 12,
           }}
         >
-          <View style={{ flex: 1 }}>
-            {/* Type Badge */}
+          <Typography
+            variant="body"
+            weight="semibold"
+            color="text"
+            style={{ flex: 1 }}
+            numberOfLines={2}
+          >
+            {quiz.title}
+          </Typography>
+
+          {quiz.timeLimit && (
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
-                backgroundColor: config.bgColor,
-                alignSelf: "flex-start",
-                paddingHorizontal: 10,
+                gap: 4,
+                backgroundColor: `${theme.colors.primary}15`,
+                paddingHorizontal: 8,
                 paddingVertical: 4,
-                borderRadius: 12,
-                marginBottom: 10,
+                borderRadius: 8,
               }}
             >
-              <Ionicons name={config.icon} size={12} color={config.color} />
+              <Ionicons
+                name="time-outline"
+                size={12}
+                color={theme.colors.primary}
+              />
               <Typography
                 variant="caption"
-                weight="semibold"
-                style={{ color: config.color, fontSize: 11 }}
+                style={{ color: theme.colors.primary, fontSize: 11 }}
               >
-                {config.label}
-              </Typography>
-            </View>
-
-            {/* Title */}
-            <Typography
-              variant="body"
-              weight="semibold"
-              color="text"
-              numberOfLines={2}
-            >
-              {quiz.title}
-            </Typography>
-
-            {/* Description */}
-            {quiz.description && (
-              <Typography
-                variant="caption"
-                color="textMuted"
-                numberOfLines={1}
-                style={{ marginTop: 4 }}
-              >
-                {quiz.description}
-              </Typography>
-            )}
-          </View>
-
-          {/* Score badge (if completed) */}
-          {isCompleted && (
-            <View
-              style={{
-                backgroundColor:
-                  quiz.attempt.percentage >= 70
-                    ? "#22C55E20"
-                    : quiz.attempt.percentage >= 40
-                      ? "#F9731620"
-                      : "#EF444420",
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 12,
-                alignItems: "center",
-              }}
-            >
-              <Typography
-                variant="h4"
-                weight="bold"
-                style={{
-                  color:
-                    quiz.attempt.percentage >= 70
-                      ? "#22C55E"
-                      : quiz.attempt.percentage >= 40
-                        ? "#F97316"
-                        : "#EF4444",
-                }}
-              >
-                {quiz.attempt.percentage}%
+                {formatDuration(quiz.timeLimit)}
               </Typography>
             </View>
           )}
         </View>
+
+        {/* Description */}
+        {quiz.description && (
+          <Typography
+            variant="caption"
+            color="textMuted"
+            numberOfLines={2}
+            style={{ marginTop: 8 }}
+          >
+            {quiz.description}
+          </Typography>
+        )}
 
         {/* Stats row */}
         <View
@@ -224,10 +155,10 @@ function QuizCard({
             flexDirection: "row",
             alignItems: "center",
             gap: 16,
-            marginTop: 14,
+            marginTop: 12,
           }}
         >
-          {/* Questions */}
+          {/* Question count */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Ionicons
               name="help-circle-outline"
@@ -235,22 +166,32 @@ function QuizCard({
               color={theme.colors.textMuted}
             />
             <Typography variant="caption" color="textMuted">
-              {quiz.questionCount} questions
+              {quiz.questionCount} Q
             </Typography>
           </View>
 
-          {/* Time */}
-          {(quiz.timeLimit || quiz.perQuestionTime) && (
+          {/* Attempt count */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons
+              name="people-outline"
+              size={14}
+              color={theme.colors.textMuted}
+            />
+            <Typography variant="caption" color="textMuted">
+              {quiz.attemptCount} attempts
+            </Typography>
+          </View>
+
+          {/* Best score */}
+          {hasAttempted && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons
-                name="time-outline"
+                name="trophy-outline"
                 size={14}
                 color={theme.colors.textMuted}
               />
               <Typography variant="caption" color="textMuted">
-                {quiz.timeLimit
-                  ? formatDuration(quiz.timeLimit)
-                  : `${quiz.perQuestionTime}s/Q`}
+                Best: {quiz.bestScore}/{quiz.questionCount}
               </Typography>
             </View>
           )}
@@ -261,11 +202,11 @@ function QuizCard({
           style={{
             height: 1,
             backgroundColor: theme.colors.border,
-            marginVertical: 14,
+            marginVertical: 12,
           }}
         />
 
-        {/* Action row */}
+        {/* Bottom: Action button + score chip */}
         <View
           style={{
             flexDirection: "row",
@@ -273,77 +214,67 @@ function QuizCard({
             justifyContent: "space-between",
           }}
         >
-          {isLocked ? (
+          {hasAttempted ? (
             <>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name="lock-closed" size={16} color={theme.colors.textMuted} />
-                <Typography variant="caption" color="textMuted">
-                  Opens in {formatCountdown(quiz.scheduledIn)}
-                </Typography>
-              </View>
+              {/* Score chip */}
               <View
                 style={{
-                  backgroundColor: theme.colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: passed ? "#22C55E20" : "#F9731620",
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 10,
+                }}
+              >
+                <Ionicons
+                  name={passed ? "checkmark-circle" : "alert-circle"}
+                  size={14}
+                  color={passed ? "#22C55E" : "#F97316"}
+                />
+                <Typography
+                  variant="caption"
+                  weight="semibold"
+                  style={{ color: passed ? "#22C55E" : "#F97316" }}
+                >
+                  {passed ? "Passed" : "Try Again"}
+                </Typography>
+              </View>
+
+              {/* Retake button */}
+              <Pressable
+                onPress={onPress}
+                style={{
+                  borderWidth: 1.5,
+                  borderColor: theme.colors.primary,
                   paddingHorizontal: 16,
                   paddingVertical: 8,
                   borderRadius: 12,
                 }}
               >
-                <Typography variant="caption" weight="semibold" color="textMuted">
-                  Locked
+                <Typography
+                  variant="caption"
+                  weight="semibold"
+                  color="primary"
+                >
+                  Retake
                 </Typography>
-              </View>
-            </>
-          ) : isExpired ? (
-            <>
-              <Typography variant="caption" color="textMuted">
-                Quiz has expired
-              </Typography>
-              <View
-                style={{
-                  backgroundColor: theme.colors.border,
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 12,
-                }}
-              >
-                <Typography variant="caption" weight="semibold" color="textMuted">
-                  Expired
-                </Typography>
-              </View>
-            </>
-          ) : isCompleted ? (
-            <>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
-                <Typography variant="caption" style={{ color: "#22C55E" }}>
-                  Completed
-                </Typography>
-              </View>
-              <View
-                style={{
-                  backgroundColor: theme.colors.primary + "20",
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 12,
-                }}
-              >
-                <Typography variant="caption" weight="semibold" color="primary">
-                  Review
-                </Typography>
-              </View>
+              </Pressable>
             </>
           ) : (
             <>
               <Typography variant="caption" color="textMuted">
                 Ready to attempt
               </Typography>
+
+              {/* Start Quiz gradient button */}
               <LinearGradient
                 colors={["#6C5DD3", "#8676FF"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
-                  paddingHorizontal: 20,
+                  paddingHorizontal: 18,
                   paddingVertical: 8,
                   borderRadius: 12,
                 }}
@@ -368,142 +299,47 @@ function QuizCard({
 function EmptyState() {
   const { theme } = useTheme();
 
-  const glowScale = useSharedValue(1);
-  const iconTranslateY = useSharedValue(0);
-
-  useEffect(() => {
-    glowScale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: 1200 }),
-        withTiming(1.0, { duration: 1200 }),
-      ),
-      -1,
-      true,
-    );
-
-    iconTranslateY.value = withRepeat(
-      withSequence(
-        withTiming(-6, { duration: 1000 }),
-        withTiming(0, { duration: 1000 }),
-      ),
-      -1,
-      true,
-    );
-  }, [glowScale, iconTranslateY]);
-
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: glowScale.value }],
-  }));
-
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: iconTranslateY.value }],
-  }));
-
   return (
     <Animated.View
-      entering={FadeIn.duration(600).delay(100)}
+      entering={FadeIn.duration(500)}
       style={{
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 32,
-        paddingTop: 60,
+        paddingTop: 80,
       }}
     >
       <View
         style={{
-          width: 110,
-          height: 110,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          backgroundColor: `${theme.colors.primary}10`,
           alignItems: "center",
           justifyContent: "center",
+          marginBottom: 24,
         }}
       >
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              width: 110,
-              height: 110,
-              borderRadius: 55,
-              backgroundColor: `${theme.colors.primary}15`,
-            },
-            glowAnimatedStyle,
-          ]}
-        />
-        <View
-          style={{
-            width: 110,
-            height: 110,
-            borderRadius: 55,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Animated.View style={iconAnimatedStyle}>
-            <Ionicons
-              name="school-outline"
-              size={52}
-              color={theme.colors.primary}
-            />
-          </Animated.View>
-        </View>
-      </View>
-
-      <Animated.View
-        entering={FadeInDown.duration(400).delay(200)}
-        style={{ marginTop: 28, alignItems: "center" }}
-      >
-        <Typography variant="h2" weight="bold" color="text" align="center">
-          No Quizzes Yet
-        </Typography>
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.duration(400).delay(350)}
-        style={{ marginTop: 10, maxWidth: 260, alignItems: "center" }}
-      >
-        <Typography
-          variant="body"
-          color="textMuted"
-          align="center"
-          style={{ lineHeight: 24 }}
-        >
-          {"The admin hasn't created any quizzes\nfor this group yet.\nCheck back soon!"}
-        </Typography>
-      </Animated.View>
-
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 28 }}>
-        <Animated.View
-          entering={FadeIn.delay(500)}
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: theme.colors.primary,
-          }}
-        />
-        <Animated.View
-          entering={FadeIn.delay(600)}
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: `${theme.colors.primary}99`,
-          }}
-        />
-        <Animated.View
-          entering={FadeIn.delay(700)}
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: `${theme.colors.primary}4D`,
-          }}
+        <Ionicons
+          name="help-circle-outline"
+          size={64}
+          color={`${theme.colors.primary}66`}
         />
       </View>
+
+      <Typography variant="h3" weight="bold" color="text" align="center">
+        No Quizzes Yet
+      </Typography>
+
+      <Typography
+        variant="body"
+        color="textMuted"
+        align="center"
+        style={{ marginTop: 8, lineHeight: 22 }}
+      >
+        Admin hasn't added quizzes yet.{"\n"}Check back soon!
+      </Typography>
     </Animated.View>
   );
 }
@@ -537,13 +373,10 @@ export default function QuizListScreen() {
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<string | null>(null);
 
   const quizzes = useQuery(
-    api.quizzes.getQuizzes,
-    groupId
-      ? { groupId: groupId as Id<"groups">, type: filter ?? undefined }
-      : "skip",
+    api.quizzes.getQuizzesByGroup,
+    groupId ? { groupId: groupId as Id<"groups"> } : "skip"
   );
 
   const backButtonScale = useSharedValue(1);
@@ -565,14 +398,8 @@ export default function QuizListScreen() {
     setTimeout(() => setRefreshing(false), 500);
   }, []);
 
-  const handleQuizPress = (quiz: any) => {
-    if (quiz.attempt) {
-      // Go to review
-      router.push(`/group/${groupId}/quiz/${quiz._id}/results` as any);
-    } else {
-      // Go to take quiz
-      router.push(`/group/${groupId}/quiz/${quiz._id}` as any);
-    }
+  const handleQuizPress = (quizId: string) => {
+    router.push(`/group/${groupId}/quiz/${quizId}` as any);
   };
 
   const isLoading = quizzes === undefined;
@@ -621,97 +448,23 @@ export default function QuizListScreen() {
             <Ionicons name="arrow-back" size={18} color="#FFFFFF" />
           </AnimatedPressable>
 
-          <View style={{ flex: 1 }}>
-            <Typography variant="body" weight="semibold" color="text">
-              Quizzes & Tests
-            </Typography>
-            <Typography
-              variant="caption"
-              color="textMuted"
-              style={{ marginTop: 2 }}
-            >
-              Test your knowledge
-            </Typography>
-          </View>
-
-          <Pressable
-            onPress={() => router.push(`/group/${groupId}/leaderboard` as any)}
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 19,
-              backgroundColor: "rgba(255,255,255,0.08)",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.10)",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons
-              name="trophy-outline"
-              size={18}
-              color={theme.colors.primary}
-            />
-          </Pressable>
+          <Typography variant="body" weight="semibold" color="text">
+            Quizzes
+          </Typography>
         </View>
 
+        {/* Accent line */}
         <LinearGradient
           colors={["#6C5DD3", "#8676FF", "transparent"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{
-            height: 1.5,
+            height: 2,
             marginTop: 14,
             marginHorizontal: -16,
           }}
         />
       </Animated.View>
-
-      {/* Filter tabs */}
-      <View
-        style={{
-          flexDirection: "row",
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          gap: 8,
-        }}
-      >
-        {[
-          { key: null, label: "All" },
-          { key: "daily", label: "Daily" },
-          { key: "weekly", label: "Weekly" },
-          { key: "test_series", label: "Mock Tests" },
-        ].map((item) => (
-          <Pressable
-            key={item.key ?? "all"}
-            onPress={() => setFilter(item.key)}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 20,
-              backgroundColor:
-                filter === item.key
-                  ? theme.colors.primary
-                  : theme.colors.surface,
-              borderWidth: 1,
-              borderColor:
-                filter === item.key
-                  ? theme.colors.primary
-                  : theme.colors.border,
-            }}
-          >
-            <Typography
-              variant="caption"
-              weight="semibold"
-              style={{
-                color: filter === item.key ? "#FFFFFF" : theme.colors.textMuted,
-              }}
-            >
-              {item.label}
-            </Typography>
-          </Pressable>
-        ))}
-      </View>
 
       {/* Content */}
       {isLoading ? (
@@ -719,10 +472,19 @@ export default function QuizListScreen() {
       ) : quizzes.length === 0 ? (
         <EmptyState />
       ) : (
-        <ScrollView
-          style={{ flex: 1 }}
+        <FlatList
+          data={quizzes}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item, index }) => (
+            <QuizCard
+              quiz={item}
+              index={index}
+              onPress={() => handleQuizPress(item._id)}
+            />
+          )}
           contentContainerStyle={{
             paddingHorizontal: 16,
+            paddingTop: 16,
             paddingBottom: insets.bottom + 20,
           }}
           showsVerticalScrollIndicator={false}
@@ -733,16 +495,7 @@ export default function QuizListScreen() {
               tintColor={theme.colors.primary}
             />
           }
-        >
-          {quizzes.map((quiz: any, index: number) => (
-            <QuizCard
-              key={quiz._id}
-              quiz={quiz}
-              index={index}
-              onPress={() => handleQuizPress(quiz)}
-            />
-          ))}
-        </ScrollView>
+        />
       )}
     </View>
   );

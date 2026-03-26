@@ -12,12 +12,32 @@ export default function InitialLayout() {
   const router = useRouter();
 
   const createUser = useMutation(api.users.createUser);
+  const updateStreak = useMutation(
+    api.streaks.updateStreak,
+  );
   const existingUser = useQuery(
     api.users.getUserByClerkId,
-    user ? { clerkId: user.id } : "skip"
+    user ? { clerkId: user.id } : "skip",
   );
 
   const hasCreatedRef = useRef(false);
+  const hasUpdatedStreakRef = useRef(false);
+
+  // Update streak when user is authenticated
+  useEffect(() => {
+    if (
+      !isSignedIn ||
+      !existingUser ||
+      hasUpdatedStreakRef.current
+    )
+      return;
+
+    hasUpdatedStreakRef.current = true;
+    updateStreak({}).catch(() => {
+      // Silent fail - streak update is non-critical
+      hasUpdatedStreakRef.current = false;
+    });
+  }, [isSignedIn, existingUser, updateStreak]);
 
   useEffect(() => {
     if (!isAuthLoaded || !isUserLoaded) return;

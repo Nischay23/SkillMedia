@@ -173,6 +173,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     coverImage: v.optional(v.string()),
     memberCount: v.number(),
+    messageCount: v.optional(v.number()),
     createdBy: v.id("users"),
     isActive: v.boolean(),
     createdAt: v.number(),
@@ -184,7 +185,7 @@ export default defineSchema({
   groupMembers: defineTable({
     groupId: v.id("groups"),
     userId: v.id("users"),
-    role: v.union(v.literal("admin"), v.literal("member")),
+    role: v.union(v.literal("admin"), v.literal("moderator"), v.literal("member")),
     joinedAt: v.number(),
     lastReadAt: v.optional(v.number()),
   })
@@ -319,4 +320,78 @@ export default defineSchema({
     .index("by_roadmap", ["roadmapId"])
     .index("by_user_and_roadmap", ["userId", "roadmapId"])
     .index("by_user_and_step", ["userId", "stepId"]),
+
+  // ===========================================
+  // PHASE 4: QUIZZES, TESTS & ENGAGEMENT
+  // ===========================================
+
+  // 17. quizzes table: Quiz definitions for groups
+  quizzes: defineTable({
+    groupId: v.id("groups"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    timeLimit: v.optional(v.number()),
+    passingScore: v.optional(v.number()),
+    isPublished: v.boolean(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_group", ["groupId"]),
+
+  // 18. questions table: Quiz questions
+  questions: defineTable({
+    quizId: v.id("quizzes"),
+    text: v.string(),
+    options: v.array(v.string()),
+    correctIndex: v.number(),
+    explanation: v.optional(v.string()),
+    order: v.number(),
+  }).index("by_quiz", ["quizId"]),
+
+  // 19. quizAttempts table: User quiz attempts and scores
+  quizAttempts: defineTable({
+    quizId: v.id("quizzes"),
+    userId: v.id("users"),
+    answers: v.array(v.number()),
+    score: v.number(),
+    totalQuestions: v.number(),
+    timeTaken: v.optional(v.number()),
+    completedAt: v.number(),
+  })
+    .index("by_quiz", ["quizId"])
+    .index("by_user", ["userId"])
+    .index("by_quiz_and_user", ["quizId", "userId"]),
+
+  // 20. challenges table: Group challenges
+  challenges: defineTable({
+    groupId: v.id("groups"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(v.literal("quiz"), v.literal("steps"), v.literal("streak")),
+    targetValue: v.number(),
+    startDate: v.number(),
+    endDate: v.number(),
+    isActive: v.boolean(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_group", ["groupId"]),
+
+  // 21. challengeSubmissions table: User challenge submissions
+  challengeSubmissions: defineTable({
+    challengeId: v.id("challenges"),
+    userId: v.id("users"),
+    value: v.number(),
+    completedAt: v.optional(v.number()),
+    isCompleted: v.boolean(),
+  })
+    .index("by_challenge", ["challengeId"])
+    .index("by_user", ["userId"]),
+
+  // 22. streaks table: User activity streaks
+  streaks: defineTable({
+    userId: v.id("users"),
+    currentStreak: v.number(),
+    longestStreak: v.number(),
+    lastActiveDate: v.string(),
+    totalActiveDays: v.number(),
+  }).index("by_user", ["userId"]),
 });

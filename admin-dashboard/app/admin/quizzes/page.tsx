@@ -5,86 +5,87 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import {
-  Activity,
-  AlertTriangle,
+  BarChart3,
+  CheckCircle,
+  Clock,
   Eye,
   Filter,
-  MessageSquare,
-  Power,
+  HelpCircle,
+  Plus,
   Search,
+  Target,
   Trash2,
-  TrendingUp,
-  Users2,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function GroupsPage() {
+export default function QuizzesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "disabled"
+    "all" | "published" | "draft"
   >("all");
-  const [deleteGroupId, setDeleteGroupId] =
-    useState<Id<"groups"> | null>(null);
-  const [toggleGroupId, setToggleGroupId] =
-    useState<Id<"groups"> | null>(null);
+  const [deleteQuizId, setDeleteQuizId] =
+    useState<Id<"quizzes"> | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isToggling, setIsToggling] = useState(false);
 
-  // Fetch groups and stats
-  const groups = useQuery(api.groups.getGroupsForAdmin, {
-    status: statusFilter,
-  });
-  const stats = useQuery(api.groups.getGroupStats);
+  // Fetch quizzes and stats
+  const quizzes = useQuery(
+    api.quizzes.getAllQuizzesForAdmin,
+  );
+  const stats = useQuery(api.quizzes.getQuizStats);
 
   // Mutations
-  const deleteGroup = useMutation(api.groups.deleteGroup);
-  const toggleStatus = useMutation(
-    api.groups.toggleGroupStatus,
-  );
+  const deleteQuiz = useMutation(api.quizzes.deleteQuiz);
+  const updateQuiz = useMutation(api.quizzes.updateQuiz);
 
-  // Filter groups by search query
-  const filteredGroups = groups?.filter((group: any) => {
+  // Filter quizzes
+  const filteredQuizzes = quizzes?.filter((quiz) => {
+    if (statusFilter === "published" && !quiz.isPublished)
+      return false;
+    if (statusFilter === "draft" && quiz.isPublished)
+      return false;
+
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      group.name.toLowerCase().includes(query) ||
-      group.filterOptionName
-        ?.toLowerCase()
-        .includes(query) ||
-      group.description?.toLowerCase().includes(query)
+      quiz.title.toLowerCase().includes(query) ||
+      quiz.groupName?.toLowerCase().includes(query) ||
+      quiz.description?.toLowerCase().includes(query)
     );
   });
 
   // Handle delete
   const handleDelete = async () => {
-    if (!deleteGroupId) return;
+    if (!deleteQuizId) return;
     setIsDeleting(true);
     try {
-      await deleteGroup({ groupId: deleteGroupId });
-      setDeleteGroupId(null);
+      await deleteQuiz({ quizId: deleteQuizId });
+      setDeleteQuizId(null);
     } catch (error) {
-      console.error("Failed to delete group:", error);
-      alert("Failed to delete group. Please try again.");
+      console.error("Failed to delete quiz:", error);
+      alert("Failed to delete quiz. Please try again.");
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Handle toggle status
-  const handleToggleStatus = async () => {
-    if (!toggleGroupId) return;
-    setIsToggling(true);
+  // Handle toggle publish
+  const handleTogglePublish = async (
+    quizId: Id<"quizzes">,
+    currentStatus: boolean,
+  ) => {
     try {
-      await toggleStatus({ groupId: toggleGroupId });
-      setToggleGroupId(null);
+      await updateQuiz({
+        quizId,
+        isPublished: !currentStatus,
+      });
     } catch (error) {
-      console.error("Failed to toggle status:", error);
-      alert(
-        "Failed to change group status. Please try again.",
+      console.error(
+        "Failed to toggle publish status:",
+        error,
       );
-    } finally {
-      setIsToggling(false);
+      alert("Failed to update quiz status.");
     }
   };
 
@@ -97,7 +98,7 @@ export default function GroupsPage() {
   };
 
   const isLoading =
-    groups === undefined || stats === undefined;
+    quizzes === undefined || stats === undefined;
 
   return (
     <div className="space-y-6">
@@ -105,12 +106,19 @@ export default function GroupsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Group Management
+            Quiz Management
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Manage community groups and moderation
+            Create and manage quizzes for career groups
           </p>
         </div>
+        <Link
+          href="/admin/quizzes/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Create Quiz
+        </Link>
       </div>
 
       {/* Stats Cards */}
@@ -118,16 +126,16 @@ export default function GroupsPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Users2 className="h-5 w-5 text-primary" />
+              <HelpCircle className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {isLoading
                   ? "..."
-                  : (stats?.totalGroups ?? 0)}
+                  : (stats?.totalQuizzes ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground">
-                Total Groups
+                Total Quizzes
               </p>
             </div>
           </div>
@@ -136,16 +144,34 @@ export default function GroupsPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Activity className="h-5 w-5 text-emerald-500" />
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {isLoading
                   ? "..."
-                  : (stats?.activeGroups ?? 0)}
+                  : (stats?.publishedQuizzes ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground">
-                Active Groups
+                Published
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+              <Target className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">
+                {isLoading
+                  ? "..."
+                  : (stats?.draftQuizzes ?? 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Drafts
               </p>
             </div>
           </div>
@@ -154,34 +180,16 @@ export default function GroupsPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <TrendingUp className="h-5 w-5 text-blue-500" />
+              <BarChart3 className="h-5 w-5 text-blue-500" />
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {isLoading
                   ? "..."
-                  : (stats?.totalMembers ?? 0)}
+                  : (stats?.totalAttempts ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground">
-                Total Members
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-              <MessageSquare className="h-5 w-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {isLoading
-                  ? "..."
-                  : (stats?.totalMessages ?? 0)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Total Messages
+                Total Attempts
               </p>
             </div>
           </div>
@@ -195,7 +203,7 @@ export default function GroupsPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search groups..."
+            placeholder="Search quizzes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input-field pl-10"
@@ -215,37 +223,40 @@ export default function GroupsPage() {
             className="input-field w-auto"
           >
             <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="disabled">Disabled</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
           </select>
         </div>
 
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
-          {filteredGroups?.length ?? 0} groups
+          {filteredQuizzes?.length ?? 0} quizzes
         </div>
       </div>
 
-      {/* Groups Table */}
+      {/* Quizzes Table */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Group
+                  Quiz
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Career Path
+                  Group
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <Users2 className="mx-auto h-4 w-4" />
+                  Questions
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <MessageSquare className="mx-auto h-4 w-4" />
+                  <Users className="mx-auto h-4 w-4" />
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <AlertTriangle className="mx-auto h-4 w-4" />
+                  Avg Score
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <Clock className="mx-auto h-4 w-4" />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
@@ -285,7 +296,10 @@ export default function GroupsPage() {
                       <div className="mx-auto h-4 w-8 rounded bg-muted" />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="mx-auto h-4 w-8 rounded bg-muted" />
+                      <div className="mx-auto h-4 w-12 rounded bg-muted" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="mx-auto h-4 w-12 rounded bg-muted" />
                     </td>
                     <td className="px-6 py-4">
                       <div className="h-6 w-16 rounded bg-muted" />
@@ -298,87 +312,104 @@ export default function GroupsPage() {
                     </td>
                   </tr>
                 ))
-              ) : filteredGroups &&
-                filteredGroups.length > 0 ? (
-                filteredGroups.map((group: any) => (
+              ) : filteredQuizzes &&
+                filteredQuizzes.length > 0 ? (
+                filteredQuizzes.map((quiz) => (
                   <tr
-                    key={group._id}
+                    key={quiz._id}
                     className="transition-colors hover:bg-muted/50"
                   >
-                    {/* Group */}
+                    {/* Quiz */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-sm font-bold text-white">
-                          {group.name
-                            .charAt(0)
-                            .toUpperCase()}
+                          <HelpCircle className="h-5 w-5" />
                         </div>
                         <div>
                           <p className="font-medium text-foreground">
-                            {group.name}
+                            {quiz.title}
                           </p>
-                          {group.description && (
+                          {quiz.description && (
                             <p className="mt-0.5 max-w-[200px] truncate text-xs text-muted-foreground">
-                              {group.description}
+                              {quiz.description}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
 
-                    {/* Career Path */}
+                    {/* Group */}
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                        {group.filterOptionName}
+                        {quiz.groupName}
                       </span>
                     </td>
 
-                    {/* Members */}
+                    {/* Questions */}
                     <td className="px-6 py-4 text-center">
                       <span className="text-sm font-medium text-foreground">
-                        {group.memberCount}
+                        {quiz.questionCount}
                       </span>
                     </td>
 
-                    {/* Messages */}
+                    {/* Attempts */}
                     <td className="px-6 py-4 text-center">
                       <span className="text-sm text-foreground">
-                        {group.messageCount ?? 0}
+                        {quiz.attemptCount}
                       </span>
                     </td>
 
-                    {/* Reports */}
+                    {/* Avg Score */}
                     <td className="px-6 py-4 text-center">
-                      {group.pendingReportsCount > 0 ? (
-                        <span className="inline-flex items-center justify-center rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-500">
-                          {group.pendingReportsCount}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          0
-                        </span>
-                      )}
+                      <span
+                        className={`text-sm font-medium ${
+                          quiz.avgScore >= 70
+                            ? "text-emerald-500"
+                            : quiz.avgScore >= 50
+                              ? "text-amber-500"
+                              : "text-foreground"
+                        }`}
+                      >
+                        {quiz.attemptCount > 0
+                          ? `${quiz.avgScore}%`
+                          : "-"}
+                      </span>
+                    </td>
+
+                    {/* Time Limit */}
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm text-muted-foreground">
+                        {quiz.timeLimit
+                          ? `${quiz.timeLimit}m`
+                          : "—"}
+                      </span>
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-4">
-                      <span
-                        className={`badge ${
-                          group.isActive
-                            ? "badge-success"
-                            : "badge-warning"
+                      <button
+                        onClick={() =>
+                          handleTogglePublish(
+                            quiz._id,
+                            quiz.isPublished,
+                          )
+                        }
+                        className={`badge cursor-pointer transition-colors ${
+                          quiz.isPublished
+                            ? "badge-success hover:bg-emerald-500/30"
+                            : "badge-warning hover:bg-amber-500/30"
                         }`}
                       >
-                        {group.isActive
-                          ? "Active"
-                          : "Disabled"}
-                      </span>
+                        {quiz.isPublished
+                          ? "Published"
+                          : "Draft"}
+                      </button>
                     </td>
 
                     {/* Created */}
                     <td className="px-6 py-4">
                       <span className="text-sm text-muted-foreground">
-                        {formatDate(group.createdAt)}
+                        {formatDate(quiz.createdAt)}
                       </span>
                     </td>
 
@@ -386,32 +417,15 @@ export default function GroupsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/groups/${group._id}`}
+                          href={`/admin/quizzes/${quiz._id}`}
                           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          title="View Details"
+                          title="View Analytics"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
                         <button
                           onClick={() =>
-                            setToggleGroupId(group._id)
-                          }
-                          className={`rounded-lg p-2 text-muted-foreground transition-colors ${
-                            group.isActive
-                              ? "hover:bg-amber-500/10 hover:text-amber-500"
-                              : "hover:bg-emerald-500/10 hover:text-emerald-500"
-                          }`}
-                          title={
-                            group.isActive
-                              ? "Disable"
-                              : "Enable"
-                          }
-                        >
-                          <Power className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setDeleteGroupId(group._id)
+                            setDeleteQuizId(quiz._id)
                           }
                           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-error-muted hover:text-error"
                           title="Delete"
@@ -425,18 +439,27 @@ export default function GroupsPage() {
               ) : (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-6 py-12 text-center"
                   >
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <Users2 className="h-6 w-6 text-muted-foreground" />
+                        <HelpCircle className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <p className="text-muted-foreground">
                         {searchQuery
-                          ? "No groups match your search"
-                          : "No groups found"}
+                          ? "No quizzes match your search"
+                          : "No quizzes found"}
                       </p>
+                      {!searchQuery && (
+                        <Link
+                          href="/admin/quizzes/new"
+                          className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Create First Quiz
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -446,51 +469,14 @@ export default function GroupsPage() {
         </div>
       </div>
 
-      {/* Toggle Status Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={toggleGroupId !== null}
-        onClose={() => setToggleGroupId(null)}
-        onConfirm={handleToggleStatus}
-        title={
-          filteredGroups?.find(
-            (g) => g._id === toggleGroupId,
-          )?.isActive
-            ? "Disable Group"
-            : "Enable Group"
-        }
-        description={
-          filteredGroups?.find(
-            (g) => g._id === toggleGroupId,
-          )?.isActive
-            ? "Disabling this group will prevent members from sending messages. Members will still see the group but won't be able to interact."
-            : "Enabling this group will allow members to send messages again."
-        }
-        confirmText={
-          filteredGroups?.find(
-            (g) => g._id === toggleGroupId,
-          )?.isActive
-            ? "Disable"
-            : "Enable"
-        }
-        cancelText="Cancel"
-        variant={
-          filteredGroups?.find(
-            (g) => g._id === toggleGroupId,
-          )?.isActive
-            ? "warning"
-            : "default"
-        }
-        isLoading={isToggling}
-      />
-
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        isOpen={deleteGroupId !== null}
-        onClose={() => setDeleteGroupId(null)}
+        isOpen={deleteQuizId !== null}
+        onClose={() => setDeleteQuizId(null)}
         onConfirm={handleDelete}
-        title="Delete Group"
-        description="Are you sure you want to delete this group? This action cannot be undone. All messages, memberships, and associated data will be permanently removed."
-        confirmText="Delete Group"
+        title="Delete Quiz"
+        description="Are you sure you want to delete this quiz? This will remove all questions and attempt history. This action cannot be undone."
+        confirmText="Delete Quiz"
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}

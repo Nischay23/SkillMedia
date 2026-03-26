@@ -46,14 +46,13 @@ function AnimatedScore({
   const rotation = useSharedValue(0);
 
   useEffect(() => {
-    // Animate the score counting up
     const duration = 1500;
     const startTime = Date.now();
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
 
       setDisplayScore(Math.floor(easeProgress * score));
       setDisplayPercentage(Math.floor(easeProgress * percentage));
@@ -66,18 +65,17 @@ function AnimatedScore({
             ? Haptics.NotificationFeedbackType.Success
             : percentage >= 40
               ? Haptics.NotificationFeedbackType.Warning
-              : Haptics.NotificationFeedbackType.Error,
+              : Haptics.NotificationFeedbackType.Error
         );
       }
     };
 
-    // Start animation after a delay
     setTimeout(() => {
       scale.value = withSpring(1, { damping: 10, stiffness: 100 });
       rotation.value = withSequence(
         withTiming(10, { duration: 100 }),
         withTiming(-10, { duration: 100 }),
-        withTiming(0, { duration: 100 }),
+        withTiming(0, { duration: 100 })
       );
       animate();
     }, 500);
@@ -121,7 +119,7 @@ function AnimatedScore({
           {displayPercentage}%
         </Typography>
         <Typography variant="caption" color="textMuted">
-          {displayScore}/{total} points
+          {displayScore}/{total} correct
         </Typography>
       </View>
     </Animated.View>
@@ -183,23 +181,21 @@ function StatCard({
 // Question Review Card
 function QuestionReviewCard({
   question,
+  userAnswer,
   index,
 }: {
-  question: any;
+  question: {
+    text: string;
+    options: string[];
+    correctIndex: number;
+    explanation?: string;
+  };
+  userAnswer: number;
   index: number;
 }) {
   const { theme } = useTheme();
   const [expanded, setExpanded] = useState(false);
-
-  const getAnswerDisplay = (answer: any) => {
-    if (Array.isArray(answer)) return answer.join(", ");
-    return answer || "Not answered";
-  };
-
-  const getCorrectAnswerDisplay = (answer: any) => {
-    if (Array.isArray(answer)) return answer.join(", ");
-    return answer;
-  };
+  const isCorrect = userAnswer === question.correctIndex;
 
   return (
     <Animated.View entering={FadeInDown.duration(300).delay(index * 50)}>
@@ -211,11 +207,9 @@ function QuestionReviewCard({
           padding: 16,
           marginBottom: 12,
           borderWidth: 1,
-          borderColor: question.isCorrect
-            ? "#22C55E40"
-            : "#EF444440",
+          borderColor: isCorrect ? "#22C55E40" : "#EF444440",
           borderLeftWidth: 4,
-          borderLeftColor: question.isCorrect ? "#22C55E" : "#EF4444",
+          borderLeftColor: isCorrect ? "#22C55E" : "#EF4444",
         }}
       >
         {/* Header */}
@@ -232,18 +226,16 @@ function QuestionReviewCard({
                 width: 28,
                 height: 28,
                 borderRadius: 14,
-                backgroundColor: question.isCorrect
-                  ? "#22C55E20"
-                  : "#EF444420",
+                backgroundColor: isCorrect ? "#22C55E20" : "#EF444420",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 12,
               }}
             >
               <Ionicons
-                name={question.isCorrect ? "checkmark" : "close"}
+                name={isCorrect ? "checkmark" : "close"}
                 size={16}
-                color={question.isCorrect ? "#22C55E" : "#EF4444"}
+                color={isCorrect ? "#22C55E" : "#EF4444"}
               />
             </View>
             <Typography
@@ -268,9 +260,7 @@ function QuestionReviewCard({
             {/* Your answer */}
             <View
               style={{
-                backgroundColor: question.isCorrect
-                  ? "#22C55E10"
-                  : "#EF444410",
+                backgroundColor: isCorrect ? "#22C55E10" : "#EF444410",
                 borderRadius: 12,
                 padding: 12,
                 marginBottom: 12,
@@ -282,16 +272,18 @@ function QuestionReviewCard({
               <Typography
                 variant="body"
                 style={{
-                  color: question.isCorrect ? "#22C55E" : "#EF4444",
+                  color: isCorrect ? "#22C55E" : "#EF4444",
                   marginTop: 4,
                 }}
               >
-                {getAnswerDisplay(question.userAnswer)}
+                {userAnswer >= 0 && userAnswer < question.options.length
+                  ? question.options[userAnswer]
+                  : "Not answered"}
               </Typography>
             </View>
 
             {/* Correct answer (if wrong) */}
-            {!question.isCorrect && (
+            {!isCorrect && (
               <View
                 style={{
                   backgroundColor: "#22C55E10",
@@ -311,7 +303,7 @@ function QuestionReviewCard({
                   variant="body"
                   style={{ color: "#22C55E", marginTop: 4 }}
                 >
-                  {getCorrectAnswerDisplay(question.correctAnswer)}
+                  {question.options[question.correctIndex]}
                 </Typography>
               </View>
             )}
@@ -368,8 +360,8 @@ function StreakCelebration({ streak }: { streak: number }) {
       1500,
       withSequence(
         withSpring(1.2, { damping: 5 }),
-        withSpring(1, { damping: 10 }),
-      ),
+        withSpring(1, { damping: 10 })
+      )
     );
     rotation.value = withDelay(
       1500,
@@ -378,8 +370,8 @@ function StreakCelebration({ streak }: { streak: number }) {
         withTiming(-15, { duration: 100 }),
         withTiming(10, { duration: 100 }),
         withTiming(-10, { duration: 100 }),
-        withTiming(0, { duration: 100 }),
-      ),
+        withTiming(0, { duration: 100 })
+      )
     );
   }, []);
 
@@ -426,15 +418,23 @@ export default function QuizResultsScreen() {
 
   const [showReview, setShowReview] = useState(false);
 
-  const reviewData = useQuery(
-    api.quizzes.getQuizForReview,
-    quizId ? { quizId: quizId as Id<"quizzes"> } : "skip",
+  // Get quiz data with questions
+  const quiz = useQuery(
+    api.quizzes.getQuizById,
+    quizId ? { quizId: quizId as Id<"quizzes"> } : "skip"
   );
 
-  const streak = useQuery(api.streaks.getStreak);
+  // Get user's attempt
+  const attempt = useQuery(
+    api.quizAttempts.getAttempt,
+    quizId ? { quizId: quizId as Id<"quizzes"> } : "skip"
+  );
+
+  // Get user's streak
+  const streak = useQuery(api.streaks.getMyStreak);
 
   // Loading state
-  if (!reviewData) {
+  if (!quiz || !attempt) {
     return (
       <View
         style={{
@@ -452,16 +452,18 @@ export default function QuizResultsScreen() {
     );
   }
 
-  const { quiz, attempt, questions } = reviewData;
-  const correctCount = questions.filter((q: any) => q.isCorrect).length;
-  const wrongCount = questions.filter(
-    (q: any) => !q.isCorrect && q.userAnswer,
-  ).length;
-  const skippedCount = questions.filter(
-    (q: any) => !q.isCorrect && !q.userAnswer,
-  ).length;
+  const questions = quiz.questions ?? [];
+  const userAnswers = attempt.answers ?? [];
+  const score = attempt.score;
+  const totalQuestions = attempt.totalQuestions;
+  const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
 
-  const formatTime = (seconds: number) => {
+  // Calculate stats
+  const correctCount = score;
+  const wrongCount = totalQuestions - score;
+
+  const formatTime = (seconds?: number) => {
+    if (!seconds) return "N/A";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -542,9 +544,9 @@ export default function QuizResultsScreen() {
       >
         {/* Score Display */}
         <AnimatedScore
-          score={attempt.score}
-          total={attempt.totalPoints}
-          percentage={attempt.percentage}
+          score={score}
+          total={totalQuestions}
+          percentage={percentage}
         />
 
         {/* Streak celebration */}
@@ -639,10 +641,11 @@ export default function QuizResultsScreen() {
         {/* Review questions */}
         {showReview && (
           <View style={{ marginTop: 16 }}>
-            {questions.map((question: any, index: number) => (
+            {questions.map((question, index) => (
               <QuestionReviewCard
                 key={question._id}
                 question={question}
+                userAnswer={userAnswers[index] ?? -1}
                 index={index}
               />
             ))}

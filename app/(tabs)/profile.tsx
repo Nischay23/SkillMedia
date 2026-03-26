@@ -59,7 +59,7 @@ export default function Profile() {
   );
 
   // Fetch streak data
-  const streakData = useQuery(api.streaks.getStreak);
+  const streakData = useQuery(api.streaks.getMyStreak);
 
   const [editedProfile, setEditedProfile] = useState({
     fullname: currentUser?.fullname || "",
@@ -392,67 +392,83 @@ export default function Profile() {
             </View>
           </View>
 
-          {/* Streak Badge */}
-          {streakData && streakData.currentStreak > 0 && (
-            <Animated.View
-              entering={FadeInDown.duration(300).delay(100)}
+          {/* Streak Card */}
+          <Animated.View
+            entering={FadeInDown.duration(400).delay(200)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: theme.colors.surface,
+              borderRadius: 16,
+              padding: 16,
+              marginTop: 16,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            }}
+          >
+            {/* Flame icon */}
+            <View
               style={{
-                flexDirection: "row",
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: streakData && streakData.currentStreak > 0 ? "#F59E0B15" : `${theme.colors.textMuted}10`,
                 alignItems: "center",
-                marginTop: 12,
-                gap: 8,
+                justifyContent: "center",
               }}
             >
-              <LinearGradient
-                colors={["#F97316", "#FB923C"]}
+              <Ionicons
+                name="flame"
+                size={32}
+                color={streakData && streakData.currentStreak > 0 ? "#F59E0B" : theme.colors.textMuted}
+              />
+            </View>
+
+            {/* Center: streak count */}
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              {streakData && streakData.currentStreak > 0 ? (
+                <>
+                  <Typography variant="h2" weight="bold" color="primary">
+                    {streakData.currentStreak}
+                  </Typography>
+                  <Typography variant="caption" color="textMuted">
+                    day streak
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="body" weight="semibold" color="textMuted">
+                    No streak
+                  </Typography>
+                  <Typography variant="caption" color="textMuted">
+                    Start your streak today!
+                  </Typography>
+                </>
+              )}
+            </View>
+
+            {/* Right: best streak */}
+            {streakData && streakData.longestStreak > 0 && (
+              <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                  gap: 6,
+                  alignItems: "flex-end",
+                  paddingLeft: 12,
+                  borderLeftWidth: 1,
+                  borderLeftColor: theme.colors.border,
                 }}
               >
-                <Typography style={{ fontSize: 16 }}>🔥</Typography>
-                <Typography
-                  variant="caption"
-                  weight="bold"
-                  style={{ color: "#FFFFFF" }}
-                >
-                  {streakData.currentStreak} day streak
-                </Typography>
-              </LinearGradient>
-              {streakData.longestStreak > streakData.currentStreak && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: theme.colors.surface,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: theme.colors.border,
-                    gap: 4,
-                  }}
-                >
-                  <Ionicons
-                    name="trophy"
-                    size={14}
-                    color={theme.colors.warning}
-                  />
-                  <Typography
-                    variant="caption"
-                    color="textMuted"
-                    style={{ fontSize: 11 }}
-                  >
-                    Best: {streakData.longestStreak}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Ionicons name="trophy" size={14} color="#F59E0B" />
+                  <Typography variant="caption" color="textMuted">
+                    Best
                   </Typography>
                 </View>
-              )}
-            </Animated.View>
-          )}
+                <Typography variant="body" weight="semibold" color="text">
+                  {streakData.longestStreak} days
+                </Typography>
+              </View>
+            )}
+          </Animated.View>
 
           {/* Name + Bio */}
           <Typography
