@@ -4,10 +4,14 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import {
+  BarChart3,
+  Bell,
   BookOpen,
+  Bot,
   FileText,
   Flag,
   HelpCircle,
+  Languages,
   LayoutDashboard,
   ListTree,
   Map,
@@ -24,6 +28,26 @@ const navigation = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    name: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+  },
+  {
+    name: "AI Config",
+    href: "/admin/ai-config",
+    icon: Bot,
+  },
+  {
+    name: "Notifications",
+    href: "/admin/notifications",
+    icon: Bell,
+  },
+  {
+    name: "Languages",
+    href: "/admin/languages",
+    icon: Languages,
   },
   {
     name: "Filters",

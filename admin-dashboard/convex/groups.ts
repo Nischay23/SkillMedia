@@ -61,7 +61,9 @@ export const getGroupById = query({
     const membership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", user._id),
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
       )
       .first();
 
@@ -82,7 +84,9 @@ export const getIsMember = query({
     const membership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", user._id),
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
       )
       .first();
 
@@ -117,8 +121,10 @@ export const getGroupMembers = query({
 
     // Admins first, then members sorted by joinedAt
     return enriched.sort((a, b) => {
-      if (a.role === "admin" && b.role !== "admin") return -1;
-      if (a.role !== "admin" && b.role === "admin") return 1;
+      if (a.role === "admin" && b.role !== "admin")
+        return -1;
+      if (a.role !== "admin" && b.role === "admin")
+        return 1;
       return a.joinedAt - b.joinedAt;
     });
   },
@@ -132,7 +138,9 @@ export const joinGroup = mutation({
     const existing = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", user._id),
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
       )
       .first();
 
@@ -162,7 +170,9 @@ export const leaveGroup = mutation({
     const membership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", user._id),
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", user._id),
       )
       .first();
 
@@ -213,7 +223,13 @@ export const createGroup = mutation({
 // Get all groups for admin panel
 export const getGroupsForAdmin = query({
   args: {
-    status: v.optional(v.union(v.literal("all"), v.literal("active"), v.literal("disabled"))),
+    status: v.optional(
+      v.union(
+        v.literal("all"),
+        v.literal("active"),
+        v.literal("disabled"),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
@@ -231,19 +247,25 @@ export const getGroupsForAdmin = query({
     // Enrich with filter option name and message count
     const enrichedGroups = await Promise.all(
       groups.map(async (group) => {
-        const filterOption = await ctx.db.get(group.filterOptionId);
+        const filterOption = await ctx.db.get(
+          group.filterOptionId,
+        );
 
         // Get actual message count
         const messages = await ctx.db
           .query("messages")
-          .withIndex("by_group", (q) => q.eq("groupId", group._id))
+          .withIndex("by_group", (q) =>
+            q.eq("groupId", group._id),
+          )
           .filter((q) => q.neq(q.field("isDeleted"), true))
           .collect();
 
         // Get pending reports count for this group
         const reports = await ctx.db
           .query("reports")
-          .withIndex("by_group", (q) => q.eq("groupId", group._id))
+          .withIndex("by_group", (q) =>
+            q.eq("groupId", group._id),
+          )
           .filter((q) => q.eq(q.field("status"), "pending"))
           .collect();
 
@@ -253,11 +275,13 @@ export const getGroupsForAdmin = query({
           messageCount: messages.length,
           pendingReportsCount: reports.length,
         };
-      })
+      }),
     );
 
     // Sort by member count descending
-    return enrichedGroups.sort((a, b) => b.memberCount - a.memberCount);
+    return enrichedGroups.sort(
+      (a, b) => b.memberCount - a.memberCount,
+    );
   },
 });
 
@@ -274,7 +298,9 @@ export const removeGroupMember = mutation({
     const membership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", args.userId)
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", args.userId),
       )
       .first();
 
@@ -297,7 +323,11 @@ export const updateMemberRole = mutation({
   args: {
     groupId: v.id("groups"),
     userId: v.id("users"),
-    role: v.union(v.literal("admin"), v.literal("moderator"), v.literal("member")),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("moderator"),
+      v.literal("member"),
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getAuthenticatedUser(ctx);
@@ -306,7 +336,9 @@ export const updateMemberRole = mutation({
     const membership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
-        q.eq("groupId", args.groupId).eq("userId", args.userId)
+        q
+          .eq("groupId", args.groupId)
+          .eq("userId", args.userId),
       )
       .first();
 
@@ -326,7 +358,9 @@ export const toggleGroupStatus = mutation({
     const group = await ctx.db.get(args.groupId);
     if (!group) throw new Error("Group not found");
 
-    await ctx.db.patch(args.groupId, { isActive: !group.isActive });
+    await ctx.db.patch(args.groupId, {
+      isActive: !group.isActive,
+    });
   },
 });
 
@@ -340,7 +374,9 @@ export const deleteGroup = mutation({
     // Delete all memberships
     const memberships = await ctx.db
       .query("groupMembers")
-      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .withIndex("by_group", (q) =>
+        q.eq("groupId", args.groupId),
+      )
       .collect();
 
     for (const membership of memberships) {
@@ -350,11 +386,16 @@ export const deleteGroup = mutation({
     // Soft delete all messages
     const messages = await ctx.db
       .query("messages")
-      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .withIndex("by_group", (q) =>
+        q.eq("groupId", args.groupId),
+      )
       .collect();
 
     for (const message of messages) {
-      await ctx.db.patch(message._id, { isDeleted: true, content: "" });
+      await ctx.db.patch(message._id, {
+        isDeleted: true,
+        content: "",
+      });
     }
 
     // Delete the group
@@ -369,8 +410,12 @@ export const getGroupStats = query({
     const user = await getAuthenticatedUser(ctx);
     if (!user.isAdmin) throw new Error("Unauthorized");
 
-    const allGroups = await ctx.db.query("groups").collect();
-    const allMembers = await ctx.db.query("groupMembers").collect();
+    const allGroups = await ctx.db
+      .query("groups")
+      .collect();
+    const allMembers = await ctx.db
+      .query("groupMembers")
+      .collect();
     const allMessages = await ctx.db
       .query("messages")
       .filter((q) => q.neq(q.field("isDeleted"), true))
@@ -378,8 +423,10 @@ export const getGroupStats = query({
 
     return {
       totalGroups: allGroups.length,
-      activeGroups: allGroups.filter((g) => g.isActive).length,
-      disabledGroups: allGroups.filter((g) => !g.isActive).length,
+      activeGroups: allGroups.filter((g) => g.isActive)
+        .length,
+      disabledGroups: allGroups.filter((g) => !g.isActive)
+        .length,
       totalMembers: allMembers.length,
       totalMessages: allMessages.length,
     };

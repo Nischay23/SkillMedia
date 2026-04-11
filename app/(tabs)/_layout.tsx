@@ -1,5 +1,9 @@
-import { useTheme, useThemedStyles } from "@/providers/ThemeProvider";
+import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
@@ -15,7 +19,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { Typography } from "@/components/ui/Typography";
 
 // Badge component for unread counts
 const UnreadBadge = ({ count }: { count: number }) => {
@@ -70,7 +73,8 @@ const UnreadBadge = ({ count }: { count: number }) => {
 
   if (count === 0) return null;
 
-  const displayCount = count > 99 ? "99+" : count.toString();
+  const displayCount =
+    count > 99 ? "99+" : count.toString();
   const badgeColor = "#EF4444";
 
   return (
@@ -185,11 +189,13 @@ export default function TabLayout() {
   const { theme } = useTheme();
 
   // Query total unread messages across all groups
-  const totalUnread = useQuery(api.groups.getTotalUnreadCount) ?? 0;
+  const totalUnread =
+    useQuery(api.groups.getTotalUnreadCount) ?? 0;
 
-  // Haptic feedback on tab press
+  // Haptic feedback on tab press — selectionAsync is the correct
+  // feedback type for navigation switches (lighter, crisper feel)
   const handleTabPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
   };
 
   return (
@@ -200,7 +206,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          position: 'absolute',
+          position: "absolute",
           bottom: 12,
           left: 16,
           right: 16,
@@ -296,6 +302,13 @@ export default function TabLayout() {
           ),
         }}
         listeners={{ tabPress: handleTabPress }}
+      />
+
+      <Tabs.Screen
+        name="create"
+        options={{
+          href: null, // 👈 THIS hides it from tab bar
+        }}
       />
     </Tabs>
   );

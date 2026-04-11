@@ -16,6 +16,8 @@ import type {
 import type * as adminArticles from "../adminArticles.js";
 import type * as adminAuth from "../adminAuth.js";
 import type * as adminFilters from "../adminFilters.js";
+import type * as ai from "../ai.js";
+import type * as analytics from "../analytics.js";
 import type * as challenges from "../challenges.js";
 import type * as clearDatabase from "../clearDatabase.js";
 import type * as comments from "../comments.js";
@@ -38,6 +40,7 @@ import type * as roadmaps from "../roadmaps.js";
 import type * as savedContent from "../savedContent.js";
 import type * as seedData from "../seedData.js";
 import type * as streaks from "../streaks.js";
+import type * as userPreferences from "../userPreferences.js";
 import type * as users from "../users.js";
 
 /**
@@ -52,6 +55,8 @@ declare const fullApi: ApiFromModules<{
   adminArticles: typeof adminArticles;
   adminAuth: typeof adminAuth;
   adminFilters: typeof adminFilters;
+  ai: typeof ai;
+  analytics: typeof analytics;
   challenges: typeof challenges;
   clearDatabase: typeof clearDatabase;
   comments: typeof comments;
@@ -74,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   savedContent: typeof savedContent;
   seedData: typeof seedData;
   streaks: typeof streaks;
+  userPreferences: typeof userPreferences;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

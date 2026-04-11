@@ -58,7 +58,8 @@
     "svix": "^1.71.0",
     "expo-notifications": "~0.31.5",
     "expo-device": "~7.1.4",
-    "expo-image-manipulator": "~13.1.7"
+    "expo-image-manipulator": "~13.1.7",
+    "expo-clipboard": "~7.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

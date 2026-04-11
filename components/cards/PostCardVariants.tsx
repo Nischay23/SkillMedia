@@ -47,12 +47,14 @@ function useScalePress() {
     scale.value = withSpring(0.98, {
       damping: 15,
       stiffness: 400,
+      overshootClamping: true,
     });
   };
   const onPressOut = () => {
     scale.value = withSpring(1, {
       damping: 12,
       stiffness: 300,
+      overshootClamping: true,
     });
   };
   return { animatedStyle, onPressIn, onPressOut };
@@ -162,6 +164,8 @@ function PostImage({ uri }: { uri?: string }) {
         style={s.image}
         contentFit="cover"
         placeholder={{ blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6." }}
+        cachePolicy="memory-disk"
+        recyclingKey={uri}
         transition={300}
       />
     </View>

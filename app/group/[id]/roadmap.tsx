@@ -9,7 +9,6 @@ import React, {
   useRef,
 } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   Pressable,
   RefreshControl,
@@ -818,7 +817,50 @@ const EmptyState = () => {
   );
 };
 
-// Loading State Component
+// Skeleton Shimmer Card
+const SkeletonShimmer = ({
+  height,
+  width: w,
+  borderRadius: br = 12,
+  style,
+}: {
+  height: number;
+  width?: string | number;
+  borderRadius?: number;
+  style?: any;
+}) => {
+  const { theme } = useTheme();
+  const opacity = useSharedValue(0.4);
+
+  React.useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(0.15, { duration: 700 }),
+      -1,
+      true,
+    );
+  }, [opacity]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          height,
+          width: w ?? "100%",
+          borderRadius: br,
+          backgroundColor: theme.colors.surface,
+        },
+        pulseStyle,
+        style,
+      ]}
+    />
+  );
+};
+
+// Loading State Component — skeleton shimmer
 const LoadingState = () => {
   const { theme } = useTheme();
 
@@ -826,22 +868,34 @@ const LoadingState = () => {
     <View
       style={{
         flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 64,
+        paddingHorizontal: 12,
+        paddingTop: 12,
+        gap: 12,
       }}
     >
-      <ActivityIndicator
-        size="large"
-        color={theme.colors.primary}
-      />
-      <Typography
-        variant="body"
-        color="textMuted"
-        style={{ marginTop: 16 }}
-      >
-        Loading roadmap...
-      </Typography>
+      {/* Progress header skeleton */}
+      <SkeletonShimmer height={140} borderRadius={20} />
+      {/* Milestone card skeletons */}
+      {[0, 1, 2].map((i) => (
+        <Animated.View
+          key={i}
+          entering={FadeInDown.duration(300).delay(i * 80)}
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            marginLeft: 16,
+          }}
+        >
+          {/* Timeline dot */}
+          <SkeletonShimmer height={10} width={10} borderRadius={5} />
+          {/* Card */}
+          <SkeletonShimmer
+            height={90}
+            borderRadius={16}
+            style={{ flex: 1, marginRight: 12 }}
+          />
+        </Animated.View>
+      ))}
     </View>
   );
 };

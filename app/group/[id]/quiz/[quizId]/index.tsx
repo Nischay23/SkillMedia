@@ -3,11 +3,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   StatusBar,
+  StyleSheet,
   View,
 } from "react-native";
 import Animated, {
@@ -17,6 +17,7 @@ import Animated, {
   ZoomIn,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -30,6 +31,54 @@ import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// ── Shimmer skeleton pulse ──────────────────────────────
+function SkeletonPulse({
+  height,
+  width,
+  radius = 8,
+  delay = 0,
+}: {
+  height: number;
+  width: number | string;
+  radius?: number;
+  delay?: number;
+}) {
+  const { theme } = useTheme();
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withSequence(
+      withTiming(0.3, { duration: delay }),
+      withTiming(0.15, { duration: 700 }),
+      withTiming(0.3, { duration: 700 }),
+    );
+    // Loop manually
+    const loop = setInterval(() => {
+      opacity.value = withSequence(
+        withTiming(0.15, { duration: 700 }),
+        withTiming(0.3, { duration: 700 }),
+      );
+    }, 1400 + delay);
+    return () => clearInterval(loop);
+  }, [opacity, delay]);
+
+  const pulse = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          height,
+          width: width as any,
+          borderRadius: radius,
+          backgroundColor: theme.colors.surface,
+        },
+        pulse,
+      ]}
+    />
+  );
+}
 
 // Answer Option Labels
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
@@ -103,8 +152,29 @@ function AnswerOption({
     );
   }
 
+  // ── Green correct-answer flash micro-interaction ─────────
+  const correctFlash = useSharedValue(0);
+
+  useEffect(() => {
+    if (showResult && isCorrect) {
+      // Flash in then fade: 0 → 0.35 → 0 over 400ms total
+      correctFlash.value = withSequence(
+        withTiming(0.35, { duration: 120 }),
+        withTiming(0, { duration: 280 }),
+      );
+    }
+  }, [showResult, isCorrect, correctFlash]);
+
+  const flashStyle = useAnimatedStyle(() => ({
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#22C55E",
+    opacity: correctFlash.value,
+    borderRadius: 14,
+    pointerEvents: "none" as any,
+  }));
+
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, { position: "relative" }]}>
       <Pressable
         onPress={handlePress}
         disabled={disabled || showResult}
@@ -139,6 +209,8 @@ function AnswerOption({
           {option}
         </Typography>
       </Pressable>
+      {/* Green flash overlay for correct answer reveal */}
+      <Animated.View style={flashStyle} />
     </Animated.View>
   );
 }
@@ -558,21 +630,39 @@ export default function QuizAttemptScreen() {
     ]);
   };
 
-  // Loading state
+  // Loading state — shimmer skeleton
   if (!quiz) {
     return (
       <View
         style={{
           flex: 1,
           backgroundColor: theme.colors.background,
-          alignItems: "center",
-          justifyContent: "center",
         }}
       >
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Typography variant="body" color="textMuted" style={{ marginTop: 16 }}>
-          Loading quiz...
-        </Typography>
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+        {/* Fake header */}
+        <View
+          style={{
+            backgroundColor: theme.colors.surface,
+            paddingTop: insets.top,
+            paddingHorizontal: 16,
+            paddingBottom: 16,
+          }}
+        >
+          <SkeletonPulse height={12} width="40%" radius={6} />
+          <View style={{ height: 12 }} />
+          <SkeletonPulse height={4} width="100%" radius={2} />
+        </View>
+        {/* Fake question card */}
+        <View style={{ padding: 16 }}>
+          <SkeletonPulse height={100} width="100%" radius={20} />
+          <View style={{ height: 12 }} />
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={{ marginBottom: 10 }}>
+              <SkeletonPulse height={56} width="100%" radius={14} delay={i * 60} />
+            </View>
+          ))}
+        </View>
       </View>
     );
   }

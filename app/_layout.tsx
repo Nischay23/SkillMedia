@@ -1,5 +1,6 @@
 import InitialLayout from "@/components/InitialLayout";
 import { ToastProvider } from "@/components/ui/Toast";
+import { useDeepLinking } from "@/hooks/useDeepLinking";
 import ClerkAndConvexProvider from "@/providers/ClerkAndConvexProvider";
 import { PushNotificationProvider } from "@/providers/PushNotificationProvider";
 import {
@@ -23,6 +24,9 @@ SplashScreen.preventAutoHideAsync();
 // Inner component to access theme after provider is set up
 function ThemedApp() {
   const { theme, isDark, fontsLoaded } = useTheme();
+
+  // Handle deep linking
+  useDeepLinking();
 
   useEffect(() => {
     if (Platform.OS === "android" && fontsLoaded) {

@@ -11,6 +11,8 @@
 import type * as adminArticles from "../adminArticles.js";
 import type * as adminAuth from "../adminAuth.js";
 import type * as adminFilters from "../adminFilters.js";
+import type * as aiConfig from "../aiConfig.js";
+import type * as analytics from "../analytics.js";
 import type * as challenges from "../challenges.js";
 import type * as clearDatabase from "../clearDatabase.js";
 import type * as comments from "../comments.js";
@@ -23,6 +25,7 @@ import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
+import type * as pushNotifications from "../pushNotifications.js";
 import type * as questions from "../questions.js";
 import type * as quizAttempts from "../quizAttempts.js";
 import type * as quizzes from "../quizzes.js";
@@ -42,6 +45,8 @@ declare const fullApi: ApiFromModules<{
   adminArticles: typeof adminArticles;
   adminAuth: typeof adminAuth;
   adminFilters: typeof adminFilters;
+  aiConfig: typeof aiConfig;
+  analytics: typeof analytics;
   challenges: typeof challenges;
   clearDatabase: typeof clearDatabase;
   comments: typeof comments;
@@ -54,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   notifications: typeof notifications;
   posts: typeof posts;
+  pushNotifications: typeof pushNotifications;
   questions: typeof questions;
   quizAttempts: typeof quizAttempts;
   quizzes: typeof quizzes;

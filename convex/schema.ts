@@ -15,6 +15,12 @@ export default defineSchema({
     createdAt: v.optional(v.number()),
     // Push notification token
     pushToken: v.optional(v.string()),
+    // Last active timestamp for analytics
+    lastActiveAt: v.optional(v.number()),
+    // Ban management
+    isBanned: v.optional(v.boolean()),
+    banReason: v.optional(v.string()),
+    bannedAt: v.optional(v.number()),
     // Temporary fields for migration
     image: v.optional(v.string()),
     followers: v.optional(v.number()),
@@ -389,4 +395,38 @@ export default defineSchema({
     lastActiveDate: v.string(),
     totalActiveDays: v.number(),
   }).index("by_user", ["userId"]),
+
+  // ===========================================
+  // PHASE 5: INTELLIGENCE & POLISH
+  // ===========================================
+
+  // 23. aiConversations table: AI chatbot conversations
+  aiConversations: defineTable({
+    groupId: v.id("groups"),
+    userId: v.id("users"),
+    question: v.string(),
+    answer: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_user", ["userId"]),
+
+  // 24. userPreferences table: User onboarding preferences
+  userPreferences: defineTable({
+    userId: v.id("users"),
+    qualification: v.optional(v.string()),
+    interestedCategories: v.optional(v.array(v.string())),
+    onboardingCompleted: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // 25. analytics table: App-wide analytics tracking
+  analytics: defineTable({
+    type: v.string(),
+    value: v.number(),
+    date: v.string(),
+    metadata: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_type_and_date", ["type", "date"]),
 });

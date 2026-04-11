@@ -57,6 +57,8 @@ export function AddFilterModal({
   const [avgSalary, setAvgSalary] = useState("");
   const [relevantExams, setRelevantExams] = useState("");
   const [image, setImage] = useState("");
+  const [ranking, setRanking] = useState("");
+  const [annualVacancies, setAnnualVacancies] = useState("");
 
   // Determine the type based on parent
   const filterType: FilterType = parent
@@ -74,6 +76,8 @@ export function AddFilterModal({
     setAvgSalary("");
     setRelevantExams("");
     setImage("");
+    setRanking("");
+    setAnnualVacancies("");
   };
 
   // Handle close
@@ -106,6 +110,8 @@ export function AddFilterModal({
         avgSalary: avgSalary.trim() || undefined,
         relevantExams: relevantExams.trim() || undefined,
         image: image.trim() || undefined,
+        ranking: ranking !== "" ? Number(ranking) : undefined,
+        annualVacancies: annualVacancies !== "" ? Number(annualVacancies) : undefined,
       });
 
       addToast({
@@ -234,6 +240,58 @@ export function AddFilterModal({
                   placeholder="Exam names"
                   className="input-field"
                 />
+              </div>
+            </div>
+
+            {/* Ranking + Annual Vacancies row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Ranking */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Ranking
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={ranking}
+                  onChange={(e) => setRanking(e.target.value)}
+                  placeholder="e.g. 1"
+                  className="input-field"
+                />
+                {ranking !== "" && Number(ranking) > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Preview: #{ranking} demand rank
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Lower = higher priority (1 = most in demand)
+                </p>
+              </div>
+
+              {/* Annual Vacancies */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Annual Vacancies
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={annualVacancies}
+                  onChange={(e) => setAnnualVacancies(e.target.value)}
+                  placeholder="e.g. 45000"
+                  className="input-field"
+                />
+                {annualVacancies !== "" && Number(annualVacancies) > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ~{Number(annualVacancies) >= 1000
+                      ? `${Math.round(Number(annualVacancies) / 1000)}k`
+                      : annualVacancies}{" "}
+                    vacancies/yr
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Approx. job openings per year
+                </p>
               </div>
             </div>
 

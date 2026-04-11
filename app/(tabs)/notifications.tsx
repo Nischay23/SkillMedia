@@ -4,25 +4,23 @@ import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
 import { useQuery } from "convex/react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import {
-  FlatList,
-  View,
-  SafeAreaView,
-  StatusBar,
-  RefreshControl,
-} from "react-native";
-import {
-  useTheme,
-  useThemedStyles,
-} from "@/providers/ThemeProvider";
-import { useState, useCallback, useEffect } from "react";
 
 export default function Notifications() {
   const { theme, isDark } = useTheme();
@@ -140,6 +138,11 @@ export default function Notifications() {
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        initialNumToRender={8}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

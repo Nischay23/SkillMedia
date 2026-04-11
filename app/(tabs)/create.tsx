@@ -1,17 +1,19 @@
 import { Loader } from "@/components/Loader";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Typography } from "@/components/ui/Typography";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
-  Image,
   SafeAreaView,
   StatusBar,
   ScrollView,
@@ -27,6 +29,7 @@ import {
 export default function CreatePost() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedImage, setSelectedImage] = useState<
@@ -96,12 +99,31 @@ export default function CreatePost() {
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 1, // Pick at full quality, we'll compress ourselves
       });
 
     if (!result.canceled && result.assets[0]) {
       setSelectedImage(result.assets[0].uri);
     }
+  };
+
+  /**
+   * Compress and resize the image to max 800px wide at 80% quality.
+   * This significantly reduces upload size (typically 70-90% smaller).
+   */
+  const compressImage = async (uri: string): Promise<string> => {
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      [
+        // Resize: keep aspect ratio, cap at 800px on the longest side
+        { resize: { width: 800 } },
+      ],
+      {
+        compress: 0.8,
+        format: ImageManipulator.SaveFormat.JPEG,
+      },
+    );
+    return result.uri;
   };
 
   const handlePost = async () => {
@@ -116,16 +138,19 @@ export default function CreatePost() {
 
       // Upload image if selected
       if (selectedImage) {
+        // → Compress to max 800px @ 80% quality BEFORE uploading
+        const compressedUri = await compressImage(selectedImage);
+
         // Get upload URL
         const uploadUrl = await generateUploadUrl();
 
-        // Upload image
-        const response = await fetch(selectedImage);
+        // Upload compressed image
+        const response = await fetch(compressedUri);
         const blob = await response.blob();
 
         const uploadResponse = await fetch(uploadUrl, {
           method: "POST",
-          headers: { "Content-Type": blob.type },
+          headers: { "Content-Type": "image/jpeg" },
           body: blob,
         });
 
@@ -144,12 +169,12 @@ export default function CreatePost() {
       setTitle("");
       setContent("");
       setSelectedImage(null);
+      showToast("Post shared! 🎉", "success");
       router.push("/(tabs)");
-    } catch (error) {
-      console.error("Error creating post:", error);
-      Alert.alert(
-        "Error",
-        "Failed to create post. Please try again.",
+    } catch {
+      showToast(
+        "Couldn't share post. Check your connection.",
+        "error",
       );
     } finally {
       setIsLoading(false);
@@ -200,7 +225,10 @@ export default function CreatePost() {
               <Image
                 source={{ uri: selectedImage }}
                 style={styles.selectedImage}
-                resizeMode="cover"
+                contentFit="cover"
+                placeholder={{ blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6." }}
+                transition={200}
+                recyclingKey={selectedImage}
               />
             ) : (
               <View style={{ alignItems: "center" }}>

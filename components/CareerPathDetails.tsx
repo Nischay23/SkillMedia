@@ -1,13 +1,10 @@
 // components/CareerPathDetails.tsx
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   ScrollView,
   Pressable,
-  Share,
-  ActivityIndicator,
 } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   FadeInDown,
@@ -21,11 +18,11 @@ import { useThemedStyles, useTheme } from "@/providers/ThemeProvider";
 import { Typography } from "@/components/ui/Typography";
 import RankingBadge from "@/components/RankingBadge";
 import VacancyChip from "@/components/VacancyChip";
+import ShareButton from "@/components/ShareButton";
 import { api } from "@/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-expo";
 import { FilterOption } from "@/types";
-import { Id } from "@/convex/_generated/dataModel";
 
 interface CareerPathDetailsProps {
   filterOption: FilterOption;
@@ -260,12 +257,7 @@ export default function CareerPathDetails({
     }
   };
 
-  const handleShare = async () => {
-    const deepLink = `skillmedia://career/${filterOption._id}`;
-    await Share.share({
-      message: `Check out ${filterOption.name} on SkillsApp!\n${deepLink}`,
-    });
-  };
+  // Share is handled by <ShareButton> below — no inline handler needed
 
   const styles = useThemedStyles((t) => ({
     container: {
@@ -713,20 +705,12 @@ export default function CareerPathDetails({
           </Typography>
         </Pressable>
 
-        <Pressable style={styles.actionBtn} onPress={handleShare}>
-          <Ionicons
-            name="share-social-outline"
-            size={18}
-            color={theme.colors.primary}
-          />
-          <Typography
-            variant="body"
-            weight="medium"
-            color="primary"
-          >
-            Share
-          </Typography>
-        </Pressable>
+        <ShareButton
+          filterOptionId={filterOption._id}
+          filterOptionName={filterOption.name}
+          variant="pill"
+          style={styles.actionBtn}
+        />
       </Animated.View>
     </ScrollView>
   );

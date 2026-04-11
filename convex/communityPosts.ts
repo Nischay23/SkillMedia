@@ -231,6 +231,385 @@ export const getCommunityPosts = query({
   },
 });
 
+// ── Cursor-based paginated feed ──────────────────────────
+// Used by the main feed screen for infinite scroll / "Load More".
+// Returns standard Convex paginated result shape.
+export const paginateCommunityPosts = query({
+  args: {
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
+    statusFilter: v.optional(
+      v.union(
+        v.literal("all"),
+        v.literal("published"),
+        v.literal("draft"),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    const { numItems, cursor } = args.paginationOpts;
+
+    // Fetch a page of posts ordered newest-first
+    let q = ctx.db
+      .query("communityPosts")
+      .withIndex("by_created_at")
+      .order("desc");
+
+    // Collect all for simple manual cursor (Convex doesn't yet
+    // expose .paginate() on all plans; simulate with slice).
+    let allPosts = await q.collect();
+
+    if (!currentUser?.isAdmin) {
+      allPosts = allPosts.filter(
+        (p) => p.status === "published",
+      );
+    } else if (
+      args.statusFilter &&
+      args.statusFilter !== "all"
+    ) {
+      allPosts = allPosts.filter(
+        (p) => p.status === args.statusFilter,
+      );
+    }
+
+    // Decode cursor (it's the last _id we've seen)
+    const startIndex = cursor
+      ? allPosts.findIndex((p) => p._id === cursor) + 1
+      : 0;
+
+    const page = allPosts.slice(
+      startIndex,
+      startIndex + numItems,
+    );
+    const isDone =
+      startIndex + numItems >= allPosts.length;
+    const continueCursor =
+      page.length > 0 ? page[page.length - 1]._id : null;
+
+    const enriched = await Promise.all(
+      page.map((post) => enrichPost(ctx, post)),
+    );
+
+    return { page: enriched, isDone, continueCursor };
+  },
+});
+
+// ── Paginated personalized feed ──────────────────────────
+export const paginatePersonalizedFeed = query({
+  args: {
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) return { page: [], isDone: true, continueCursor: null };
+
+    const { numItems, cursor } = args.paginationOpts;
+
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .first();
+
+    if (!preferences?.onboardingCompleted) {
+      // Fall back to plain paginated feed
+      let allPosts = await ctx.db
+        .query("communityPosts")
+        .withIndex("by_created_at")
+        .order("desc")
+        .filter((q) => q.eq(q.field("status"), "published"))
+        .collect();
+
+      const startIndex = cursor
+        ? allPosts.findIndex((p) => p._id === cursor) + 1
+        : 0;
+      const page = allPosts.slice(startIndex, startIndex + numItems);
+      const isDone = startIndex + numItems >= allPosts.length;
+      const continueCursor = page.length > 0 ? page[page.length - 1]._id : null;
+      return {
+        page: await Promise.all(page.map((p) => enrichPost(ctx, p))),
+        isDone,
+        continueCursor,
+      };
+    }
+
+    // Personalized: score all once, then paginate by cursor
+    const memberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .collect();
+    const groupIds = memberships.map((m) => m.groupId);
+    const groups = await Promise.all(groupIds.map((id) => ctx.db.get(id)));
+    const userCareerPathIds = groups
+      .filter(Boolean)
+      .map((g) => g!.filterOptionId);
+
+    const allPosts = await ctx.db
+      .query("communityPosts")
+      .filter((q) => q.eq(q.field("status"), "published"))
+      .collect();
+
+    const allFilterIds = [
+      ...new Set(allPosts.flatMap((p) => p.linkedFilterOptionIds)),
+    ];
+    const filterOptions = await Promise.all(
+      allFilterIds.map((id) => ctx.db.get(id)),
+    );
+    const filterNameMap = new Map(
+      filterOptions
+        .filter(Boolean)
+        .map((f) => [f!._id.toString(), f!.name]),
+    );
+
+    const scored = allPosts
+      .map((post) => {
+        let score = 0;
+        if (
+          post.linkedFilterOptionIds.some((id) =>
+            userCareerPathIds.includes(id),
+          )
+        )
+          score += 3;
+        if (
+          preferences.interestedCategories?.length &&
+          post.linkedFilterOptionIds
+            .map((id) => filterNameMap.get(id.toString()))
+            .some((n) =>
+              preferences.interestedCategories!.includes(n!),
+            )
+        )
+          score += 2;
+        if (post.likes > 10) score += 1;
+        return { post, score };
+      })
+      .sort((a, b) =>
+        b.score !== a.score
+          ? b.score - a.score
+          : b.post.createdAt - a.post.createdAt,
+      )
+      .map((s) => s.post);
+
+    const startIndex = cursor
+      ? scored.findIndex((p) => p._id === cursor) + 1
+      : 0;
+    const page = scored.slice(startIndex, startIndex + numItems);
+    const isDone = startIndex + numItems >= scored.length;
+    const continueCursor = page.length > 0 ? page[page.length - 1]._id : null;
+
+    return {
+      page: await Promise.all(page.map((post) => enrichPost(ctx, post))),
+      isDone,
+      continueCursor,
+    };
+  },
+});
+
+
+
+// Personalized feed based on user preferences and joined groups
+export const getPersonalizedFeed = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) return [];
+
+    const limit = args.limit || 20;
+
+    // 1. Get user preferences
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .first();
+
+    // If no preferences, fall back to regular feed
+    if (!preferences || !preferences.onboardingCompleted) {
+      const posts = await ctx.db
+        .query("communityPosts")
+        .withIndex("by_created_at")
+        .order("desc")
+        .filter((q) => q.eq(q.field("status"), "published"))
+        .take(limit);
+
+      return await Promise.all(posts.map((post) => enrichPost(ctx, post)));
+    }
+
+    // 2. Get user's joined groups and their career path IDs
+    const memberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .collect();
+
+    const groupIds = memberships.map((m) => m.groupId);
+    const groups = await Promise.all(groupIds.map((id) => ctx.db.get(id)));
+    const userCareerPathIds = groups
+      .filter((g) => g !== null)
+      .map((g) => g!.filterOptionId);
+
+    // 3. Get all published posts
+    const allPosts = await ctx.db
+      .query("communityPosts")
+      .filter((q) => q.eq(q.field("status"), "published"))
+      .collect();
+
+    // 4. Score each post
+    // First, batch fetch all filter options for scoring
+    const allFilterIds = [...new Set(allPosts.flatMap((p) => p.linkedFilterOptionIds))];
+    const filterOptions = await Promise.all(allFilterIds.map((id) => ctx.db.get(id)));
+    const filterNameMap = new Map(
+      filterOptions.filter(Boolean).map((f) => [f!._id.toString(), f!.name])
+    );
+
+    const scoredPosts = allPosts.map((post) => {
+      let score = 0;
+
+      // +3 if post matches user's joined group career paths
+      const matchesCareerPath = post.linkedFilterOptionIds.some((id) =>
+        userCareerPathIds.includes(id)
+      );
+      if (matchesCareerPath) score += 3;
+
+      // +2 if post category matches user's interested categories
+      if (preferences.interestedCategories && preferences.interestedCategories.length > 0) {
+        const postCategoryNames = post.linkedFilterOptionIds
+          .map((id) => filterNameMap.get(id.toString()))
+          .filter(Boolean);
+        const matchesInterest = postCategoryNames.some((name) =>
+          preferences.interestedCategories!.includes(name!)
+        );
+        if (matchesInterest) score += 2;
+      }
+
+      // +1 if post has high engagement (likes > 10)
+      if (post.likes > 10) score += 1;
+
+      return { post, score };
+    });
+
+    // 5. Sort by score desc, then createdAt desc
+    scoredPosts.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.post.createdAt - a.post.createdAt;
+    });
+
+    // 6. Return top posts enriched
+    const topPosts = scoredPosts.slice(0, limit).map((sp) => sp.post);
+    return await Promise.all(topPosts.map((post) => enrichPost(ctx, post)));
+  },
+});
+
+// "Recommended for you" carousel - top personalized posts
+export const getRecommendedPosts = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) return [];
+
+    const limit = args.limit || 8;
+
+    // 1. Get user preferences
+    const preferences = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .first();
+
+    // 2. Get user's joined groups and their career path IDs
+    const memberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .collect();
+
+    const groupIds = memberships.map((m) => m.groupId);
+    const groups = await Promise.all(groupIds.map((id) => ctx.db.get(id)));
+    const userCareerPathIds = groups
+      .filter((g) => g !== null)
+      .map((g) => g!.filterOptionId);
+
+    // 3. Get recent high-engagement posts (last 30 days)
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recentPosts = await ctx.db
+      .query("communityPosts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "published"),
+          q.gte(q.field("createdAt"), thirtyDaysAgo)
+        )
+      )
+      .collect();
+
+    // 4. Score posts for recommendation
+    // First, batch fetch all filter options for scoring
+    const allFilterIds = [...new Set(recentPosts.flatMap((p) => p.linkedFilterOptionIds))];
+    const filterOptions = await Promise.all(allFilterIds.map((id) => ctx.db.get(id)));
+    const filterNameMap = new Map(
+      filterOptions.filter(Boolean).map((f) => [f!._id.toString(), f!.name])
+    );
+
+    const scoredPosts = recentPosts.map((post) => {
+      let score = 0;
+
+      // +5 if matches user's joined group career paths (highly relevant)
+      const matchesCareerPath = post.linkedFilterOptionIds.some((id) =>
+        userCareerPathIds.includes(id)
+      );
+      if (matchesCareerPath) score += 5;
+
+      // +3 for high engagement posts (likes > 5)
+      if (post.likes > 5) score += 3;
+
+      // +2 if user's interested categories match post categories
+      if (preferences?.interestedCategories && preferences.interestedCategories.length > 0) {
+        const postCategoryNames = post.linkedFilterOptionIds
+          .map((id) => filterNameMap.get(id.toString()))
+          .filter(Boolean);
+        const matchesInterest = postCategoryNames.some((name) =>
+          preferences.interestedCategories!.includes(name!)
+        );
+        if (matchesInterest) score += 2;
+      }
+
+      // +1 for posts with comments (discussion value)
+      if (post.comments > 0) score += 1;
+
+      // Slight recency boost (newer posts)
+      const ageInDays = (Date.now() - post.createdAt) / (24 * 60 * 60 * 1000);
+      if (ageInDays < 7) score += 2;
+      else if (ageInDays < 14) score += 1;
+
+      return { post, score };
+    });
+
+    // 5. Filter out posts with no relevance score
+    let relevantPosts = scoredPosts.filter((sp) => sp.score > 0);
+
+    // Fallback: if no relevant posts, return recent high-engagement posts
+    if (relevantPosts.length === 0) {
+      relevantPosts = scoredPosts
+        .sort((a, b) => b.post.createdAt - a.post.createdAt)
+        .slice(0, limit)
+        .map((sp) => ({ ...sp, score: 1 }));
+    }
+
+    // 6. Sort by score desc, then by engagement
+    relevantPosts.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return (b.post.likes + b.post.comments) - (a.post.likes + a.post.comments);
+    });
+
+    // 7. Return top posts enriched
+    const topPosts = relevantPosts.slice(0, limit).map((sp) => sp.post);
+    return await Promise.all(topPosts.map((post) => enrichPost(ctx, post)));
+  },
+});
+
 export const getCommunityPostsByFilterOption = query({
   args: {
     filterOptionId: v.id("FilterOption"),

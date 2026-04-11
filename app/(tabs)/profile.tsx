@@ -1,4 +1,3 @@
-import { Loader } from "@/components/Loader";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Typography } from "@/components/ui/Typography";
@@ -9,13 +8,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useMutation, useQuery } from "convex/react";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Animated, {
+  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   View,
   TouchableOpacity,
@@ -36,10 +39,120 @@ import {
   useThemedStyles,
 } from "@/providers/ThemeProvider";
 
+// ── Profile Skeleton Shimmer ─────────────────────────────
+function ProfileSkeleton({
+  insets,
+  theme,
+}: {
+  insets: { top: number };
+  theme: any;
+}) {
+  const opacity = useSharedValue(0.4);
+
+  React.useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(0.15, { duration: 700 }),
+      -1,
+      true,
+    );
+  }, [opacity]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const Shimmer = ({
+    h,
+    w,
+    br = 8,
+    mt = 0,
+    ml = 0,
+  }: {
+    h: number;
+    w: number | string;
+    br?: number;
+    mt?: number;
+    ml?: number;
+  }) => (
+    <Animated.View
+      style={[
+        {
+          height: h,
+          width: w as any,
+          borderRadius: br,
+          backgroundColor: theme.colors.surface,
+          marginTop: mt,
+          marginLeft: ml,
+        },
+        pulseStyle,
+      ]}
+    />
+  );
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(300)}
+      style={{ flex: 1, paddingTop: insets.top }}
+    >
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
+        <Shimmer h={20} w={120} br={10} />
+        <Shimmer h={36} w={36} br={10} />
+      </View>
+      {/* Profile info */}
+      <View
+        style={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          gap: 12,
+        }}
+      >
+        {/* Avatar + stats row */}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Shimmer h={76} w={76} br={38} />
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              marginLeft: 20,
+            }}
+          >
+            <Shimmer h={36} w={48} br={8} />
+            <Shimmer h={36} w={48} br={8} />
+            <Shimmer h={36} w={48} br={8} />
+          </View>
+        </View>
+        {/* Streak card */}
+        <Shimmer h={80} w="100%" br={16} mt={4} />
+        {/* Name + bio */}
+        <Shimmer h={16} w={140} br={8} />
+        <Shimmer h={12} w={200} br={8} />
+        {/* Action buttons */}
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+          <Shimmer h={34} w="80%" br={8} />
+          <Shimmer h={34} w={34} br={8} />
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
 export default function Profile() {
   const { signOut, userId } = useAuth();
   const { theme, isDark } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isEditModalVisible, setIsEditModalVisible] =
     useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -53,7 +166,6 @@ export default function Profile() {
     userId ? { clerkId: userId } : "skip",
   );
 
-  // Fetch roadmap progress
   const roadmapsProgress = useQuery(
     api.roadmaps.getMyRoadmapsProgress,
   );
@@ -89,19 +201,20 @@ export default function Profile() {
     api.users.updateProfile,
   );
 
-  const styles = useThemedStyles((theme) => ({
+  const styles = useThemedStyles((t) => ({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: t.colors.background,
     },
     header: {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
       alignItems: "center" as const,
-      paddingHorizontal: theme.spacing.lg,
-      paddingVertical: theme.spacing.md,
+      paddingHorizontal: t.spacing.lg,
+      paddingVertical: t.spacing.md,
+      paddingTop: insets.top + t.spacing.md,
       borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      borderBottomColor: t.colors.border,
     },
     headerLeft: {
       flexDirection: "row" as const,
@@ -109,12 +222,12 @@ export default function Profile() {
     },
     headerRight: {
       flexDirection: "row" as const,
-      gap: theme.spacing.lg,
+      gap: t.spacing.lg,
     },
     headerIcon: {
-      padding: theme.spacing.xs,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: theme.colors.surface,
+      padding: t.spacing.xs,
+      borderRadius: t.borderRadius.md,
+      backgroundColor: t.colors.surface,
     },
     profileInfo: {
       paddingHorizontal: 16,
@@ -130,7 +243,7 @@ export default function Profile() {
       height: 76,
       borderRadius: 38,
       borderWidth: 3,
-      borderColor: theme.colors.primary,
+      borderColor: t.colors.primary,
     },
     statsContainer: {
       flex: 1,
@@ -145,27 +258,27 @@ export default function Profile() {
     statDivider: {
       width: 1,
       height: 28,
-      backgroundColor: theme.colors.border,
+      backgroundColor: t.colors.border,
     },
     statNumber: {
       fontSize: 17,
       fontWeight: "700" as const,
-      color: theme.colors.text,
+      color: t.colors.text,
     },
     statLabel: {
       fontSize: 12,
-      color: theme.colors.textSecondary,
+      color: t.colors.textSecondary,
       marginTop: 1,
     },
     nameText: {
       fontSize: 14,
       fontWeight: "600" as const,
-      color: theme.colors.text,
+      color: t.colors.text,
       marginTop: 10,
     },
     bioText: {
       fontSize: 13,
-      color: theme.colors.textSecondary,
+      color: t.colors.textSecondary,
       marginTop: 2,
       lineHeight: 18,
     },
@@ -178,7 +291,7 @@ export default function Profile() {
       flex: 1,
       height: 34,
       borderWidth: 1.5,
-      borderColor: theme.colors.primary,
+      borderColor: t.colors.primary,
       borderRadius: 8,
       backgroundColor: "transparent",
       justifyContent: "center" as const,
@@ -187,21 +300,21 @@ export default function Profile() {
     editButtonText: {
       fontSize: 13,
       fontWeight: "600" as const,
-      color: theme.colors.primary,
+      color: t.colors.primary,
     },
     shareButton: {
       height: 34,
       width: 34,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: t.colors.border,
       borderRadius: 8,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: t.colors.surface,
       justifyContent: "center" as const,
       alignItems: "center" as const,
     },
     gridDivider: {
       height: 1,
-      backgroundColor: theme.colors.border,
+      backgroundColor: t.colors.border,
       marginTop: 14,
     },
     gridContainer: {
@@ -222,15 +335,15 @@ export default function Profile() {
     },
     modalContainer: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
       justifyContent: "center" as const,
       alignItems: "center" as const,
     },
     modalContent: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.lg,
-      padding: theme.spacing.xl,
-      margin: theme.spacing.lg,
+      backgroundColor: t.colors.surface,
+      borderRadius: t.borderRadius.lg,
+      padding: t.spacing.xl,
+      margin: t.spacing.lg,
       width: "90%" as const,
       maxHeight: "80%" as const,
     },
@@ -238,19 +351,19 @@ export default function Profile() {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
       alignItems: "center" as const,
-      marginBottom: theme.spacing.lg,
+      marginBottom: t.spacing.lg,
     },
     inputContainer: {
-      marginBottom: theme.spacing.lg,
+      marginBottom: t.spacing.lg,
     },
     input: {
-      backgroundColor: theme.colors.background,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      color: theme.colors.text,
+      backgroundColor: t.colors.background,
+      borderRadius: t.borderRadius.md,
+      padding: t.spacing.md,
+      color: t.colors.text,
       borderWidth: 1,
-      borderColor: theme.colors.border,
-      fontSize: theme.typography.sizes.body,
+      borderColor: t.colors.border,
+      fontSize: (t.typography.sizes as any)?.body ?? 15,
     },
     bioInput: {
       height: 100,
@@ -258,7 +371,7 @@ export default function Profile() {
     },
     modalBackdrop: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      backgroundColor: "rgba(0, 0, 0, 0.8)",
       justifyContent: "center" as const,
       alignItems: "center" as const,
     },
@@ -269,19 +382,19 @@ export default function Profile() {
     postDetailHeader: {
       flexDirection: "row" as const,
       justifyContent: "flex-end" as const,
-      padding: theme.spacing.md,
+      padding: t.spacing.md,
     },
     postDetailImage: {
       width: "100%" as const,
       aspectRatio: 1,
-      borderRadius: theme.borderRadius.lg,
+      borderRadius: t.borderRadius.lg,
     },
     emptyStateContainer: {
       height: 200,
       justifyContent: "center" as const,
       alignItems: "center" as const,
       gap: 12,
-      marginTop: theme.spacing.xl,
+      marginTop: t.spacing.xl,
     },
   }));
 
@@ -313,8 +426,15 @@ export default function Profile() {
     }, 100);
   };
 
-  if (!currentUser || posts === undefined)
-    return <Loader />;
+  if (!currentUser || posts === undefined) {
+    // Skeleton loading — matches the profile layout
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <StatusBar translucent backgroundColor="transparent" barStyle={isDark ? "light-content" : "dark-content"} />
+        <ProfileSkeleton insets={insets} theme={theme} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

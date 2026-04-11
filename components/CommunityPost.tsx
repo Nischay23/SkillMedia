@@ -1,7 +1,7 @@
 // components/CommunityPost.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import {
   Alert,
   Pressable,
@@ -11,6 +11,7 @@ import {
 
 import { AnimatedLikeButton } from "@/components/ui/AnimatedLikeButton";
 import { Typography } from "@/components/ui/Typography";
+import { useToast } from "@/components/ui/Toast";
 import {
   SpacingValues,
   CardSpacing,
@@ -23,18 +24,20 @@ import {
 import { CommunityPost as CommunityPostType } from "@/types";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
 
 interface CommunityPostProps {
   post: CommunityPostType;
   onOpenComments?: () => void;
 }
 
-export default function CommunityPost({
+function CommunityPostComponent({
   post,
   onOpenComments,
 }: CommunityPostProps) {
   const { theme } = useTheme();
   const { user: clerkUser } = useUser();
+  const { showToast } = useToast();
   const [showFullContent, setShowFullContent] =
     useState(false);
 
@@ -65,10 +68,19 @@ export default function CommunityPost({
   }, [post.likes]);
 
   // ── Other queries ───────────────────────────────────
-  const isSaved = useQuery(
+  const isSavedQuery = useQuery(
     api.savedContent.getIsSaved,
     clerkUser ? { communityPostId: post._id } : "skip",
   );
+  // Optimistic save state — flip instantly, revert on error
+  const [optimisticSaved, setOptimisticSaved] = useState<boolean | null>(null);
+  const isSaved = optimisticSaved ?? isSavedQuery === true;
+
+  // Sync optimistic saved if server state changes
+  useEffect(() => {
+    if (isSavedQuery !== undefined) setOptimisticSaved(isSavedQuery);
+  }, [isSavedQuery]);
+
   const currentUserConvex = useQuery(
     api.users.getUserByClerkId,
     clerkUser ? { clerkId: clerkUser.id } : "skip",
@@ -112,12 +124,23 @@ export default function CommunityPost({
 
   const handleSave = async () => {
     if (!clerkUser) return;
+    const wasSaved = isSaved;
+    // Optimistic: flip immediately
+    setOptimisticSaved(!wasSaved);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await toggleSaveMutation({
         communityPostId: post._id,
       });
-    } catch (error) {
-      console.error("Error toggling save:", error);
+      showToast(
+        wasSaved ? "Removed from saved" : "Post saved!",
+        wasSaved ? "info" : "success",
+        2000,
+      );
+    } catch {
+      // Revert on error
+      setOptimisticSaved(wasSaved);
+      showToast("Couldn't save post. Try again.", "error");
     }
   };
 
@@ -135,8 +158,12 @@ export default function CommunityPost({
               await deleteCommunityPostMutation({
                 postId: post._id,
               });
-            } catch (error) {
-              console.error("Error deleting post:", error);
+              showToast("Post deleted", "info", 2000);
+            } catch {
+              showToast(
+                "Couldn't delete post. Try again.",
+                "error",
+              );
             }
           },
         },
@@ -273,6 +300,8 @@ export default function CommunityPost({
             source={{ uri: post.user.profileImage }}
             style={styles.avatar}
             contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={post.user.profileImage}
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
@@ -359,6 +388,8 @@ export default function CommunityPost({
             source={{ uri: post.imageUrl }}
             style={styles.postImage}
             contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={post._id}
             // Show a blurhash placeholder while loading
             placeholder={{
               blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6.",
@@ -440,3 +471,7 @@ export default function CommunityPost({
     </View>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+const CommunityPost = memo(CommunityPostComponent);
+export default CommunityPost;

@@ -145,6 +145,7 @@ export const AnimatedButton: React.FC<
     scale.value = withSpring(0.95, {
       damping: 10,
       stiffness: 400,
+      overshootClamping: true,
     });
     shadowOpacity.value = withTiming(0.4, {
       duration: 150,
@@ -155,6 +156,7 @@ export const AnimatedButton: React.FC<
     scale.value = withSpring(1, {
       damping: 10,
       stiffness: 400,
+      overshootClamping: true,
     });
     shadowOpacity.value = withTiming(0, { duration: 150 });
   };

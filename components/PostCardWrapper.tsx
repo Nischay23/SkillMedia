@@ -1,10 +1,10 @@
 // components/PostCardWrapper.tsx
 // Wrapper that owns per-post like/save queries for ExpertPostCard & DiscussionPostCard
-import React, { useState, useEffect } from "react";
+import React, { memo, useEffect, useState } from "react";
 
 import {
-  ExpertPostCard,
   DiscussionPostCard,
+  ExpertPostCard,
 } from "@/components/cards/PostCardVariants";
 import { api } from "@/convex/_generated/api";
 import type { CommunityPost as CommunityPostType } from "@/types";
@@ -25,7 +25,7 @@ function formatTimeAgo(timestamp: number): string {
   return `${Math.floor(diffH / 24)}d ago`;
 }
 
-export default function PostCardWrapper({
+function PostCardWrapperComponent({
   post,
   variant,
   onOpenComments,
@@ -140,3 +140,7 @@ export default function PostCardWrapper({
     />
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+const PostCardWrapper = memo(PostCardWrapperComponent);
+export default PostCardWrapper;

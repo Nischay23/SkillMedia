@@ -13,6 +13,14 @@ export default defineSchema({
     clerkId: v.string(),
     isAdmin: v.optional(v.boolean()),
     createdAt: v.optional(v.number()),
+    // Push notification token
+    pushToken: v.optional(v.string()),
+    // Last active timestamp for analytics
+    lastActiveAt: v.optional(v.number()),
+    // Ban management
+    isBanned: v.optional(v.boolean()),
+    banReason: v.optional(v.string()),
+    bannedAt: v.optional(v.number()),
     // Temporary fields for migration
     image: v.optional(v.string()),
     followers: v.optional(v.number()),
@@ -185,7 +193,11 @@ export default defineSchema({
   groupMembers: defineTable({
     groupId: v.id("groups"),
     userId: v.id("users"),
-    role: v.union(v.literal("admin"), v.literal("moderator"), v.literal("member")),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("moderator"),
+      v.literal("member"),
+    ),
     joinedAt: v.number(),
     lastReadAt: v.optional(v.number()),
   })
@@ -366,7 +378,11 @@ export default defineSchema({
     groupId: v.id("groups"),
     title: v.string(),
     description: v.optional(v.string()),
-    type: v.union(v.literal("quiz"), v.literal("steps"), v.literal("streak")),
+    type: v.union(
+      v.literal("quiz"),
+      v.literal("steps"),
+      v.literal("streak"),
+    ),
     targetValue: v.number(),
     startDate: v.number(),
     endDate: v.number(),
@@ -394,4 +410,80 @@ export default defineSchema({
     lastActiveDate: v.string(),
     totalActiveDays: v.number(),
   }).index("by_user", ["userId"]),
+
+  // ===========================================
+  // PHASE 5: INTELLIGENCE & POLISH
+  // ===========================================
+
+  // 23. aiConversations table: AI chatbot conversations
+  aiConversations: defineTable({
+    groupId: v.id("groups"),
+    userId: v.id("users"),
+    question: v.string(),
+    answer: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_user", ["userId"]),
+
+  // 24. userPreferences table: User onboarding preferences
+  userPreferences: defineTable({
+    userId: v.id("users"),
+    qualification: v.optional(v.string()),
+    interestedCategories: v.optional(v.array(v.string())),
+    onboardingCompleted: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // 25. analytics table: App-wide analytics tracking
+  analytics: defineTable({
+    type: v.string(),
+    value: v.number(),
+    date: v.string(),
+    metadata: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_type_and_date", ["type", "date"]),
+
+  // 26. aiSettings table: AI configuration per group
+  aiSettings: defineTable({
+    groupId: v.optional(v.id("groups")), // null = global settings
+    isEnabled: v.boolean(),
+    systemPrompt: v.optional(v.string()),
+    maxQueriesPerDay: v.optional(v.number()),
+    temperature: v.optional(v.number()),
+    model: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_group", ["groupId"]),
+
+  // 27. broadcastNotifications table: Admin scheduled notifications
+  broadcastNotifications: defineTable({
+    title: v.string(),
+    body: v.string(),
+    data: v.optional(v.string()), // JSON string for deep link data
+    targetAudience: v.string(), // "all" | "group" | "qualification"
+    targetId: v.optional(v.string()), // groupId or qualification name
+    scheduledAt: v.optional(v.number()), // null = send immediately
+    sentAt: v.optional(v.number()),
+    status: v.string(), // "draft" | "scheduled" | "sent" | "failed"
+    recipientCount: v.optional(v.number()),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_scheduled", ["scheduledAt"]),
+
+  // 28. translations table: Multi-language content
+  translations: defineTable({
+    key: v.string(), // "filter.name.{filterId}" or "ui.{componentKey}"
+    language: v.string(), // "en" | "hi" | "mr" | "ta" etc.
+    content: v.string(),
+    updatedBy: v.optional(v.id("users")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_key", ["key"])
+    .index("by_language", ["language"])
+    .index("by_key_language", ["key", "language"]),
 });

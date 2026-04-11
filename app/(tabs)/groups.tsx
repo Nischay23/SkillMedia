@@ -17,6 +17,7 @@ import {
   FlatList,
   Platform,
   Pressable,
+  StatusBar,
   TextInput,
   View,
 } from "react-native";
@@ -32,6 +33,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Typography } from "@/components/ui/Typography";
+import { useToast } from "@/components/ui/Toast";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
@@ -87,14 +89,22 @@ function GroupCard({
 }) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
-  const badgeScale = useSharedValue(group.unreadCount > 0 ? 1 : 0);
+  const badgeScale = useSharedValue(
+    group.unreadCount > 0 ? 1 : 0,
+  );
 
   // Animate badge when it appears
   useEffect(() => {
     if (group.unreadCount > 0) {
-      badgeScale.value = withSpring(1, { damping: 10, stiffness: 300 });
+      badgeScale.value = withSpring(1, {
+        damping: 10,
+        stiffness: 300,
+      });
     } else {
-      badgeScale.value = withSpring(0, { damping: 10, stiffness: 300 });
+      badgeScale.value = withSpring(0, {
+        damping: 10,
+        stiffness: 300,
+      });
     }
   }, [group.unreadCount, badgeScale]);
 
@@ -122,7 +132,9 @@ function GroupCard({
   }, [scale]);
 
   // Format last message time
-  const formatMessageTime = (timestamp: number | undefined) => {
+  const formatMessageTime = (
+    timestamp: number | undefined,
+  ) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     const now = new Date();
@@ -135,7 +147,10 @@ function GroupCard({
     if (diffMins < 60) return `${diffMins}m`;
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
@@ -230,9 +245,14 @@ function GroupCard({
                   <Typography
                     variant="caption"
                     weight="bold"
-                    style={{ color: "#FFFFFF", fontSize: 11 }}
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: 11,
+                    }}
                   >
-                    {group.unreadCount > 99 ? "99+" : group.unreadCount}
+                    {group.unreadCount > 99
+                      ? "99+"
+                      : group.unreadCount}
                   </Typography>
                 </LinearGradient>
               </Animated.View>
@@ -251,7 +271,11 @@ function GroupCard({
             >
               <Typography
                 variant="body"
-                weight={group.unreadCount > 0 ? "bold" : "semibold"}
+                weight={
+                  group.unreadCount > 0
+                    ? "bold"
+                    : "semibold"
+                }
                 color="text"
                 numberOfLines={1}
                 style={{ flex: 1, fontSize: 15 }}
@@ -260,10 +284,16 @@ function GroupCard({
               </Typography>
               <Typography
                 variant="caption"
-                color={group.unreadCount > 0 ? "primary" : "textMuted"}
+                color={
+                  group.unreadCount > 0
+                    ? "primary"
+                    : "textMuted"
+                }
                 style={{ fontSize: 11, marginLeft: 8 }}
               >
-                {formatMessageTime(group.lastMessage?.createdAt)}
+                {formatMessageTime(
+                  group.lastMessage?.createdAt,
+                )}
               </Typography>
             </View>
 
@@ -271,18 +301,28 @@ function GroupCard({
             {group.lastMessage ? (
               <Typography
                 variant="caption"
-                color={group.unreadCount > 0 ? "text" : "textMuted"}
-                weight={group.unreadCount > 0 ? "medium" : "normal"}
+                color={
+                  group.unreadCount > 0
+                    ? "text"
+                    : "textMuted"
+                }
+                weight={
+                  group.unreadCount > 0
+                    ? "medium"
+                    : "normal"
+                }
                 numberOfLines={1}
                 style={{ marginTop: 4, fontSize: 13 }}
               >
-                {group.lastMessage.senderName}: {group.lastMessage.content}
+                {group.lastMessage.senderName}:{" "}
+                {group.lastMessage.content}
               </Typography>
             ) : (
               <View
                 style={{
                   alignSelf: "flex-start",
-                  backgroundColor: theme.colors.primary + "18",
+                  backgroundColor:
+                    theme.colors.primary + "18",
                   borderRadius: 20,
                   paddingHorizontal: 10,
                   paddingVertical: 3,
@@ -333,7 +373,8 @@ function GroupCard({
                     color="textMuted"
                     style={{ fontSize: 12 }}
                   >
-                    {group.memberCount.toLocaleString()} members
+                    {group.memberCount.toLocaleString()}{" "}
+                    members
                   </Typography>
                 </View>
 
@@ -344,7 +385,8 @@ function GroupCard({
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 4,
-                      backgroundColor: theme.colors.primary + "18",
+                      backgroundColor:
+                        theme.colors.primary + "18",
                       paddingHorizontal: 8,
                       paddingVertical: 2,
                       borderRadius: 10,
@@ -361,7 +403,10 @@ function GroupCard({
                       weight="semibold"
                       style={{ fontSize: 11 }}
                     >
-                      {group.quizCount} {group.quizCount === 1 ? "quiz" : "quizzes"}
+                      {group.quizCount}{" "}
+                      {group.quizCount === 1
+                        ? "quiz"
+                        : "quizzes"}
                     </Typography>
                   </View>
                 )}
@@ -427,11 +472,20 @@ export default function GroupsScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
   const currentUser = useQuery(api.users.getCurrentUser);
   const myGroups = useQuery(api.groups.getMyGroups);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Search bar border animation
+  const searchBorderOpacity = useSharedValue(0);
+  const searchBorderStyle = useAnimatedStyle(() => ({
+    borderColor: `${theme.colors.primary}${searchBorderOpacity.value > 0.5 ? "CC" : "00"}`,
+    borderWidth: searchBorderOpacity.value > 0.5 ? 2 : 1,
+  }));
 
   // Create group sheet
   const sheetRef = useRef<BottomSheet>(null);
@@ -516,18 +570,24 @@ export default function GroupsScreen() {
 
   const handleCreateGroup = useCallback(async () => {
     if (!selectedFilterId || !groupName.trim()) return;
-    const id = await createGroupMutation({
-      filterOptionId: selectedFilterId,
-      name: groupName.trim(),
-      description: groupDesc.trim() || undefined,
-    });
-    sheetRef.current?.close();
-    router.push(`/group/${id}` as any);
+    try {
+      const id = await createGroupMutation({
+        filterOptionId: selectedFilterId,
+        name: groupName.trim(),
+        description: groupDesc.trim() || undefined,
+      });
+      sheetRef.current?.close();
+      showToast("Group created!", "success");
+      router.push(`/group/${id}` as any);
+    } catch {
+      showToast("Couldn't create group. Try again.", "error");
+    }
   }, [
     selectedFilterId,
     groupName,
     groupDesc,
     createGroupMutation,
+    showToast,
     router,
   ]);
 
@@ -551,7 +611,7 @@ export default function GroupsScreen() {
     },
     headerContainer: {
       paddingHorizontal: 16,
-      paddingTop: 20,
+      paddingTop: insets.top + 12,
     },
     headerRow: {
       flexDirection: "row" as const,
@@ -685,6 +745,11 @@ export default function GroupsScreen() {
   if (myGroups === undefined) {
     return (
       <View style={styles.container}>
+        <StatusBar
+          translucent
+          backgroundColor="transparent"
+          barStyle="light-content"
+        />
         <Animated.View
           entering={FadeInDown.duration(300).delay(50)}
           style={styles.headerContainer}
@@ -720,6 +785,11 @@ export default function GroupsScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       {/* Header */}
       <Animated.View
         entering={FadeInDown.duration(300).delay(50)}
@@ -782,12 +852,17 @@ export default function GroupsScreen() {
         </View>
       </Animated.View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      {/* Search Bar — with focus glow */}
+      <Animated.View
+        style={[
+          styles.searchContainer,
+          searchBorderStyle,
+        ]}
+      >
         <Ionicons
           name="search-outline"
           size={16}
-          color={theme.colors.textMuted}
+          color={searchFocused ? theme.colors.primary : theme.colors.textMuted}
         />
         <TextInput
           style={styles.searchInput}
@@ -795,8 +870,22 @@ export default function GroupsScreen() {
           placeholderTextColor={theme.colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          onFocus={() => {
+            setSearchFocused(true);
+            searchBorderOpacity.value = withSpring(1, {
+              damping: 15,
+              stiffness: 300,
+            });
+          }}
+          onBlur={() => {
+            setSearchFocused(false);
+            searchBorderOpacity.value = withSpring(0, {
+              damping: 15,
+              stiffness: 300,
+            });
+          }}
         />
-      </View>
+      </Animated.View>
 
       {/* Group List or Empty State */}
       {myGroups.length === 0 ? (

@@ -1,12 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import BottomSheet, {
   BottomSheetBackdrop,
+  BottomSheetFlatList,
   BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { useUser } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+import * as Clipboard from "expo-clipboard";
 import React, {
   useCallback,
   useEffect,
@@ -20,7 +24,8 @@ import {
   Dimensions,
   DimensionValue,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
+  KeyboardEvent,
   Modal,
   Platform,
   Pressable,
@@ -38,6 +43,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -50,14 +56,22 @@ import {
   useTheme,
   useThemedStyles,
 } from "@/providers/ThemeProvider";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import {
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const SKELETON_WIDTHS = ["60%", "45%", "70%", "40%", "65%", "50%"];
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
+  Dimensions.get("window");
+const SKELETON_WIDTHS = [
+  "60%",
+  "45%",
+  "70%",
+  "40%",
+  "65%",
+  "50%",
+];
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 const REPORT_REASONS = [
   "Spam or misleading",
@@ -100,15 +114,27 @@ type Message = {
 // ─────────────────────────────────────────────────────────────
 // SKELETON MESSAGE
 // ─────────────────────────────────────────────────────────────
-function SkeletonMessage({ isRight, index }: { isRight: boolean; index: number }) {
+function SkeletonMessage({
+  isRight,
+  index,
+}: {
+  isRight: boolean;
+  index: number;
+}) {
   const { theme } = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.25, { duration: 700 }), -1, true);
+    opacity.value = withRepeat(
+      withTiming(0.25, { duration: 700 }),
+      -1,
+      true,
+    );
   }, [opacity]);
 
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
   return (
     <Animated.View
@@ -138,7 +164,9 @@ function SkeletonMessage({ isRight, index }: { isRight: boolean; index: number }
       <Animated.View
         style={[
           {
-            width: SKELETON_WIDTHS[index % SKELETON_WIDTHS.length] as DimensionValue,
+            width: SKELETON_WIDTHS[
+              index % SKELETON_WIDTHS.length
+            ] as DimensionValue,
             height: 44,
             borderRadius: 18,
             backgroundColor: theme.colors.surface,
@@ -165,11 +193,27 @@ function DateSeparator({ date }: { date: string }) {
         paddingHorizontal: 20,
       }}
     >
-      <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
-      <Typography variant="caption" color="textMuted" style={{ marginHorizontal: 12 }}>
+      <View
+        style={{
+          flex: 1,
+          height: 1,
+          backgroundColor: theme.colors.border,
+        }}
+      />
+      <Typography
+        variant="caption"
+        color="textMuted"
+        style={{ marginHorizontal: 12 }}
+      >
         {date}
       </Typography>
-      <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
+      <View
+        style={{
+          flex: 1,
+          height: 1,
+          backgroundColor: theme.colors.border,
+        }}
+      />
     </View>
   );
 }
@@ -202,7 +246,8 @@ function ReactionPills({
       }}
     >
       {reactions.map((reaction) => {
-        const userReacted = reaction.userIds.includes(currentUserId);
+        const userReacted =
+          reaction.userIds.includes(currentUserId);
         return (
           <Pressable
             key={reaction.emoji}
@@ -223,12 +268,16 @@ function ReactionPills({
                 gap: 4,
               }}
             >
-              <Typography style={{ fontSize: 14 }}>{reaction.emoji}</Typography>
+              <Typography style={{ fontSize: 14 }}>
+                {reaction.emoji}
+              </Typography>
               <Typography
                 variant="caption"
                 style={{
                   fontSize: 12,
-                  color: userReacted ? theme.colors.primary : theme.colors.textMuted,
+                  color: userReacted
+                    ? theme.colors.primary
+                    : theme.colors.textMuted,
                 }}
               >
                 {reaction.count}
@@ -283,7 +332,11 @@ function MessageBubble({
       >
         <Typography
           variant="body"
-          style={{ color: theme.colors.textMuted, fontStyle: "italic", fontSize: 13 }}
+          style={{
+            color: theme.colors.textMuted,
+            fontStyle: "italic",
+            fontSize: 13,
+          }}
         >
           [Message deleted]
         </Typography>
@@ -307,17 +360,40 @@ function MessageBubble({
           paddingVertical: 12,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
-          <Ionicons name="megaphone-outline" size={13} color="#F59E0B" />
-          <Typography variant="caption" weight="semibold" style={{ color: "#F59E0B" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 6,
+          }}
+        >
+          <Ionicons
+            name="megaphone-outline"
+            size={13}
+            color="#F59E0B"
+          />
+          <Typography
+            variant="caption"
+            weight="semibold"
+            style={{ color: "#F59E0B" }}
+          >
             Announcement
           </Typography>
         </View>
-        <Typography variant="body" color="text" style={{ fontSize: 15, lineHeight: 22 }}>
+        <Typography
+          variant="body"
+          color="text"
+          style={{ fontSize: 15, lineHeight: 22 }}
+        >
           {message.content}
         </Typography>
         {showTimestamp && (
-          <Typography variant="caption" color="textMuted" style={{ fontSize: 10, marginTop: 6 }}>
+          <Typography
+            variant="caption"
+            color="textMuted"
+            style={{ fontSize: 10, marginTop: 6 }}
+          >
             {formatTime(message.createdAt)}
           </Typography>
         )}
@@ -328,7 +404,10 @@ function MessageBubble({
   // Image message
   if (message.type === "image" && message.imageUrl) {
     return (
-      <Pressable onLongPress={onLongPress} delayLongPress={400}>
+      <Pressable
+        onLongPress={onLongPress}
+        delayLongPress={400}
+      >
         <Animated.View
           entering={FadeIn.duration(180)}
           style={{
@@ -343,11 +422,18 @@ function MessageBubble({
           {/* Avatar for others */}
           {!isOwn && (
             <View style={{ width: 34 }}>
-              {isLastInGroup && message.sender && (
-                message.sender.profileImage ? (
+              {isLastInGroup &&
+                message.sender &&
+                (message.sender.profileImage ? (
                   <Image
-                    source={{ uri: message.sender.profileImage }}
-                    style={{ width: 34, height: 34, borderRadius: 17 }}
+                    source={{
+                      uri: message.sender.profileImage,
+                    }}
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                    }}
                     contentFit="cover"
                   />
                 ) : (
@@ -361,23 +447,35 @@ function MessageBubble({
                       justifyContent: "center",
                     }}
                   >
-                    <Typography variant="caption" weight="bold" style={{ color: "#FFFFFF" }}>
-                      {message.sender.fullname[0]?.toUpperCase() ?? "?"}
+                    <Typography
+                      variant="caption"
+                      weight="bold"
+                      style={{ color: "#FFFFFF" }}
+                    >
+                      {message.sender.fullname[0]?.toUpperCase() ??
+                        "?"}
                     </Typography>
                   </LinearGradient>
-                )
-              )}
+                ))}
             </View>
           )}
 
           <View style={{ maxWidth: SCREEN_WIDTH * 0.65 }}>
             {!isOwn && showName && message.sender && (
-              <Typography variant="caption" color="textMuted" style={{ marginBottom: 2 }}>
+              <Typography
+                variant="caption"
+                color="textMuted"
+                style={{ marginBottom: 2 }}
+              >
                 {message.sender.fullname}
               </Typography>
             )}
 
-            <Pressable onPress={() => onImagePress(message.imageUrl!)}>
+            <Pressable
+              onPress={() =>
+                onImagePress(message.imageUrl!)
+              }
+            >
               <View
                 style={{
                   borderRadius: 18,
@@ -396,12 +494,18 @@ function MessageBubble({
                       justifyContent: "center",
                     }}
                   >
-                    <ActivityIndicator color={theme.colors.primary} />
+                    <ActivityIndicator
+                      color={theme.colors.primary}
+                    />
                   </Animated.View>
                 )}
                 <Image
                   source={{ uri: message.imageUrl }}
-                  style={{ width: SCREEN_WIDTH * 0.65, height: 200, borderRadius: 18 }}
+                  style={{
+                    width: SCREEN_WIDTH * 0.65,
+                    height: 200,
+                    borderRadius: 18,
+                  }}
                   contentFit="cover"
                   onLoadEnd={() => setImageLoading(false)}
                 />
@@ -413,7 +517,9 @@ function MessageBubble({
               <View
                 style={{
                   marginTop: 4,
-                  backgroundColor: isOwn ? undefined : theme.colors.surface,
+                  backgroundColor: isOwn
+                    ? undefined
+                    : theme.colors.surface,
                   borderRadius: 12,
                   paddingHorizontal: isOwn ? 0 : 12,
                   paddingVertical: isOwn ? 0 : 8,
@@ -422,14 +528,28 @@ function MessageBubble({
                 {isOwn ? (
                   <LinearGradient
                     colors={["#6C5DD3", "#8676FF"]}
-                    style={{ borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}
+                    style={{
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                    }}
                   >
-                    <Typography variant="body" style={{ color: "#FFFFFF", fontSize: 14 }}>
+                    <Typography
+                      variant="body"
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 14,
+                      }}
+                    >
                       {message.content}
                     </Typography>
                   </LinearGradient>
                 ) : (
-                  <Typography variant="body" color="text" style={{ fontSize: 14 }}>
+                  <Typography
+                    variant="body"
+                    color="text"
+                    style={{ fontSize: 14 }}
+                  >
                     {message.content}
                   </Typography>
                 )}
@@ -447,7 +567,13 @@ function MessageBubble({
               <Typography
                 variant="caption"
                 color="textMuted"
-                style={{ fontSize: 10, marginTop: 4, alignSelf: isOwn ? "flex-end" : "flex-start" }}
+                style={{
+                  fontSize: 10,
+                  marginTop: 4,
+                  alignSelf: isOwn
+                    ? "flex-end"
+                    : "flex-start",
+                }}
               >
                 {formatTime(message.createdAt)}
               </Typography>
@@ -460,7 +586,10 @@ function MessageBubble({
 
   // Regular text message
   return (
-    <Pressable onLongPress={onLongPress} delayLongPress={400}>
+    <Pressable
+      onLongPress={onLongPress}
+      delayLongPress={400}
+    >
       <Animated.View
         entering={FadeIn.duration(180)}
         style={{
@@ -475,11 +604,18 @@ function MessageBubble({
         {/* Avatar for others */}
         {!isOwn && (
           <View style={{ width: 34 }}>
-            {isLastInGroup && message.sender && (
-              message.sender.profileImage ? (
+            {isLastInGroup &&
+              message.sender &&
+              (message.sender.profileImage ? (
                 <Image
-                  source={{ uri: message.sender.profileImage }}
-                  style={{ width: 34, height: 34, borderRadius: 17 }}
+                  source={{
+                    uri: message.sender.profileImage,
+                  }}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 17,
+                  }}
                   contentFit="cover"
                 />
               ) : (
@@ -493,18 +629,26 @@ function MessageBubble({
                     justifyContent: "center",
                   }}
                 >
-                  <Typography variant="caption" weight="bold" style={{ color: "#FFFFFF" }}>
-                    {message.sender.fullname[0]?.toUpperCase() ?? "?"}
+                  <Typography
+                    variant="caption"
+                    weight="bold"
+                    style={{ color: "#FFFFFF" }}
+                  >
+                    {message.sender.fullname[0]?.toUpperCase() ??
+                      "?"}
                   </Typography>
                 </LinearGradient>
-              )
-            )}
+              ))}
           </View>
         )}
 
         <View style={{ maxWidth: SCREEN_WIDTH * 0.72 }}>
           {!isOwn && showName && message.sender && (
-            <Typography variant="caption" color="textMuted" style={{ marginBottom: 2 }}>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginBottom: 2 }}
+            >
               {message.sender.fullname}
             </Typography>
           )}
@@ -517,12 +661,21 @@ function MessageBubble({
               end={{ x: 1, y: 1 }}
               style={{
                 borderRadius: 18,
-                borderTopRightRadius: isFirstInGroup ? 4 : 18,
+                borderTopRightRadius: isFirstInGroup
+                  ? 4
+                  : 18,
                 paddingHorizontal: 14,
                 paddingVertical: 10,
               }}
             >
-              <Typography variant="body" style={{ color: "#FFFFFF", fontSize: 15, lineHeight: 22 }}>
+              <Typography
+                variant="body"
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 15,
+                  lineHeight: 22,
+                }}
+              >
                 {message.content}
               </Typography>
             </LinearGradient>
@@ -533,12 +686,18 @@ function MessageBubble({
                 borderWidth: 1,
                 borderColor: theme.colors.border,
                 borderRadius: 18,
-                borderTopLeftRadius: isFirstInGroup ? 4 : 18,
+                borderTopLeftRadius: isFirstInGroup
+                  ? 4
+                  : 18,
                 paddingHorizontal: 14,
                 paddingVertical: 10,
               }}
             >
-              <Typography variant="body" color="text" style={{ fontSize: 15, lineHeight: 22 }}>
+              <Typography
+                variant="body"
+                color="text"
+                style={{ fontSize: 15, lineHeight: 22 }}
+              >
                 {message.content}
               </Typography>
             </View>
@@ -558,7 +717,9 @@ function MessageBubble({
               style={{
                 fontSize: 10,
                 marginTop: 4,
-                alignSelf: isOwn ? "flex-end" : "flex-start",
+                alignSelf: isOwn
+                  ? "flex-end"
+                  : "flex-start",
               }}
             >
               {formatTime(message.createdAt)}
@@ -620,7 +781,9 @@ function EmojiReactionBar({
         {QUICK_EMOJIS.map((emoji, index) => (
           <Animated.View
             key={emoji}
-            entering={FadeIn.duration(100).delay(index * 30)}
+            entering={FadeIn.duration(100).delay(
+              index * 30,
+            )}
           >
             <Pressable
               onPress={() => {
@@ -629,7 +792,9 @@ function EmojiReactionBar({
               }}
               style={{ padding: 4 }}
             >
-              <Typography style={{ fontSize: 24 }}>{emoji}</Typography>
+              <Typography style={{ fontSize: 24 }}>
+                {emoji}
+              </Typography>
             </Pressable>
           </Animated.View>
         ))}
@@ -641,7 +806,13 @@ function EmojiReactionBar({
 // ─────────────────────────────────────────────────────────────
 // SUCCESS TOAST
 // ─────────────────────────────────────────────────────────────
-function SuccessToast({ message, visible }: { message: string; visible: boolean }) {
+function SuccessToast({
+  message,
+  visible,
+}: {
+  message: string;
+  visible: boolean;
+}) {
   if (!visible) return null;
 
   return (
@@ -668,8 +839,16 @@ function SuccessToast({ message, visible }: { message: string; visible: boolean 
           gap: 8,
         }}
       >
-        <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-        <Typography variant="body" weight="semibold" style={{ color: "#FFFFFF" }}>
+        <Ionicons
+          name="checkmark-circle"
+          size={18}
+          color="#FFFFFF"
+        />
+        <Typography
+          variant="body"
+          weight="semibold"
+          style={{ color: "#FFFFFF" }}
+        >
           {message}
         </Typography>
       </View>
@@ -692,7 +871,12 @@ function FullscreenImageViewer({
   if (!visible || !imageUrl) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <Animated.View
         entering={FadeIn.duration(250)}
         style={{
@@ -717,12 +901,19 @@ function FullscreenImageViewer({
             zIndex: 10,
           }}
         >
-          <Ionicons name="close" size={24} color="#FFFFFF" />
+          <Ionicons
+            name="close"
+            size={24}
+            color="#FFFFFF"
+          />
         </Pressable>
 
         <Image
           source={{ uri: imageUrl }}
-          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.7 }}
+          style={{
+            width: SCREEN_WIDTH,
+            height: SCREEN_HEIGHT * 0.7,
+          }}
           contentFit="contain"
         />
       </Animated.View>
@@ -735,7 +926,10 @@ function FullscreenImageViewer({
 // ─────────────────────────────────────────────────────────────
 function formatTime(timestamp: number): string {
   const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function formatDateLabel(timestamp: number): string {
@@ -744,9 +938,14 @@ function formatDateLabel(timestamp: number): string {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) return "Today";
-  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  if (date.toDateString() === today.toDateString())
+    return "Today";
+  if (date.toDateString() === yesterday.toDateString())
+    return "Yesterday";
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function isSameDay(ts1: number, ts2: number): boolean {
@@ -755,10 +954,19 @@ function isSameDay(ts1: number, ts2: number): boolean {
   return d1.toDateString() === d2.toDateString();
 }
 
-function shouldGroupMessages(msg1: Message, msg2: Message): boolean {
+function shouldGroupMessages(
+  msg1: Message,
+  msg2: Message,
+): boolean {
   if (msg1.userId !== msg2.userId) return false;
-  if (msg1.type === "announcement" || msg2.type === "announcement") return false;
-  const timeDiff = Math.abs(msg1.createdAt - msg2.createdAt);
+  if (
+    msg1.type === "announcement" ||
+    msg2.type === "announcement"
+  )
+    return false;
+  const timeDiff = Math.abs(
+    msg1.createdAt - msg2.createdAt,
+  );
   return timeDiff < 5 * 60 * 1000;
 }
 
@@ -775,37 +983,90 @@ export default function GroupChatScreen() {
 
   // Queries
   const currentUser = useQuery(api.users.getCurrentUser);
-  const group = useQuery(api.groups.getGroupById, { groupId });
-  const messages = useQuery(api.messages.getMessages, { groupId });
-  const pinnedMessage = useQuery(api.messages.getPinnedMessage, { groupId });
+  const group = useQuery(api.groups.getGroupById, {
+    groupId,
+  });
+  const messages = useQuery(api.messages.getMessages, {
+    groupId,
+  });
+  const pinnedMessage = useQuery(
+    api.messages.getPinnedMessage,
+    { groupId },
+  );
 
   // Mutations
-  const sendMessageMutation = useMutation(api.messages.sendMessage);
-  const sendImageMessageMutation = useMutation(api.messages.sendImageMessage);
-  const generateUploadUrlMutation = useMutation(api.messages.generateUploadUrl);
-  const deleteMessageMutation = useMutation(api.messages.deleteMessage);
-  const pinMessageMutation = useMutation(api.messages.pinMessage);
-  const toggleReactionMutation = useMutation(api.messages.toggleReaction);
-  const leaveGroupMutation = useMutation(api.groups.leaveGroup);
-  const markAsReadMutation = useMutation(api.groups.markGroupAsRead);
-  const reportMessageMutation = useMutation(api.reports.reportMessage);
+  const sendMessageMutation = useMutation(
+    api.messages.sendMessage,
+  );
+  const sendImageMessageMutation = useMutation(
+    api.messages.sendImageMessage,
+  );
+  const generateUploadUrlMutation = useMutation(
+    api.messages.generateUploadUrl,
+  );
+  const deleteMessageMutation = useMutation(
+    api.messages.deleteMessage,
+  );
+  const pinMessageMutation = useMutation(
+    api.messages.pinMessage,
+  );
+  const toggleReactionMutation = useMutation(
+    api.messages.toggleReaction,
+  );
+  const leaveGroupMutation = useMutation(
+    api.groups.leaveGroup,
+  );
+  const markAsReadMutation = useMutation(
+    api.groups.markGroupAsRead,
+  );
+  const reportMessageMutation = useMutation(
+    api.reports.reportMessage,
+  );
+
+  // AI Chatbot
+  const { user: clerkUser } = useUser();
+  const askAIAction = useAction(api.ai.askAI);
+  const aiHistory = useQuery(api.ai.getAIHistory, { groupId });
+  const remainingAIQueries = useQuery(api.ai.getRemainingAIQueries);
 
   // State
   const [inputText, setInputText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [actionMessageId, setActionMessageId] = useState<Id<"messages"> | null>(null);
-  const [announcementOpen, setAnnouncementOpen] = useState(false);
-  const [announcementText, setAnnouncementText] = useState("");
-  const [pinnedExpanded, setPinnedExpanded] = useState(false);
+  const [actionMessageId, setActionMessageId] =
+    useState<Id<"messages"> | null>(null);
+  const [announcementOpen, setAnnouncementOpen] =
+    useState(false);
+  const [announcementText, setAnnouncementText] =
+    useState("");
+  const [pinnedExpanded, setPinnedExpanded] =
+    useState(false);
   const [showEmojiBar, setShowEmojiBar] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<
+    string | null
+  >(null);
   const [imageCaption, setImageCaption] = useState("");
-  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [imagePreviewOpen, setImagePreviewOpen] =
+    useState(false);
   const [uploading, setUploading] = useState(false);
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<
+    string | null
+  >(null);
   const [reportOpen, setReportOpen] = useState(false);
-  const [selectedReason, setSelectedReason] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedReason, setSelectedReason] = useState<
+    string | null
+  >(null);
+  const [toastMessage, setToastMessage] = useState<
+    string | null
+  >(null);
+  // AI state
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessages, setAiMessages] = useState<Array<{ type: "user" | "ai"; text: string; id: string; timestamp?: number }>>([]);
+  const [aiKeyboardHeight, setAiKeyboardHeight] = useState(0);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  // Keyboard height for main chat (Keyboard.addListener approach)
+  const [chatKeyboardHeight, setChatKeyboardHeight] = useState(0);
 
   // Refs
   const flatListRef = useRef<FlatList>(null);
@@ -815,6 +1076,8 @@ export default function GroupChatScreen() {
   const pinnedRef = useRef<BottomSheet>(null);
   const imagePreviewRef = useRef<BottomSheet>(null);
   const reportRef = useRef<BottomSheet>(null);
+  const aiChatRef = useRef<BottomSheet>(null);
+  const aiChatListRef = useRef<FlatList>(null);
   const prevMessageCount = useRef<number>(0);
 
   // Animation values
@@ -823,9 +1086,12 @@ export default function GroupChatScreen() {
   const menuScale = useSharedValue(1);
   const announceBtnScale = useSharedValue(1);
   const imagePickerScale = useSharedValue(1);
+  const aiBtnScale = useSharedValue(1);
 
   // Derived
-  const isAdmin = currentUser?.isAdmin || group?.currentUserRole === "admin";
+  const isAdmin =
+    currentUser?.isAdmin ||
+    group?.currentUserRole === "admin";
   const canSend = inputText.trim().length > 0;
 
   // Mark as read on mount and when messages change
@@ -834,23 +1100,105 @@ export default function GroupChatScreen() {
       markAsReadMutation({ groupId });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages?.length, currentUser, groupId, markAsReadMutation]);
+  }, [
+    messages?.length,
+    currentUser,
+    groupId,
+    markAsReadMutation,
+  ]);
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (messages && messages.length > prevMessageCount.current) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    if (
+      messages &&
+      messages.length > prevMessageCount.current
+    ) {
+      setTimeout(
+        () =>
+          flatListRef.current?.scrollToEnd({
+            animated: true,
+          }),
+        100,
+      );
     }
-    if (messages) prevMessageCount.current = messages.length;
+    if (messages)
+      prevMessageCount.current = messages.length;
   }, [messages]);
 
   // Initial scroll to bottom
   const messagesLoaded = messages !== undefined;
   useEffect(() => {
     if (messages && messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 300);
+      setTimeout(
+        () =>
+          flatListRef.current?.scrollToEnd({
+            animated: false,
+          }),
+        300,
+      );
     }
   }, [messagesLoaded, messages]);
+
+  // Main chat keyboard handling — scroll to bottom when keyboard opens
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e: KeyboardEvent) => {
+        if (!aiChatOpen) {
+          setChatKeyboardHeight(e.endCoordinates.height);
+          // Scroll to bottom so latest message stays above keyboard
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, Platform.OS === "ios" ? 50 : 100);
+        }
+      },
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        if (!aiChatOpen) {
+          setChatKeyboardHeight(0);
+        }
+      },
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [aiChatOpen]);
+
+  // AI Chat keyboard handling
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e: KeyboardEvent) => {
+        if (aiChatOpen) {
+          setAiKeyboardHeight(e.endCoordinates.height);
+        }
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        if (aiChatOpen) {
+          setAiKeyboardHeight(0);
+        }
+      }
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [aiChatOpen]);
+
+  // Scroll AI chat to bottom when keyboard opens
+  useEffect(() => {
+    if (aiKeyboardHeight > 0 && aiMessages.length > 0) {
+      setTimeout(() => {
+        aiChatListRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    }
+  }, [aiKeyboardHeight, aiMessages.length]);
 
   // Show toast with auto dismiss
   const showToast = useCallback((msg: string) => {
@@ -863,36 +1211,63 @@ export default function GroupChatScreen() {
     if (!canSend) return;
     const text = inputText.trim();
     setInputText("");
-    sendScale.value = withSpring(0.85, { damping: 12, stiffness: 300 });
+    // Haptic feedback on send
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    sendScale.value = withSpring(0.85, {
+      damping: 12,
+      stiffness: 300,
+      overshootClamping: false,
+    });
     setTimeout(() => {
-      sendScale.value = withSpring(1, { damping: 12, stiffness: 300 });
+      sendScale.value = withSpring(1, {
+        damping: 12,
+        stiffness: 300,
+      });
     }, 100);
 
     try {
-      await sendMessageMutation({ groupId, content: text, type: "text" });
+      await sendMessageMutation({
+        groupId,
+        content: text,
+        type: "text",
+      });
     } catch {
       Alert.alert("Error", "Failed to send message");
       setInputText(text);
     }
-  }, [inputText, canSend, groupId, sendMessageMutation, sendScale]);
+  }, [
+    inputText,
+    canSend,
+    groupId,
+    sendMessageMutation,
+    sendScale,
+  ]);
 
   const handlePickImage = useCallback(async () => {
-    imagePickerScale.value = withSpring(0.88, { damping: 12 });
+    imagePickerScale.value = withSpring(0.88, {
+      damping: 12,
+    });
     setTimeout(() => {
-      imagePickerScale.value = withSpring(1, { damping: 12 });
+      imagePickerScale.value = withSpring(1, {
+        damping: 12,
+      });
     }, 100);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsEditing: true,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+      });
 
     if (!result.canceled && result.assets[0]) {
       setSelectedImage(result.assets[0].uri);
       setImageCaption("");
       setImagePreviewOpen(true);
-      setTimeout(() => imagePreviewRef.current?.snapToIndex(0), 100);
+      setTimeout(
+        () => imagePreviewRef.current?.snapToIndex(0),
+        100,
+      );
     }
   }, [imagePickerScale]);
 
@@ -916,7 +1291,9 @@ export default function GroupChatScreen() {
 
       // Extract storage ID from upload URL
       const url = new URL(uploadUrl);
-      const storageId = url.searchParams.get("storageId") as Id<"_storage">;
+      const storageId = url.searchParams.get(
+        "storageId",
+      ) as Id<"_storage">;
 
       // Send image message
       await sendImageMessageMutation({
@@ -934,7 +1311,13 @@ export default function GroupChatScreen() {
     } finally {
       setUploading(false);
     }
-  }, [selectedImage, imageCaption, groupId, generateUploadUrlMutation, sendImageMessageMutation]);
+  }, [
+    selectedImage,
+    imageCaption,
+    groupId,
+    generateUploadUrlMutation,
+    sendImageMessageMutation,
+  ]);
 
   const handleSendAnnouncement = useCallback(async () => {
     if (!announcementText.trim()) return;
@@ -943,18 +1326,83 @@ export default function GroupChatScreen() {
     announcementRef.current?.close();
 
     try {
-      await sendMessageMutation({ groupId, content: text, type: "announcement" });
+      await sendMessageMutation({
+        groupId,
+        content: text,
+        type: "announcement",
+      });
     } catch {
       Alert.alert("Error", "Failed to send announcement");
     }
   }, [announcementText, groupId, sendMessageMutation]);
+
+  // AI Chat handlers
+  const handleOpenAIChat = useCallback(() => {
+    setAiChatOpen(true);
+    // Load history into local state
+    if (aiHistory && aiHistory.length > 0) {
+      const historicalMessages = aiHistory.flatMap((conv: { _id: string; question: string; answer: string; createdAt?: number }) => [
+        { type: "user" as const, text: conv.question, id: `q-${conv._id}`, timestamp: conv.createdAt },
+        { type: "ai" as const, text: conv.answer, id: `a-${conv._id}`, timestamp: conv.createdAt },
+      ]).reverse();
+      setAiMessages(historicalMessages);
+    }
+    setTimeout(() => aiChatRef.current?.snapToIndex(0), 100);
+  }, [aiHistory]);
+
+  const handleAskAI = useCallback(async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    if ((remainingAIQueries ?? 0) <= 0) {
+      return; // Rate limit banner will show
+    }
+
+    const question = aiInput.trim();
+    const now = Date.now();
+    const tempUserId = `user-${now}`;
+
+    // Add user message immediately
+    setAiMessages(prev => [...prev, { type: "user", text: question, id: tempUserId, timestamp: now }]);
+    setAiInput("");
+    setAiLoading(true);
+
+    // Scroll to bottom
+    setTimeout(() => aiChatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+    try {
+      const result = await askAIAction({
+        groupId,
+        question,
+      });
+
+      // Add AI response
+      setAiMessages(prev => [...prev, { type: "ai", text: result.answer, id: `ai-${Date.now()}`, timestamp: Date.now() }]);
+      setTimeout(() => aiChatListRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "AI service unavailable";
+      setAiMessages(prev => [...prev, { type: "ai", text: `Error: ${errorMessage}`, id: `error-${Date.now()}`, timestamp: Date.now() }]);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiInput, clerkUser?.id, groupId, askAIAction, aiLoading, remainingAIQueries]);
+
+  const handleAIChipPress = useCallback((chip: string) => {
+    setAiInput(chip);
+  }, []);
+
+  const handleCopyAIMessage = useCallback((text: string, id: string) => {
+    Clipboard.setStringAsync(text);
+    setCopiedMessageId(id);
+    setTimeout(() => setCopiedMessageId(null), 1500);
+  }, []);
 
   const handleDeleteMessage = useCallback(async () => {
     if (!actionMessageId) return;
     actionRef.current?.close();
     setShowEmojiBar(false);
     try {
-      await deleteMessageMutation({ messageId: actionMessageId });
+      await deleteMessageMutation({
+        messageId: actionMessageId,
+      });
     } catch {
       Alert.alert("Error", "Failed to delete message");
     }
@@ -966,7 +1414,9 @@ export default function GroupChatScreen() {
     actionRef.current?.close();
     setShowEmojiBar(false);
     try {
-      await pinMessageMutation({ messageId: actionMessageId });
+      await pinMessageMutation({
+        messageId: actionMessageId,
+      });
     } catch {
       Alert.alert("Error", "Failed to pin message");
     }
@@ -978,8 +1428,14 @@ export default function GroupChatScreen() {
       const targetId = messageId ?? actionMessageId;
       if (!targetId) return;
 
+      // Haptic feedback on reaction
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
       try {
-        await toggleReactionMutation({ messageId: targetId, emoji });
+        await toggleReactionMutation({
+          messageId: targetId,
+          emoji,
+        });
       } catch {
         Alert.alert("Error", "Failed to add reaction");
       }
@@ -990,36 +1446,49 @@ export default function GroupChatScreen() {
         actionRef.current?.close();
       }
     },
-    [actionMessageId, toggleReactionMutation]
+    [actionMessageId, toggleReactionMutation],
   );
 
   const handleLeave = useCallback(() => {
     menuRef.current?.close();
-    Alert.alert("Leave Group", "Are you sure you want to leave this group?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Leave",
-        style: "destructive",
-        onPress: async () => {
-          await leaveGroupMutation({ groupId });
-          router.back();
+    Alert.alert(
+      "Leave Group",
+      "Are you sure you want to leave this group?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            await leaveGroupMutation({ groupId });
+            router.back();
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, [groupId, leaveGroupMutation, router]);
 
-  const handleMessageLongPress = useCallback((message: Message) => {
-    setActionMessageId(message._id);
-    setShowEmojiBar(true);
-    setTimeout(() => actionRef.current?.snapToIndex(0), 100);
-  }, []);
+  const handleMessageLongPress = useCallback(
+    (message: Message) => {
+      setActionMessageId(message._id);
+      setShowEmojiBar(true);
+      setTimeout(
+        () => actionRef.current?.snapToIndex(0),
+        100,
+      );
+    },
+    [],
+  );
 
   const handleOpenReport = useCallback(() => {
     actionRef.current?.close();
     setShowEmojiBar(false);
     setSelectedReason(null);
     setReportOpen(true);
-    setTimeout(() => reportRef.current?.snapToIndex(0), 100);
+    setTimeout(
+      () => reportRef.current?.snapToIndex(0),
+      100,
+    );
   }, []);
 
   const handleSubmitReport = useCallback(async () => {
@@ -1036,9 +1505,18 @@ export default function GroupChatScreen() {
       setActionMessageId(null);
       showToast("Report submitted");
     } catch (error: any) {
-      Alert.alert("Error", error.message ?? "Failed to submit report");
+      Alert.alert(
+        "Error",
+        error.message ?? "Failed to submit report",
+      );
     }
-  }, [actionMessageId, selectedReason, groupId, reportMessageMutation, showToast]);
+  }, [
+    actionMessageId,
+    selectedReason,
+    groupId,
+    reportMessageMutation,
+    showToast,
+  ]);
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -1050,19 +1528,35 @@ export default function GroupChatScreen() {
         pressBehavior="close"
       />
     ),
-    []
+    [],
   );
 
   // Animated styles
-  const sendButtonStyle = useAnimatedStyle(() => ({ transform: [{ scale: sendScale.value }] }));
-  const backButtonStyle = useAnimatedStyle(() => ({ transform: [{ scale: backScale.value }] }));
-  const menuButtonStyle = useAnimatedStyle(() => ({ transform: [{ scale: menuScale.value }] }));
-  const announceBtnStyle = useAnimatedStyle(() => ({ transform: [{ scale: announceBtnScale.value }] }));
-  const imagePickerStyle = useAnimatedStyle(() => ({ transform: [{ scale: imagePickerScale.value }] }));
+  const sendButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: sendScale.value }],
+  }));
+  const backButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: backScale.value }],
+  }));
+  const menuButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: menuScale.value }],
+  }));
+  const announceBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: announceBtnScale.value }],
+  }));
+  const imagePickerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: imagePickerScale.value }],
+  }));
+  const aiBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: aiBtnScale.value }],
+  }));
 
   // Styles
   const styles = useThemedStyles((t) => ({
-    container: { flex: 1, backgroundColor: t.colors.background },
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
     header: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -1070,7 +1564,12 @@ export default function GroupChatScreen() {
       paddingHorizontal: 12,
       paddingVertical: 10,
       ...Platform.select({
-        ios: { shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+        ios: {
+          shadowColor: "#000",
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+        },
         android: { elevation: 3 },
       }),
     },
@@ -1082,7 +1581,13 @@ export default function GroupChatScreen() {
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    headerCenter: { flex: 1, flexDirection: "row" as const, alignItems: "center" as const, marginHorizontal: 10, gap: 10 },
+    headerCenter: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      marginHorizontal: 10,
+      gap: 10,
+    },
     headerAccent: { height: 1.5 },
     pinnedBanner: {
       flexDirection: "row" as const,
@@ -1097,8 +1602,16 @@ export default function GroupChatScreen() {
       borderRadius: 12,
       gap: 6,
     },
-    messagesList: { flex: 1, backgroundColor: t.colors.background },
-    emptyContainer: { flex: 1, alignItems: "center" as const, justifyContent: "center" as const, paddingBottom: 100 },
+    messagesList: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingBottom: 100,
+    },
     inputContainer: {
       flexDirection: "row" as const,
       alignItems: "flex-end" as const,
@@ -1120,7 +1633,12 @@ export default function GroupChatScreen() {
       paddingVertical: 8,
       minHeight: 40,
     },
-    textInput: { fontSize: 15, color: t.colors.text, maxHeight: 100, lineHeight: 20 },
+    textInput: {
+      fontSize: 15,
+      color: t.colors.text,
+      maxHeight: 100,
+      lineHeight: 20,
+    },
     iconButton: {
       width: 40,
       height: 40,
@@ -1129,9 +1647,23 @@ export default function GroupChatScreen() {
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    sendButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center" as const, justifyContent: "center" as const },
-    sheetBg: { backgroundColor: "#1E1E1E", borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-    sheetHandle: { backgroundColor: "#555", width: 40, height: 4 },
+    sendButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    sheetBg: {
+      backgroundColor: "#1E1E1E",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+    },
+    sheetHandle: {
+      backgroundColor: "#555",
+      width: 40,
+      height: 4,
+    },
     menuItem: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -1153,8 +1685,19 @@ export default function GroupChatScreen() {
       minHeight: 100,
       textAlignVertical: "top" as const,
     },
-    announcementSubmit: { height: 50, borderRadius: 16, overflow: "hidden" as const, marginTop: 16 },
-    announcementGradient: { flex: 1, flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "center" as const, gap: 8 },
+    announcementSubmit: {
+      height: 50,
+      borderRadius: 16,
+      overflow: "hidden" as const,
+      marginTop: 16,
+    },
+    announcementGradient: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: 8,
+    },
   }));
 
   // Process messages for rendering
@@ -1181,17 +1724,28 @@ export default function GroupChatScreen() {
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
       const prevMsg = i > 0 ? messages[i - 1] : null;
-      const nextMsg = i < messages.length - 1 ? messages[i + 1] : null;
+      const nextMsg =
+        i < messages.length - 1 ? messages[i + 1] : null;
 
       const dateLabel = formatDateLabel(msg.createdAt);
       if (dateLabel !== lastDate) {
-        result.push({ type: "date", date: dateLabel, key: `date-${msg.createdAt}` });
+        result.push({
+          type: "date",
+          date: dateLabel,
+          key: `date-${msg.createdAt}`,
+        });
         lastDate = dateLabel;
       }
 
       const isOwn = msg.userId === currentUser._id;
-      const isFirstInGroup = !prevMsg || !shouldGroupMessages(prevMsg, msg) || !isSameDay(prevMsg.createdAt, msg.createdAt);
-      const isLastInGroup = !nextMsg || !shouldGroupMessages(msg, nextMsg) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+      const isFirstInGroup =
+        !prevMsg ||
+        !shouldGroupMessages(prevMsg, msg) ||
+        !isSameDay(prevMsg.createdAt, msg.createdAt);
+      const isLastInGroup =
+        !nextMsg ||
+        !shouldGroupMessages(msg, nextMsg) ||
+        !isSameDay(msg.createdAt, nextMsg.createdAt);
 
       result.push({
         type: "message",
@@ -1214,18 +1768,41 @@ export default function GroupChatScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={18} color={theme.colors.text} />
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.headerButton}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color={theme.colors.text}
+            />
           </Pressable>
           <View style={styles.headerCenter}>
-            <View style={{ width: 100, height: 14, backgroundColor: theme.colors.border, borderRadius: 7 }} />
+            <View
+              style={{
+                width: 100,
+                height: 14,
+                backgroundColor: theme.colors.border,
+                borderRadius: 7,
+              }}
+            />
           </View>
           <View style={{ width: 36 }} />
         </View>
-        <LinearGradient colors={["#6C5DD3", "#8676FF", "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.headerAccent} />
+        <LinearGradient
+          colors={["#6C5DD3", "#8676FF", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerAccent}
+        />
         <View style={{ flex: 1, paddingTop: 20 }}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <SkeletonMessage key={i} isRight={i % 2 === 0} index={i} />
+            <SkeletonMessage
+              key={i}
+              isRight={i % 2 === 0}
+              index={i}
+            />
           ))}
         </View>
       </View>
@@ -1233,47 +1810,114 @@ export default function GroupChatScreen() {
   }
 
   const renderEmpty = () => (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-      <Ionicons name="chatbubbles-outline" size={56} color={theme.colors.primary + "66"} />
-      <Typography variant="h4" weight="bold" color="text" style={{ marginTop: 16, fontSize: 18 }}>
+    <Animated.View
+      entering={FadeIn.duration(400)}
+      style={styles.emptyContainer}
+    >
+      <Ionicons
+        name="chatbubbles-outline"
+        size={56}
+        color={theme.colors.primary + "66"}
+      />
+      <Typography
+        variant="h4"
+        weight="bold"
+        color="text"
+        style={{ marginTop: 16, fontSize: 18 }}
+      >
         No messages yet
       </Typography>
-      <Typography variant="body" color="textMuted" align="center" style={{ marginTop: 6, fontSize: 14 }}>
+      <Typography
+        variant="body"
+        color="textMuted"
+        align="center"
+        style={{ marginTop: 6, fontSize: 14 }}
+      >
         Be the first to say something!
       </Typography>
     </Animated.View>
   );
 
-  const selectedMessage = actionMessageId ? messages?.find((m) => m._id === actionMessageId) : null;
-  const isSelectedOwn = selectedMessage?.userId === currentUser._id;
+  const selectedMessage = actionMessageId
+    ? messages?.find((m) => m._id === actionMessageId)
+    : null;
+  const isSelectedOwn =
+    selectedMessage?.userId === currentUser._id;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+    <View
+      style={[
+        styles.container,
+        // Push content up when keyboard is visible (Keyboard.addListener approach)
+        { paddingBottom: chatKeyboardHeight },
+      ]}
+    >
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
 
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPressIn={() => { backScale.value = withSpring(0.9, { damping: 15 }); }}
-          onPressOut={() => { backScale.value = withSpring(1, { damping: 15 }); }}
+          onPressIn={() => {
+            backScale.value = withSpring(0.9, {
+              damping: 15,
+            });
+          }}
+          onPressOut={() => {
+            backScale.value = withSpring(1, {
+              damping: 15,
+            });
+          }}
           onPress={() => router.back()}
         >
-          <Animated.View style={[styles.headerButton, backButtonStyle]}>
-            <Ionicons name="arrow-back" size={18} color={theme.colors.text} />
+          <Animated.View
+            style={[styles.headerButton, backButtonStyle]}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={18}
+              color={theme.colors.text}
+            />
           </Animated.View>
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <LinearGradient colors={["#6C5DD3", "#8676FF"]} style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}>
-            <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>
+          <LinearGradient
+            colors={["#6C5DD3", "#8676FF"]}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography
+              variant="body"
+              weight="bold"
+              style={{ color: "#FFFFFF" }}
+            >
               {(group.name || "G")[0].toUpperCase()}
             </Typography>
           </LinearGradient>
           <View>
-            <Typography variant="body" weight="bold" color="text" numberOfLines={1} style={{ fontSize: 15 }}>
+            <Typography
+              variant="body"
+              weight="bold"
+              color="text"
+              numberOfLines={1}
+              style={{ fontSize: 15 }}
+            >
               {group.name}
             </Typography>
-            <Typography variant="caption" color="textMuted" style={{ fontSize: 12 }}>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ fontSize: 12 }}
+            >
               {group.memberCount.toLocaleString()} members
             </Typography>
           </View>
@@ -1281,63 +1925,149 @@ export default function GroupChatScreen() {
 
         {/* Roadmap button */}
         <Pressable
-          onPress={() => router.push(`/group/${id}/roadmap` as any)}
+          onPress={() =>
+            router.push(`/group/${id}/roadmap` as any)
+          }
           style={[styles.headerButton, { marginRight: 8 }]}
         >
-          <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
+          <Ionicons
+            name="map-outline"
+            size={18}
+            color={theme.colors.primary}
+          />
         </Pressable>
 
         {/* Quiz button */}
         <Pressable
-          onPress={() => router.push(`/group/${id}/quiz` as any)}
+          onPress={() =>
+            router.push(`/group/${id}/quiz` as any)
+          }
           style={[styles.headerButton, { marginRight: 8 }]}
         >
-          <Ionicons name="school-outline" size={18} color={theme.colors.primary} />
+          <Ionicons
+            name="school-outline"
+            size={18}
+            color={theme.colors.primary}
+          />
         </Pressable>
 
         <Pressable
-          onPressIn={() => { menuScale.value = withSpring(0.9, { damping: 15 }); }}
-          onPressOut={() => { menuScale.value = withSpring(1, { damping: 15 }); }}
+          onPressIn={() => {
+            menuScale.value = withSpring(0.9, {
+              damping: 15,
+            });
+          }}
+          onPressOut={() => {
+            menuScale.value = withSpring(1, {
+              damping: 15,
+            });
+          }}
           onPress={() => {
             if (Platform.OS === "android") {
               Alert.alert(group.name, undefined, [
-                { text: "View Members", onPress: () => router.push(`/group/${id}/members` as any) },
-                { text: "Group Info", onPress: () => router.push(`/group/${id}/info` as any) },
-                { text: "Leave Group", style: "destructive", onPress: () => {
-                  Alert.alert("Leave Group", "Are you sure?", [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Leave", style: "destructive", onPress: async () => { await leaveGroupMutation({ groupId }); router.back(); } },
-                  ]);
-                }},
+                {
+                  text: "View Members",
+                  onPress: () =>
+                    router.push(
+                      `/group/${id}/members` as any,
+                    ),
+                },
+                {
+                  text: "Group Info",
+                  onPress: () =>
+                    router.push(`/group/${id}/info` as any),
+                },
+                {
+                  text: "Leave Group",
+                  style: "destructive",
+                  onPress: () => {
+                    Alert.alert(
+                      "Leave Group",
+                      "Are you sure?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Leave",
+                          style: "destructive",
+                          onPress: async () => {
+                            await leaveGroupMutation({
+                              groupId,
+                            });
+                            router.back();
+                          },
+                        },
+                      ],
+                    );
+                  },
+                },
                 { text: "Cancel", style: "cancel" },
               ]);
             } else {
               setMenuOpen(true);
-              setTimeout(() => menuRef.current?.snapToIndex(0), 100);
+              setTimeout(
+                () => menuRef.current?.snapToIndex(0),
+                100,
+              );
             }
           }}
         >
-          <Animated.View style={[styles.headerButton, menuButtonStyle]}>
-            <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.text} />
+          <Animated.View
+            style={[styles.headerButton, menuButtonStyle]}
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={18}
+              color={theme.colors.text}
+            />
           </Animated.View>
         </Pressable>
       </View>
 
-      <LinearGradient colors={["#6C5DD3", "#8676FF", "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.headerAccent} />
+      <LinearGradient
+        colors={["#6C5DD3", "#8676FF", "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerAccent}
+      />
 
       {/* Pinned Banner */}
       {pinnedMessage && (
         <Animated.View entering={FadeInDown.duration(300)}>
           <Pressable
-            onPress={() => { setPinnedExpanded(true); setTimeout(() => pinnedRef.current?.snapToIndex(0), 100); }}
+            onPress={() => {
+              setPinnedExpanded(true);
+              setTimeout(
+                () => pinnedRef.current?.snapToIndex(0),
+                100,
+              );
+            }}
             style={styles.pinnedBanner}
           >
-            <Ionicons name="pin" size={12} color={theme.colors.primary} />
-            <Typography variant="caption" weight="semibold" color="primary">Pinned</Typography>
-            <Typography variant="body" color="textMuted" numberOfLines={1} style={{ flex: 1, fontSize: 13 }}>
+            <Ionicons
+              name="pin"
+              size={12}
+              color={theme.colors.primary}
+            />
+            <Typography
+              variant="caption"
+              weight="semibold"
+              color="primary"
+            >
+              Pinned
+            </Typography>
+            <Typography
+              variant="body"
+              color="textMuted"
+              numberOfLines={1}
+              style={{ flex: 1, fontSize: 13 }}
+            >
               {pinnedMessage.content}
             </Typography>
-            <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
+            <Ionicons
+              name="chevron-forward"
+              size={14}
+              color={theme.colors.textMuted}
+            />
           </Pressable>
         </Animated.View>
       )}
@@ -1348,11 +2078,19 @@ export default function GroupChatScreen() {
         data={processedMessages}
         keyExtractor={(item) => item.key}
         style={styles.messagesList}
-        contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 12, paddingBottom: 20, flexGrow: 1 }}
-        ListEmptyComponent={messages?.length === 0 ? renderEmpty : null}
+        contentContainerStyle={{
+          paddingHorizontal: 0,
+          paddingTop: 12,
+          paddingBottom: 20,
+          flexGrow: 1,
+        }}
+        ListEmptyComponent={
+          messages?.length === 0 ? renderEmpty : null
+        }
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
-          if (item.type === "date") return <DateSeparator date={item.date} />;
+          if (item.type === "date")
+            return <DateSeparator date={item.date} />;
           return (
             <MessageBubble
               message={item.message}
@@ -1362,9 +2100,15 @@ export default function GroupChatScreen() {
               isFirstInGroup={item.isFirstInGroup}
               isLastInGroup={item.isLastInGroup}
               currentUserId={currentUser._id}
-              onLongPress={() => handleMessageLongPress(item.message)}
-              onImagePress={(url) => setFullscreenImage(url)}
-              onReactionPress={(emoji) => handleReaction(emoji, item.message._id)}
+              onLongPress={() =>
+                handleMessageLongPress(item.message)
+              }
+              onImagePress={(url) =>
+                setFullscreenImage(url)
+              }
+              onReactionPress={(emoji) =>
+                handleReaction(emoji, item.message._id)
+              }
             />
           );
         }}
@@ -1374,27 +2118,77 @@ export default function GroupChatScreen() {
       <View style={styles.inputContainer}>
         {/* Image picker button */}
         <Pressable
-          onPressIn={() => { imagePickerScale.value = withSpring(0.88, { damping: 15 }); }}
-          onPressOut={() => { imagePickerScale.value = withSpring(1, { damping: 15 }); }}
+          onPressIn={() => {
+            imagePickerScale.value = withSpring(0.88, {
+              damping: 15,
+            });
+          }}
+          onPressOut={() => {
+            imagePickerScale.value = withSpring(1, {
+              damping: 15,
+            });
+          }}
           onPress={handlePickImage}
         >
-          <Animated.View style={[styles.iconButton, imagePickerStyle]}>
-            <Ionicons name="image-outline" size={20} color={theme.colors.primary} />
+          <Animated.View
+            style={[styles.iconButton, imagePickerStyle]}
+          >
+            <Ionicons
+              name="image-outline"
+              size={20}
+              color={theme.colors.primary}
+            />
           </Animated.View>
         </Pressable>
 
         {/* Admin announcement button */}
         {isAdmin && (
           <Pressable
-            onPressIn={() => { announceBtnScale.value = withSpring(0.9, { damping: 15 }); }}
-            onPressOut={() => { announceBtnScale.value = withSpring(1, { damping: 15 }); }}
-            onPress={() => { setAnnouncementOpen(true); setTimeout(() => announcementRef.current?.snapToIndex(0), 100); }}
+            onPressIn={() => {
+              announceBtnScale.value = withSpring(0.9, {
+                damping: 15,
+              });
+            }}
+            onPressOut={() => {
+              announceBtnScale.value = withSpring(1, {
+                damping: 15,
+              });
+            }}
+            onPress={() => {
+              setAnnouncementOpen(true);
+              setTimeout(
+                () =>
+                  announcementRef.current?.snapToIndex(0),
+                100,
+              );
+            }}
           >
-            <Animated.View style={[styles.iconButton, announceBtnStyle]}>
-              <Ionicons name="megaphone-outline" size={18} color={theme.colors.primary} />
+            <Animated.View
+              style={[styles.iconButton, announceBtnStyle]}
+            >
+              <Ionicons
+                name="megaphone-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
             </Animated.View>
           </Pressable>
         )}
+
+        {/* AI Assistant button */}
+        <Pressable
+          onPressIn={() => {
+            aiBtnScale.value = withSpring(0.9, { damping: 15 });
+          }}
+          onPressOut={() => {
+            aiBtnScale.value = withSpring(1, { damping: 15 });
+          }}
+          onPress={handleOpenAIChat}
+        >
+          <Animated.View style={[styles.iconButton, aiBtnStyle]}>
+            <Ionicons name="sparkles-outline" size={18} color={theme.colors.primary} />
+          </Animated.View>
+        </Pressable>
 
         {/* Text input */}
         <View style={styles.textInputWrapper}>
@@ -1411,20 +2205,52 @@ export default function GroupChatScreen() {
 
         {/* Send button */}
         <Animated.View style={sendButtonStyle}>
-          <Pressable onPress={handleSend} disabled={!canSend} style={styles.sendButton}>
+          <Pressable
+            onPress={handleSend}
+            disabled={!canSend}
+            style={styles.sendButton}
+          >
             {canSend ? (
               <LinearGradient
                 colors={["#6C5DD3", "#8676FF"]}
                 style={{
-                  width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center",
-                  ...Platform.select({ ios: { shadowColor: "#6C5DD3", shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } } }),
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...Platform.select({
+                    ios: {
+                      shadowColor: "#6C5DD3",
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 2 },
+                    },
+                  }),
                 }}
               >
-                <Ionicons name="send" size={17} color="#FFFFFF" />
+                <Ionicons
+                  name="send"
+                  size={17}
+                  color="#FFFFFF"
+                />
               </LinearGradient>
             ) : (
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="send" size={17} color={theme.colors.textMuted} />
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="send"
+                  size={17}
+                  color={theme.colors.textMuted}
+                />
               </View>
             )}
           </Pressable>
@@ -1432,38 +2258,133 @@ export default function GroupChatScreen() {
       </View>
 
       {/* Success Toast */}
-      <SuccessToast message={toastMessage ?? ""} visible={!!toastMessage} />
+      <SuccessToast
+        message={toastMessage ?? ""}
+        visible={!!toastMessage}
+      />
 
       {/* Fullscreen Image Viewer */}
-      <FullscreenImageViewer visible={!!fullscreenImage} imageUrl={fullscreenImage} onClose={() => setFullscreenImage(null)} />
+      <FullscreenImageViewer
+        visible={!!fullscreenImage}
+        imageUrl={fullscreenImage}
+        onClose={() => setFullscreenImage(null)}
+      />
 
       {/* Menu Bottom Sheet (iOS only) */}
       {menuOpen && Platform.OS === "ios" && (
-        <BottomSheet ref={menuRef} index={0} snapPoints={["48%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) setMenuOpen(false); }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
+        <BottomSheet
+          ref={menuRef}
+          index={0}
+          snapPoints={["48%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) setMenuOpen(false);
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBg}
+          handleIndicatorStyle={styles.sheetHandle}
+        >
           <BottomSheetView>
-            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/members` as any); }} style={styles.menuItem}>
-              <Ionicons name="people-outline" size={20} color={theme.colors.primary} />
-              <Typography variant="body" color="text">View Members</Typography>
+            <Pressable
+              onPress={() => {
+                menuRef.current?.close();
+                router.push(`/group/${id}/members` as any);
+              }}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="people-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
+              <Typography variant="body" color="text">
+                View Members
+              </Typography>
             </Pressable>
-            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/info` as any); }} style={styles.menuItem}>
-              <Ionicons name="information-circle-outline" size={20} color={theme.colors.primary} />
-              <Typography variant="body" color="text">Group Info</Typography>
+            <Pressable
+              onPress={() => {
+                menuRef.current?.close();
+                router.push(`/group/${id}/info` as any);
+              }}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
+              <Typography variant="body" color="text">
+                Group Info
+              </Typography>
             </Pressable>
-            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/quiz` as any); }} style={styles.menuItem}>
-              <Ionicons name="help-circle-outline" size={20} color={theme.colors.primary} />
-              <Typography variant="body" color="text">Quizzes</Typography>
+            <Pressable
+              onPress={() => {
+                menuRef.current?.close();
+                router.push(`/group/${id}/quiz` as any);
+              }}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
+              <Typography variant="body" color="text">
+                Quizzes
+              </Typography>
             </Pressable>
-            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/challenges` as any); }} style={styles.menuItem}>
-              <Ionicons name="trophy-outline" size={20} color={theme.colors.primary} />
-              <Typography variant="body" color="text">Challenges</Typography>
+            <Pressable
+              onPress={() => {
+                menuRef.current?.close();
+                router.push(
+                  `/group/${id}/challenges` as any,
+                );
+              }}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="trophy-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
+              <Typography variant="body" color="text">
+                Challenges
+              </Typography>
             </Pressable>
-            <Pressable onPress={() => { menuRef.current?.close(); router.push(`/group/${id}/leaderboard` as any); }} style={styles.menuItem}>
-              <Ionicons name="podium-outline" size={20} color={theme.colors.primary} />
-              <Typography variant="body" color="text">Leaderboard</Typography>
+            <Pressable
+              onPress={() => {
+                menuRef.current?.close();
+                router.push(
+                  `/group/${id}/leaderboard` as any,
+                );
+              }}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="podium-outline"
+                size={20}
+                color={theme.colors.primary}
+              />
+              <Typography variant="body" color="text">
+                Leaderboard
+              </Typography>
             </Pressable>
-            <Pressable onPress={handleLeave} style={styles.menuItem}>
-              <Ionicons name="exit-outline" size={20} color="#EF4444" />
-              <Typography variant="body" style={{ color: "#EF4444" }}>Leave Group</Typography>
+            <Pressable
+              onPress={handleLeave}
+              style={styles.menuItem}
+            >
+              <Ionicons
+                name="exit-outline"
+                size={20}
+                color="#EF4444"
+              />
+              <Typography
+                variant="body"
+                style={{ color: "#EF4444" }}
+              >
+                Leave Group
+              </Typography>
             </Pressable>
           </BottomSheetView>
         </BottomSheet>
@@ -1471,26 +2392,80 @@ export default function GroupChatScreen() {
 
       {/* Message Action Sheet with Emoji Bar */}
       {actionMessageId && (
-        <BottomSheet ref={actionRef} index={0} snapPoints={["26%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) { setActionMessageId(null); setShowEmojiBar(false); } }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
+        <BottomSheet
+          ref={actionRef}
+          index={0}
+          snapPoints={["26%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) {
+              setActionMessageId(null);
+              setShowEmojiBar(false);
+            }
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBg}
+          handleIndicatorStyle={styles.sheetHandle}
+        >
           <BottomSheetView style={{ position: "relative" }}>
-            <EmojiReactionBar visible={showEmojiBar} onSelectEmoji={(emoji) => handleReaction(emoji)} onClose={() => setShowEmojiBar(false)} />
+            <EmojiReactionBar
+              visible={showEmojiBar}
+              onSelectEmoji={(emoji) =>
+                handleReaction(emoji)
+              }
+              onClose={() => setShowEmojiBar(false)}
+            />
 
             {(isSelectedOwn || isAdmin) && (
-              <Pressable onPress={handleDeleteMessage} style={styles.menuItem}>
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                <Typography variant="body" style={{ color: "#EF4444" }}>Delete Message</Typography>
+              <Pressable
+                onPress={handleDeleteMessage}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="#EF4444"
+                />
+                <Typography
+                  variant="body"
+                  style={{ color: "#EF4444" }}
+                >
+                  Delete Message
+                </Typography>
               </Pressable>
             )}
             {isAdmin && !isSelectedOwn && (
-              <Pressable onPress={handlePinMessage} style={styles.menuItem}>
-                <Ionicons name="pin-outline" size={20} color={theme.colors.primary} />
-                <Typography variant="body" color="primary">Pin Message</Typography>
+              <Pressable
+                onPress={handlePinMessage}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="pin-outline"
+                  size={20}
+                  color={theme.colors.primary}
+                />
+                <Typography variant="body" color="primary">
+                  Pin Message
+                </Typography>
               </Pressable>
             )}
             {!isSelectedOwn && (
-              <Pressable onPress={handleOpenReport} style={styles.menuItem}>
-                <Ionicons name="flag-outline" size={20} color="#EF4444" />
-                <Typography variant="body" style={{ color: "#EF4444" }}>Report Message</Typography>
+              <Pressable
+                onPress={handleOpenReport}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="flag-outline"
+                  size={20}
+                  color="#EF4444"
+                />
+                <Typography
+                  variant="body"
+                  style={{ color: "#EF4444" }}
+                >
+                  Report Message
+                </Typography>
               </Pressable>
             )}
           </BottomSheetView>
@@ -1499,13 +2474,48 @@ export default function GroupChatScreen() {
 
       {/* Report Bottom Sheet */}
       {reportOpen && (
-        <BottomSheet ref={reportRef} index={0} snapPoints={["55%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) { setReportOpen(false); setActionMessageId(null); } }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-            <Typography variant="body" weight="bold" color="text" style={{ fontSize: 16 }}>Report Message</Typography>
-            <Typography variant="caption" color="textMuted" style={{ marginBottom: 16 }}>Why are you reporting this?</Typography>
+        <BottomSheet
+          ref={reportRef}
+          index={0}
+          snapPoints={["55%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) {
+              setReportOpen(false);
+              setActionMessageId(null);
+            }
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBg}
+          handleIndicatorStyle={styles.sheetHandle}
+        >
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
+            <Typography
+              variant="body"
+              weight="bold"
+              color="text"
+              style={{ fontSize: 16 }}
+            >
+              Report Message
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginBottom: 16 }}
+            >
+              Why are you reporting this?
+            </Typography>
 
             {REPORT_REASONS.map((reason, index) => (
-              <Animated.View key={reason} entering={FadeInDown.duration(200).delay(index * 40)}>
+              <Animated.View
+                key={reason}
+                entering={FadeInDown.duration(200).delay(
+                  index * 40,
+                )}
+              >
                 <Pressable
                   onPress={() => setSelectedReason(reason)}
                   style={{
@@ -1516,13 +2526,30 @@ export default function GroupChatScreen() {
                     paddingHorizontal: 4,
                     borderBottomWidth: 1,
                     borderBottomColor: theme.colors.border,
-                    backgroundColor: selectedReason === reason ? "rgba(255,255,255,0.04)" : "transparent",
+                    backgroundColor:
+                      selectedReason === reason
+                        ? "rgba(255,255,255,0.04)"
+                        : "transparent",
                   }}
                 >
-                  <Typography variant="body" style={{ color: selectedReason === reason ? theme.colors.primary : theme.colors.text }}>
+                  <Typography
+                    variant="body"
+                    style={{
+                      color:
+                        selectedReason === reason
+                          ? theme.colors.primary
+                          : theme.colors.text,
+                    }}
+                  >
                     {reason}
                   </Typography>
-                  {selectedReason === reason && <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary} />}
+                  {selectedReason === reason && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                  )}
                 </Pressable>
               </Animated.View>
             ))}
@@ -1530,11 +2557,29 @@ export default function GroupChatScreen() {
             <Pressable
               onPress={handleSubmitReport}
               disabled={!selectedReason}
-              style={[styles.announcementSubmit, !selectedReason && { opacity: 0.5 }]}
+              style={[
+                styles.announcementSubmit,
+                !selectedReason && { opacity: 0.5 },
+              ]}
             >
-              <LinearGradient colors={["#6C5DD3", "#8676FF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.announcementGradient}>
-                <Ionicons name="flag" size={16} color="#FFFFFF" />
-                <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>Submit Report</Typography>
+              <LinearGradient
+                colors={["#6C5DD3", "#8676FF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.announcementGradient}
+              >
+                <Ionicons
+                  name="flag"
+                  size={16}
+                  color="#FFFFFF"
+                />
+                <Typography
+                  variant="body"
+                  weight="bold"
+                  style={{ color: "#FFFFFF" }}
+                >
+                  Submit Report
+                </Typography>
               </LinearGradient>
             </Pressable>
           </BottomSheetView>
@@ -1543,15 +2588,48 @@ export default function GroupChatScreen() {
 
       {/* Image Preview Bottom Sheet */}
       {imagePreviewOpen && (
-        <BottomSheet ref={imagePreviewRef} index={0} snapPoints={["55%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) { setImagePreviewOpen(false); setSelectedImage(null); } }} backdropComponent={renderBackdrop} backgroundStyle={{ backgroundColor: "#1C1C1E", borderTopLeftRadius: 20, borderTopRightRadius: 20 }} handleIndicatorStyle={styles.sheetHandle}>
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 4 }}>
+        <BottomSheet
+          ref={imagePreviewRef}
+          index={0}
+          snapPoints={["55%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) {
+              setImagePreviewOpen(false);
+              setSelectedImage(null);
+            }
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{
+            backgroundColor: "#1C1C1E",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+          }}
+          handleIndicatorStyle={styles.sheetHandle}
+        >
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
             {selectedImage && (
-              <Animated.View entering={FadeIn.duration(400)}>
-                <Image source={{ uri: selectedImage }} style={{ width: "100%", height: 200, borderRadius: 16 }} contentFit="cover" />
+              <Animated.View
+                entering={FadeIn.duration(400)}
+              >
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={{
+                    width: "100%",
+                    height: 200,
+                    borderRadius: 16,
+                  }}
+                  contentFit="cover"
+                />
               </Animated.View>
             )}
 
-            <Animated.View entering={FadeInUp.duration(300).delay(200)}>
+            <Animated.View
+              entering={FadeInUp.duration(300).delay(200)}
+            >
               <BottomSheetTextInput
                 style={{
                   marginTop: 16,
@@ -1563,27 +2641,80 @@ export default function GroupChatScreen() {
                   color: theme.colors.text,
                 }}
                 placeholder="Add a caption..."
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={
+                  theme.colors.textMuted
+                }
                 value={imageCaption}
                 onChangeText={setImageCaption}
               />
 
-              <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 12,
+                  marginTop: 16,
+                }}
+              >
                 <Pressable
-                  onPress={() => { imagePreviewRef.current?.close(); setSelectedImage(null); setImagePreviewOpen(false); }}
-                  style={{ flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" }}
+                  onPress={() => {
+                    imagePreviewRef.current?.close();
+                    setSelectedImage(null);
+                    setImagePreviewOpen(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: 48,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <Typography variant="body" color="text">Cancel</Typography>
+                  <Typography variant="body" color="text">
+                    Cancel
+                  </Typography>
                 </Pressable>
 
-                <Pressable onPress={handleSendImage} disabled={uploading} style={{ flex: 1, height: 48, borderRadius: 14, overflow: "hidden" }}>
-                  <LinearGradient colors={["#6C5DD3", "#8676FF"]} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Pressable
+                  onPress={handleSendImage}
+                  disabled={uploading}
+                  style={{
+                    flex: 1,
+                    height: 48,
+                    borderRadius: 14,
+                    overflow: "hidden",
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#6C5DD3", "#8676FF"]}
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
                     {uploading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <ActivityIndicator
+                        color="#FFFFFF"
+                        size="small"
+                      />
                     ) : (
                       <>
-                        <Ionicons name="send" size={16} color="#FFFFFF" />
-                        <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>Send Image</Typography>
+                        <Ionicons
+                          name="send"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                        <Typography
+                          variant="body"
+                          weight="bold"
+                          style={{ color: "#FFFFFF" }}
+                        >
+                          Send Image
+                        </Typography>
                       </>
                     )}
                   </LinearGradient>
@@ -1596,15 +2727,75 @@ export default function GroupChatScreen() {
 
       {/* Announcement Bottom Sheet */}
       {announcementOpen && (
-        <BottomSheet ref={announcementRef} index={0} snapPoints={["45%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) setAnnouncementOpen(false); }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle} keyboardBehavior="interactive" keyboardBlurBehavior="restore">
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-            <Typography variant="body" weight="bold" color="text" style={{ fontSize: 16 }}>Send Announcement</Typography>
-            <Typography variant="caption" color="textMuted" style={{ marginBottom: 16 }}>Pinned and visible to all members</Typography>
-            <BottomSheetTextInput style={styles.announcementInput} placeholder="Write your announcement..." placeholderTextColor={theme.colors.textMuted} value={announcementText} onChangeText={setAnnouncementText} multiline />
-            <Pressable onPress={handleSendAnnouncement} disabled={!announcementText.trim()} style={[styles.announcementSubmit, !announcementText.trim() && { opacity: 0.5 }]}>
-              <LinearGradient colors={["#6C5DD3", "#8676FF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.announcementGradient}>
-                <Ionicons name="megaphone-outline" size={16} color="#FFFFFF" />
-                <Typography variant="body" weight="bold" style={{ color: "#FFFFFF" }}>Send Announcement</Typography>
+        <BottomSheet
+          ref={announcementRef}
+          index={0}
+          snapPoints={["45%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) setAnnouncementOpen(false);
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBg}
+          handleIndicatorStyle={styles.sheetHandle}
+          keyboardBehavior="interactive"
+          keyboardBlurBehavior="restore"
+        >
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
+            <Typography
+              variant="body"
+              weight="bold"
+              color="text"
+              style={{ fontSize: 16 }}
+            >
+              Send Announcement
+            </Typography>
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginBottom: 16 }}
+            >
+              Pinned and visible to all members
+            </Typography>
+            <BottomSheetTextInput
+              style={styles.announcementInput}
+              placeholder="Write your announcement..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={announcementText}
+              onChangeText={setAnnouncementText}
+              multiline
+            />
+            <Pressable
+              onPress={handleSendAnnouncement}
+              disabled={!announcementText.trim()}
+              style={[
+                styles.announcementSubmit,
+                !announcementText.trim() && {
+                  opacity: 0.5,
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={["#6C5DD3", "#8676FF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.announcementGradient}
+              >
+                <Ionicons
+                  name="megaphone-outline"
+                  size={16}
+                  color="#FFFFFF"
+                />
+                <Typography
+                  variant="body"
+                  weight="bold"
+                  style={{ color: "#FFFFFF" }}
+                >
+                  Send Announcement
+                </Typography>
               </LinearGradient>
             </Pressable>
           </BottomSheetView>
@@ -1613,28 +2804,584 @@ export default function GroupChatScreen() {
 
       {/* Pinned Message Expanded */}
       {pinnedExpanded && pinnedMessage && (
-        <BottomSheet ref={pinnedRef} index={0} snapPoints={["40%"]} enablePanDownToClose enableDynamicSizing={false} onChange={(i) => { if (i === -1) setPinnedExpanded(false); }} backdropComponent={renderBackdrop} backgroundStyle={styles.sheetBg} handleIndicatorStyle={styles.sheetHandle}>
-          <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <Ionicons name="pin" size={18} color={theme.colors.primary} />
-              <Typography variant="body" weight="bold" color="text" style={{ fontSize: 16 }}>Pinned Message</Typography>
+        <BottomSheet
+          ref={pinnedRef}
+          index={0}
+          snapPoints={["40%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) setPinnedExpanded(false);
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBg}
+          handleIndicatorStyle={styles.sheetHandle}
+        >
+          <BottomSheetView
+            style={{ paddingHorizontal: 20, paddingTop: 4 }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons
+                name="pin"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Typography
+                variant="body"
+                weight="bold"
+                color="text"
+                style={{ fontSize: 16 }}
+              >
+                Pinned Message
+              </Typography>
             </View>
             {pinnedMessage.sender && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 12,
+                }}
+              >
                 {pinnedMessage.sender.profileImage ? (
-                  <Image source={{ uri: pinnedMessage.sender.profileImage }} style={{ width: 24, height: 24, borderRadius: 12 }} contentFit="cover" />
+                  <Image
+                    source={{
+                      uri: pinnedMessage.sender
+                        .profileImage,
+                    }}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                    }}
+                    contentFit="cover"
+                  />
                 ) : (
-                  <LinearGradient colors={["#6C5DD3", "#8676FF"]} style={{ width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="person" size={10} color="#FFFFFF" />
+                  <LinearGradient
+                    colors={["#6C5DD3", "#8676FF"]}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={10}
+                      color="#FFFFFF"
+                    />
                   </LinearGradient>
                 )}
-                <Typography variant="caption" color="textMuted">{pinnedMessage.sender.fullname} • {formatTime(pinnedMessage.createdAt)}</Typography>
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
+                  {pinnedMessage.sender.fullname} •{" "}
+                  {formatTime(pinnedMessage.createdAt)}
+                </Typography>
               </View>
             )}
-            <Typography variant="body" color="text" style={{ lineHeight: 22 }}>{pinnedMessage.content}</Typography>
+            <Typography
+              variant="body"
+              color="text"
+              style={{ lineHeight: 22 }}
+            >
+              {pinnedMessage.content}
+            </Typography>
           </BottomSheetView>
         </BottomSheet>
       )}
-    </KeyboardAvoidingView>
+
+      {/* AI Chat Bottom Sheet */}
+      {aiChatOpen && (
+        <BottomSheet
+          ref={aiChatRef}
+          index={0}
+          snapPoints={["85%", "95%"]}
+          enablePanDownToClose
+          enableDynamicSizing={false}
+          onChange={(i) => {
+            if (i === -1) {
+              setAiChatOpen(false);
+              setAiKeyboardHeight(0);
+            }
+          }}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{ backgroundColor: "#141414" }}
+          handleIndicatorStyle={{
+            backgroundColor: "rgba(255,255,255,0.3)",
+            width: 36,
+            height: 4
+          }}
+          keyboardBehavior="extend"
+          android_keyboardInputMode="adjustResize"
+        >
+          <View style={{ flex: 1 }}>
+            {/* Header */}
+            <View style={{
+              paddingHorizontal: 20,
+              paddingTop: 8,
+              paddingBottom: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(255,255,255,0.08)"
+            }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {/* AI Avatar with glow */}
+                <View style={{
+                  shadowColor: "#6C5DD3",
+                  shadowOpacity: 0.5,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 0 },
+                  elevation: 8,
+                }}>
+                  <LinearGradient
+                    colors={["#6C5DD3", "#8676FF"]}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 19,
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+                  </LinearGradient>
+                </View>
+
+                {/* Title and subtitle */}
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Typography variant="body" weight="semibold" style={{ color: "#FFFFFF" }}>
+                    AI Career Assistant
+                  </Typography>
+                  <Typography variant="caption" color="textMuted" numberOfLines={1}>
+                    {group?.name ? `Expert on ${group.name}` : "Career guidance"}
+                  </Typography>
+                </View>
+
+                {/* Queries remaining pill */}
+                <View style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "rgba(160,166,255,0.15)",
+                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderWidth: 1,
+                  borderColor: "rgba(160,166,255,0.3)",
+                  gap: 4,
+                }}>
+                  <Ionicons name="flash" size={10} color={theme.colors.primary} />
+                  <Typography variant="caption" color="primary" weight="medium">
+                    {remainingAIQueries ?? 0} / 10
+                  </Typography>
+                </View>
+              </View>
+            </View>
+
+            {/* Chat messages */}
+            <BottomSheetFlatList
+              ref={aiChatListRef as any}
+              data={aiMessages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item, index }) => {
+                const isUser = item.type === "user";
+                const showAiAvatar = !isUser && (index === 0 || aiMessages[index - 1]?.type === "user");
+                const formatMessageTime = (ts?: number) => {
+                  if (!ts) return "";
+                  const d = new Date(ts);
+                  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                };
+
+                return (
+                  <Animated.View
+                    entering={FadeIn.duration(200)}
+                    style={{
+                      marginBottom: isUser ? 16 : 20,
+                      paddingHorizontal: 16,
+                    }}
+                  >
+                    {isUser ? (
+                      // USER MESSAGE (right aligned)
+                      <View style={{ alignItems: "flex-end" }}>
+                        <View style={{
+                          backgroundColor: "rgba(108, 93, 211, 0.25)",
+                          borderWidth: 1,
+                          borderColor: "rgba(108, 93, 211, 0.4)",
+                          borderRadius: 20,
+                          borderBottomRightRadius: 6,
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          maxWidth: SCREEN_WIDTH * 0.78,
+                        }}>
+                          <Typography variant="body" style={{ color: "#FFFFFF", lineHeight: 22 }}>
+                            {item.text}
+                          </Typography>
+                        </View>
+                        {item.timestamp && (
+                          <Typography
+                            variant="caption"
+                            color="textMuted"
+                            style={{ fontSize: 10, marginTop: 4 }}
+                          >
+                            {formatMessageTime(item.timestamp)}
+                          </Typography>
+                        )}
+                      </View>
+                    ) : (
+                      // AI MESSAGE (left aligned)
+                      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+                        {/* AI Avatar or spacer */}
+                        {showAiAvatar ? (
+                          <LinearGradient
+                            colors={["#6C5DD3", "#8676FF"]}
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: 16,
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                          </LinearGradient>
+                        ) : (
+                          <View style={{ width: 32 }} />
+                        )}
+
+                        <View style={{ flex: 1 }}>
+                          {showAiAvatar && (
+                            <Typography
+                              variant="caption"
+                              color="primary"
+                              weight="semibold"
+                              style={{ marginBottom: 6 }}
+                            >
+                              AI Assistant
+                            </Typography>
+                          )}
+
+                          <View style={{
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            borderWidth: 1,
+                            borderColor: "rgba(255,255,255,0.08)",
+                            borderRadius: 20,
+                            borderTopLeftRadius: showAiAvatar ? 6 : 20,
+                            paddingHorizontal: 16,
+                            paddingVertical: 14,
+                          }}>
+                            <Typography variant="body" style={{ color: "#FFFFFF", lineHeight: 24 }}>
+                              {item.text}
+                            </Typography>
+                          </View>
+
+                          {/* Action row */}
+                          <View style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 8,
+                            gap: 16
+                          }}>
+                            <Pressable
+                              onPress={() => handleCopyAIMessage(item.text, item.id)}
+                              hitSlop={8}
+                            >
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                <Ionicons
+                                  name={copiedMessageId === item.id ? "checkmark" : "copy-outline"}
+                                  size={14}
+                                  color={copiedMessageId === item.id ? "#22C55E" : theme.colors.textMuted}
+                                />
+                                {copiedMessageId === item.id && (
+                                  <Typography variant="caption" style={{ color: "#22C55E", fontSize: 11 }}>
+                                    Copied!
+                                  </Typography>
+                                )}
+                              </View>
+                            </Pressable>
+
+                            {item.timestamp && (
+                              <Typography
+                                variant="caption"
+                                color="textMuted"
+                                style={{ fontSize: 10, marginLeft: "auto" }}
+                              >
+                                {formatMessageTime(item.timestamp)}
+                              </Typography>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </Animated.View>
+                );
+              }}
+              ListEmptyComponent={
+                <Animated.View
+                  entering={FadeIn.duration(500).delay(200)}
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingHorizontal: 24,
+                    paddingTop: 60,
+                  }}
+                >
+                  {/* Animated sparkle icon */}
+                  <View style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(108, 93, 211, 0.15)",
+                  }}>
+                    <Ionicons name="sparkles" size={36} color={theme.colors.primary} />
+                  </View>
+
+                  <Typography variant="h3" weight="bold" style={{ marginTop: 20, color: "#FFFFFF" }}>
+                    Ask me anything
+                  </Typography>
+                  <Typography
+                    variant="body"
+                    color="textMuted"
+                    style={{ marginTop: 8, textAlign: "center", lineHeight: 22 }}
+                  >
+                    {group?.name
+                      ? `I know all about ${group.name}.\nAsk me about exams, salary, preparation...`
+                      : "Ask me about career paths, exams,\nsalary ranges, and preparation tips..."
+                    }
+                  </Typography>
+
+                  {/* Suggested question chips */}
+                  <View style={{ marginTop: 24, gap: 10, width: "100%" }}>
+                    {[
+                      { text: "What exams do I need?", emoji: "📝" },
+                      { text: "What's the salary range?", emoji: "💰" },
+                      { text: "How do I start preparing?", emoji: "🎯" },
+                      { text: "What skills are required?", emoji: "🛠️" },
+                    ].map((chip, idx) => (
+                      <Animated.View
+                        key={chip.text}
+                        entering={FadeInUp.duration(300).delay(300 + idx * 80)}
+                      >
+                        <Pressable
+                          onPress={() => handleAIChipPress(chip.text)}
+                          style={({ pressed }) => ({
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            borderWidth: 1,
+                            borderColor: "rgba(255,255,255,0.12)",
+                            borderRadius: 20,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            transform: [{ scale: pressed ? 0.96 : 1 }],
+                          })}
+                        >
+                          <Typography variant="body" style={{ fontSize: 14 }}>
+                            {chip.emoji}
+                          </Typography>
+                          <Typography variant="body" style={{ color: "#FFFFFF", fontSize: 14 }}>
+                            {chip.text}
+                          </Typography>
+                        </Pressable>
+                      </Animated.View>
+                    ))}
+                  </View>
+                </Animated.View>
+              }
+              contentContainerStyle={{
+                paddingTop: 12,
+                paddingBottom: 12,
+                flexGrow: 1,
+              }}
+              showsVerticalScrollIndicator={false}
+            />
+
+            {/* Typing indicator */}
+            {aiLoading && (
+              <Animated.View
+                entering={FadeIn.duration(200)}
+                exiting={FadeOut.duration(200)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  paddingHorizontal: 16,
+                  paddingBottom: 12,
+                  gap: 10,
+                }}
+              >
+                <LinearGradient
+                  colors={["#6C5DD3", "#8676FF"]}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                </LinearGradient>
+                <View style={{
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.08)",
+                  borderRadius: 20,
+                  borderTopLeftRadius: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  flexDirection: "row",
+                  gap: 4,
+                }}>
+                  {[0, 1, 2].map((i) => (
+                    <Animated.View
+                      key={i}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: theme.colors.textMuted,
+                      }}
+                    />
+                  ))}
+                </View>
+              </Animated.View>
+            )}
+
+            {/* Rate limit banner */}
+            {(remainingAIQueries ?? 0) <= 0 && (
+              <Animated.View
+                entering={FadeIn.duration(200)}
+                style={{
+                  backgroundColor: "rgba(239,68,68,0.12)",
+                  borderWidth: 1,
+                  borderColor: "rgba(239,68,68,0.3)",
+                  borderRadius: 12,
+                  padding: 12,
+                  marginHorizontal: 12,
+                  marginBottom: 8,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
+                <Typography variant="caption" style={{ color: "#EF4444", flex: 1 }}>
+                  Daily limit reached. Resets tomorrow at midnight.
+                </Typography>
+              </Animated.View>
+            )}
+
+            {/* Input bar */}
+            <View style={{
+              backgroundColor: "#1C1C1E",
+              borderTopWidth: 1,
+              borderTopColor: "rgba(255,255,255,0.08)",
+              paddingHorizontal: 12,
+              paddingTop: 10,
+              paddingBottom: aiKeyboardHeight > 0 ? aiKeyboardHeight + 10 : insets.bottom + 10,
+              opacity: (remainingAIQueries ?? 0) <= 0 ? 0.5 : 1,
+            }}>
+              <View style={{
+                flexDirection: "row",
+                alignItems: "flex-end",
+                gap: 8,
+              }}>
+                {/* Text input wrapper */}
+                <View style={{
+                  flex: 1,
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.12)",
+                  flexDirection: "row",
+                  alignItems: "flex-end",
+                  paddingLeft: 16,
+                  paddingRight: 8,
+                  paddingVertical: 8,
+                }}>
+                  <BottomSheetTextInput
+                    style={{
+                      flex: 1,
+                      color: "#FFFFFF",
+                      fontSize: 15,
+                      lineHeight: 22,
+                      maxHeight: 120,
+                      paddingTop: 0,
+                      paddingBottom: 0,
+                    }}
+                    placeholder="Ask about this career..."
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={aiInput}
+                    onChangeText={setAiInput}
+                    multiline
+                    editable={(remainingAIQueries ?? 0) > 0}
+                  />
+                </View>
+
+                {/* Send button */}
+                <Pressable
+                  onPress={handleAskAI}
+                  disabled={!aiInput.trim() || aiLoading || (remainingAIQueries ?? 0) <= 0}
+                  style={({ pressed }) => ({
+                    transform: [{ scale: pressed && aiInput.trim() && !aiLoading ? 0.85 : 1 }],
+                  })}
+                >
+                  {aiInput.trim() && !aiLoading && (remainingAIQueries ?? 0) > 0 ? (
+                    <View style={{
+                      shadowColor: "#6C5DD3",
+                      shadowOpacity: 0.5,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 0 },
+                      elevation: 8,
+                    }}>
+                      <LinearGradient
+                        colors={["#6C5DD3", "#8676FF"]}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          alignItems: "center",
+                          justifyContent: "center"
+                        }}
+                      >
+                        <Ionicons name="send" size={16} color="#FFFFFF" />
+                      </LinearGradient>
+                    </View>
+                  ) : (
+                    <View style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}>
+                      {aiLoading ? (
+                        <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                      ) : (
+                        <Ionicons name="send" size={16} color="rgba(255,255,255,0.3)" />
+                      )}
+                    </View>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </BottomSheet>
+      )}
+    </View>
   );
 }

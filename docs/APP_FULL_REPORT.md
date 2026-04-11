@@ -1,2434 +1,701 @@
-# SkillsApp - Comprehensive App Report
+# SkillMedia — Comprehensive App Report
+
+> **Last Updated:** April 10, 2026  
+> **Report Version:** 2.0  
+> **Status:** Phases 1A → 5 Backend All Present | See per-phase breakdown below
+
+---
 
 ## Table of Contents
 
-1. [Use Cases](#use-cases)
-2. [Executive Summary](#executive-summary)
-3. [App Overview](#app-overview)
-4. [Technology Stack](#technology-stack)
-5. [Project Structure](#project-structure)
-6. [Database Schema](#database-schema)
-7. [Key Features](#key-features)
-8. [How to Add Posts](#how-to-add-posts)
-9. [How to Add Filter Options](#how-to-add-filter-options)
-10. [Filter System Deep Dive](#filter-system-deep-dive)
-11. [API Reference](#api-reference)
-12. [User Flows](#user-flows)
-13. [Future Enhancements](#future-enhancements)
-14. [Development Workflow](#development-workflow)
-15. [Testing Strategy](#testing-strategy)
-16. [Troubleshooting](#troubleshooting)
-17. [Support & Resources](#support--resources)
-18. [Changelog](#changelog)
-
----
-
-## Use Cases
-
-### Primary Use Case: Career Discovery for Indian Students
-
-**Problem Statement:**
-In India, young students (especially after 10th and 12th standard) are typically only aware of 7-10 traditional career paths:
-
-- Engineering
-- Medical
-- MBA
-- CA (Chartered Accountant)
-- Government Jobs (UPSC)
-- Teaching
-- Law
-
-This limited awareness means students miss out on hundreds of other career opportunities in:
-
-- Agriculture & Allied sectors
-- Sports & Fitness
-- Business & Entrepreneurship
-- Specialized government sectors (Defence, Railways, Banking, PSUs)
-- Diverse private sector roles (IT, Manufacturing, Retail, Finance)
-- Creative fields (Media, Design, Arts)
-
-### Specific Use Cases
-
-#### Use Case 1: 12th Standard Student Exploring Government Jobs
-
-**Actor:** 18-year-old student who just passed 12th standard
-
-**Flow:**
-
-1. Opens SkillsApp and sees all career-related posts
-2. Clicks on "Filter" button in home screen
-3. Selects "12th Standard" as qualification
-4. Sees categories: Government Jobs, Private Jobs, Business, Sports, Agriculture
-5. Selects "Government Jobs"
-6. Sees sectors available after 12th:
-   - Defence Services (NDA, Coast Guard)
-   - Railway Jobs (RRB Group D, NTPC)
-   - Banking (IBPS Clerk)
-   - SSC (SSC CHSL, SSC GD)
-   - Police Forces (State Police Constable)
-7. Selects "Defence Services"
-8. Sees detailed career path card showing:
-   - Description of defence career opportunities
-   - Requirements (Age limit, Physical standards, Education)
-   - Average salary range
-   - Relevant exams (NDA, CDS for 12th pass)
-   - Related community posts from admin
-9. Can like, comment, and save this career path
-10. Can view all posts tagged with this specific path
-
-**Outcome:** Student discovers NDA (National Defence Academy) which they never knew was available right after 12th standard.
-
----
-
-#### Use Case 2: Graduate Student Exploring Defence Options
-
-**Actor:** 22-year-old graduate who wants to serve in defence but doesn't know specific options
-
-**Flow:**
-
-1. Opens filter modal
-2. Selects "Graduation" → "Government Jobs" → "Defence Services"
-3. Sees all defence branches:
-   - Indian Army (IMA/OTA via CDS)
-   - Indian Navy (Executive, Technical, Logistics)
-   - Indian Air Force (Flying, Ground Duty Tech/Non-Tech via AFCAT)
-   - Paramilitary Forces (CAPF via UPSC - BSF, CRPF, ITBP, CISF, SSB)
-   - Territorial Army
-4. Selects "Indian Navy"
-5. Sees sub-branches:
-   - Executive Branch
-   - Technical Branch
-   - Logistics Branch
-   - Law Branch
-6. Selects "Executive Branch"
-7. Sees roles like:
-   - SSC Officer (Short Service Commission)
-   - Permanent Commission Officer
-   - Navy Pilot (via INET)
-8. Taps on "Navy Pilot" role
-9. Sees complete details:
-   - **Description:** "Fly advanced aircraft from aircraft carriers and naval air stations"
-   - **Requirements:** "Graduation with Physics & Math at 10+2, Age: 20-24, Medical fitness"
-   - **Salary:** "₹56,100 - ₹1,77,500 per month"
-   - **Exams:** "INET (Indian Navy Entrance Test), SSB Interview"
-10. Reads admin-posted articles about life as a Navy Pilot
-11. Saves this career path for future reference
-12. Comments asking questions
-
-**Outcome:** Student now has a clear roadmap - needs to prepare for INET exam and knows exact age/qualification requirements.
-
----
-
-#### Use Case 3: Engineering Graduate Confused Between Many IT Options
-
-**Actor:** 23-year-old B.Tech graduate overwhelmed by IT job market
-
-**Flow:**
-
-1. Applies filter: "Graduation" → "Private Jobs" → "IT & Software"
-2. Sees organized sectors:
-   - Software Development (Frontend, Backend, Full Stack, Mobile)
-   - Data Science & AI
-   - Cybersecurity
-   - Cloud & DevOps
-   - Product Management
-3. Explores "Software Development" → "Frontend Development"
-4. Sees specific role paths:
-   - React Developer
-   - Angular Developer
-   - Vue.js Developer
-5. Taps "React Developer"
-6. Career path card shows:
-   - **Description:** "Build dynamic, responsive user interfaces using React.js"
-   - **Requirements:** "JavaScript (ES6+), React.js, Redux/Context API, HTML5, CSS3, Git"
-   - **Salary:** "Fresher: ₹3-6 LPA, Experienced: ₹6-15+ LPA"
-   - **Exams:** "N/A (Portfolio & skills-based hiring)"
-7. Sees admin posts with:
-   - React roadmap for beginners
-   - Top 10 React interview questions
-   - Salary negotiation tips
-   - Portfolio project ideas
-8. Likes and saves multiple posts
-9. Decides to focus learning path on React
-
-**Outcome:** Student gets clarity on focused learning path instead of being overwhelmed.
-
----
-
-#### Use Case 4: 10th Pass Student from Rural Area
-
-**Actor:** 16-year-old from village who dropped education due to financial constraints
-
-**Flow:**
-
-1. Opens app and applies filter: "10th Standard"
-2. Sees all available paths (not just studying further):
-   - Government Jobs (Railway Group D, SSC GD Constable, Police)
-   - Agriculture & Allied (Modern farming, Dairy, Poultry)
-   - Sports & Fitness (State-level athlete, Gym trainer)
-   - Business (Small-scale manufacturing, Retail)
-   - Skilled Trades (Electrician, Plumber, Carpenter via ITI)
-3. Selects "Agriculture & Allied" (familiar domain)
-4. Discovers modern opportunities:
-   - Organic Farming Entrepreneur
-   - Dairy Farm Management
-   - Horticulture Specialist
-   - Agricultural Equipment Operator
-5. Sees posts about government schemes:
-   - PM Kisan Samman Nidhi
-   - Startup India for agriculture
-   - Subsidies for dairy farming
-6. Realizes agriculture can be profitable with modern techniques
-
-**Outcome:** Student considers staying in agriculture but with modern, entrepreneurial approach instead of migrating to city for low-wage labor.
+1. [Executive Summary](#executive-summary)
+2. [App Overview & Use Cases](#app-overview--use-cases)
+3. [Technology Stack](#technology-stack)
+4. [Project Structure (Current)](#project-structure-current)
+5. [Database Schema (Current)](#database-schema-current)
+6. [Development Phase Status](#development-phase-status)
+   - [Pre-Phase: Foundation (✅ Complete)](#pre-phase-foundation--complete)
+   - [Phase 1A: Complete Foundation (🟡 ~60% Complete)](#phase-1a-complete-foundation--60-complete)
+   - [Phase 2: Community Groups & Chat (✅ Complete)](#phase-2-community-groups--chat--complete)
+   - [Phase 3: Structured Roadmaps (✅ Complete)](#phase-3-structured-roadmaps--complete)
+   - [Phase 4: Quizzes, Tests & Engagement (✅ Complete)](#phase-4-quizzes-tests--engagement--complete)
+   - [Phase 5: Intelligence & Polish (✅ Largely Complete)](#phase-5-intelligence--polish--largely-complete)
+7. [Overall Completion Summary](#overall-completion-summary)
+8. [Pending Work & Gaps](#pending-work--gaps)
+9. [Admin Panel Status](#admin-panel-status)
+10. [Key User Flows](#key-user-flows)
+11. [API Reference (Convex Functions)](#api-reference-convex-functions)
+12. [Development Workflow](#development-workflow)
+13. [Troubleshooting](#troubleshooting)
+14. [Changelog](#changelog)
 
 ---
 
 ## Executive Summary
 
-**SkillsApp** is a mobile-first career discovery platform designed specifically for Indian students and young professionals. Unlike traditional social media where users create content, SkillsApp follows an **admin-curated model** where career experts post high-quality, verified information about career paths.
+**SkillMedia** is a mobile-first career discovery and community platform designed for Indian students. It combines a structured career filter/discovery system with community groups, real-time chat, learning roadmaps, quizzes, and AI-powered guidance.
 
-### Key Differentiators
+### Current Status (April 2026)
 
-1. **Admin-Only Posting**: Ensures quality, verified career information (no spam or misinformation)
-2. **Hierarchical Filter System**: 6-level deep filtering allows precise career path discovery
-3. **Dual Content Model**:
-   - Career Path Cards (structured data: salary, exams, requirements)
-   - Community Posts (articles, tips, success stories)
-4. **Qualification-First Design**: Starts with user's current education level (10th, 12th, Diploma, Graduation)
-5. **Comprehensive Coverage**: From traditional (UPSC, Engineering) to unconventional (Agriculture, Sports, Trades)
-6. **Engagement on Career Paths**: Users can like, comment, and discuss specific career options
-7. **Personalized Feed**: Filter combinations show tailored content
+| Phase | Description | Status | Completion |
+|-------|-------------|--------|------------|
+| Pre-Phase | Core foundation (auth, feed, filters, admin panel) | ✅ Done | 100% |
+| **1A** | **Complete Foundation (ranking, articles, vacancies)** | **🟡 Partial** | **~60%** |
+| 2 | Community Groups & Real-time Chat | ✅ Done | ~95% |
+| 3 | Structured Roadmaps | ✅ Done | ~90% |
+| 4 | Quizzes, Tests & Engagement | ✅ Done | ~90% |
+| 5 | Intelligence & Polish | ✅ Largely Done | ~80% |
 
-### Mission
-
-To democratize career awareness in India by exposing students to the full spectrum of career possibilities based on their current qualification level.
-
-### Target Audience
-
-- 10th-12th standard students (15-18 years)
-- Diploma students
-- College graduates (18-25 years)
-- Parents and career counselors
-- Young professionals exploring career switches
+> **Key Finding:** The project has an unusual but impressive development pattern — Phases 2–5 were built largely concurrently and are functional, while several Phase 1A polish items (ranking badges, annual vacancies display, card preview in admin) are still missing. The backend schema fully covers all 5 phases (25 tables defined).
 
 ---
 
-## App Overview
+## App Overview & Use Cases
 
-### Core Functionality
+### Problem Statement
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    SkillsApp Home                      │
-│                                                         │
-│  [Filter Button]                                       │
-│                                                         │
-│  ┌──────────────────────────────────────────────┐    │
-│  │  Selected Filter Path (if any):             │    │
-│  │  Graduation > Govt Jobs > Defence > Navy    │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                         │
-│  ┌──────────────────────────────────────────────┐    │
-│  │  Career Path Card (if filter selected)      │    │
-│  │  ┌────────────────────────────────────────┐ │    │
-│  │  │  Navy Pilot                             │ │    │
-│  │  │  Description: Fly advanced aircraft...  │ │    │
-│  │  │  Salary: ₹56,100 - ₹1,77,500/month     │ │    │
-│  │  │  Exams: INET, SSB Interview            │ │    │
-│  │  │  [Like] [Comment] [Save]               │ │    │
-│  │  └────────────────────────────────────────┘ │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                         │
-│  Community Posts:                                      │
-│  ┌──────────────────────────────────────────────┐    │
-│  │ @admin_naval_career                         │    │
-│  │ Life as a Navy Pilot: My journey...         │    │
-│  │ [Image]                                     │    │
-│  │ 234 likes • 45 comments                     │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                         │
-│  ┌──────────────────────────────────────────────┐    │
-│  │ @admin_defence                               │    │
-│  │ Top 10 Questions in SSB Interview            │    │
-│  │ [Image]                                     │    │
-│  │ 567 likes • 89 comments                     │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+Indian students (especially after 10th and 12th standard) are typically aware of only 7–10 traditional career paths (Engineering, Medical, MBA, UPSC, CA, etc.). SkillMedia exposes them to hundreds of career options, organized by qualification level, with community support and structured learning paths.
 
-### Tab Navigation (Floating Design) ⭐
+### Core Use Cases
 
-1. **Home (Feed)**: Main feed with filters and posts
-2. **Bookmarks**: Saved career paths and posts
-3. **Create**: Admin-only post creation (hidden for regular users)
-4. **Notifications**: Likes, comments on your interactions
-5. **Profile**: User profile, edit bio, view your comments
+#### Use Case 1: 12th Standard Student — Government Jobs
+1. Opens app → sees all career posts in feed
+2. Taps "Filter" → selects "12th Standard" → "Government Jobs" → "Defence Services"
+3. Sees NDA career path card with requirements, salary, exams
+4. Joins the NDA community group
+5. Follows the NDA Preparation roadmap
+6. Takes daily quizzes to track preparation
+7. Asks AI chatbot career questions
 
-**Floating Tab Bar Visual:**
+#### Use Case 2: Graduate — Defence Options
+1. Applies filter: Graduation → Govt Jobs → Defence → Navy → Executive Branch → Navy Pilot
+2. Reads full career details (salary: ₹56,100–₹1,77,500/month, exams: INET, SSB)
+3. Joins Navy Executive community group
+4. Tracks roadmap progress (Phase 1–3 milestones)
 
-```
-┌────────────────────────────────────────────────────┐
-│                                                    │
-│                  App Content Area                  │
-│                                                    │
-│    ┌────────────────────────────────────────┐     │
-│    │  🏠      📑      ➕      ❤️      👤    │     │ ← Floating
-│    │  ●                                     │     │   borderRadius: 30
-│    └────────────────────────────────────────┘     │   margin: 20px
-│                                                    │
-└────────────────────────────────────────────────────┘
-     ↑ Glowing active indicator dot
-```
+#### Use Case 3: Engineering Graduate — IT Career Focus
+1. Filters: Graduation → Private Jobs → IT & Software → Frontend → React Developer
+2. Reads admin articles on React ecosystem
+3. Joins React Developer group for peer support
+4. Completes weekly challenges and mock tests
+
+#### Use Case 4: 10th Pass Student — Rural Area
+1. Filters: 10th Standard → Agriculture & Allied
+2. Discovers modern agricultural paths, government schemes
+3. Follows structured roadmaps for skill development
 
 ---
 
 ## Technology Stack
 
-### Frontend
+### Mobile App
 
-- **Framework**: React Native 0.79.5
-- **Navigation**: Expo Router 5.1 (file-based routing)
-- **Platform**: Expo SDK 53
-- **Language**: TypeScript
-- **Styling**: StyleSheet API + Modern Theme System (Dribbble-inspired)
-- **Animations**: react-native-reanimated 3.17 (FadeIn, SlideIn, Springs)
-- **Blur Effects**: expo-blur 14.1 (iOS Glassmorphism)
-- **Gradients**: expo-linear-gradient 14.1
-- **Bottom Sheet**: @gorhom/bottom-sheet
-- **Fonts**: expo-font (Poppins typography)
-- **Icons**: @expo/vector-icons (MaterialIcons, Ionicons, Feather)
-- **Images**: expo-image (optimized image loading)
+| Layer | Technology |
+|-------|------------|
+| Framework | React Native 0.79.5 |
+| Navigation | Expo Router 5.1 (file-based) |
+| Platform | Expo SDK 53 |
+| Language | TypeScript |
+| Styling | StyleSheet API + custom theme system |
+| Animations | react-native-reanimated 3.17 |
+| Blur Effects | expo-blur 14.1 |
+| Gradients | expo-linear-gradient 14.1 |
+| Bottom Sheet | @gorhom/bottom-sheet |
+| Fonts | expo-font (Poppins) |
+| Icons | @expo/vector-icons |
+| Images | expo-image |
+| Haptics | expo-haptics |
 
-### Backend
+### Backend & Services
 
-- **Database**: Convex (Real-time serverless database)
-- **Authentication**: Clerk (with Google OAuth SSO)
-- **Image Storage**: Convex file storage
-- **Real-time Sync**: Convex React hooks (useQuery, useMutation)
+| Layer | Technology |
+|-------|------------|
+| Database | Convex (real-time, serverless) |
+| Authentication | Clerk (Google OAuth) |
+| Image Storage | Convex file storage |
+| AI | Google Gemini (`@google/genai`) |
+| Real-time | Convex React hooks (useQuery, useMutation) |
 
-### Development Tools
+### Admin Panel
 
-- **Package Manager**: npm
-- **Version Control**: Git
-- **TypeScript**: Full type safety
-- **Linting**: ESLint
-- **Testing**: (Not yet configured)
-
-### Key Dependencies
-
-```json
-{
-  "expo": "~53.0.3",
-  "react-native": "0.79.5",
-  "convex": "^1.17.7",
-  "@clerk/clerk-expo": "^2.7.3",
-  "react-native-reanimated": "^3.17.7",
-  "expo-router": "^5.1.1",
-  "@react-native-async-storage/async-storage": "^2.1.0",
-  "expo-blur": "~14.1.5",
-  "expo-linear-gradient": "~14.1.5",
-  "expo-font": "~13.3.2",
-  "@gorhom/bottom-sheet": "^5.1.1"
-}
-```
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js (in `/admin-dashboard`) |
+| Styling | Tailwind CSS + custom globals.css |
+| Charts | (planned: recharts) |
 
 ---
 
-## Project Structure
+## Project Structure (Current)
 
 ```
-D:\SKILLMEDIA\SkillsAppNew\
-│
-├── app/                                    # Expo Router - File-based navigation
-│   ├── (auth)/                            # Authentication screens (public)
-│   │   ├── login.tsx                      # Google OAuth login screen
-│   │   └── _layout.tsx                    # Auth stack layout
-│   │
-│   ├── (tabs)/                            # Main app tabs (protected)
-│   │   ├── index.tsx                      # Home/Feed screen ⭐ MAIN SCREEN
-│   │   ├── bookmarks.tsx                  # Saved content screen
-│   │   ├── create.tsx                     # Create post (admin only)
+SkillsAppNew/
+├── app/                                   # Expo Router screens
+│   ├── (auth)/login.tsx                   # Google OAuth login
+│   ├── (tabs)/
+│   │   ├── _layout.tsx                    # Tab navigation (5 tabs)
+│   │   ├── index.tsx                      # Home/Feed (33K) ⭐
+│   │   ├── groups.tsx                     # My Groups list (32K) ⭐ Phase 2
+│   │   ├── bookmarks.tsx                  # Saved content
+│   │   ├── create.tsx                     # Admin post creation
 │   │   ├── notifications.tsx              # Notification center
-│   │   ├── profile.tsx                    # User profile screen
-│   │   └── _layout.tsx                    # Bottom tab navigation
-│   │
-│   ├── user/                              # User detail screens
-│   │   └── [userId].tsx                   # View other user's profile
-│   │
+│   │   └── profile.tsx                    # User profile (26K) ⭐
+│   ├── group/[id]/
+│   │   ├── index.tsx                      # Group chat (101K) ⭐ Phase 2
+│   │   ├── members.tsx                    # Member directory ⭐ Phase 2
+│   │   ├── info.tsx                       # Group info/settings ⭐ Phase 2
+│   │   ├── roadmap.tsx                    # Roadmap view (48K) ⭐ Phase 3
+│   │   ├── leaderboard.tsx                # Group leaderboard ⭐ Phase 4
+│   │   ├── quiz/
+│   │   │   ├── index.tsx                  # Quiz list ⭐ Phase 4
+│   │   │   └── [quizId]/
+│   │   │       ├── index.tsx              # Take quiz ⭐ Phase 4
+│   │   │       └── results.tsx            # Quiz results ⭐ Phase 4
+│   │   └── challenges/
+│   │       ├── index.tsx                  # Challenges list ⭐ Phase 4
+│   │       └── [challengeId].tsx          # Challenge detail ⭐ Phase 4
+│   ├── user/[id].tsx                      # User profile deep link
+│   ├── onboarding.tsx                     # Onboarding flow (18K) ⭐ Phase 5
 │   ├── _layout.tsx                        # Root layout (providers)
-│   └── +not-found.tsx                     # 404 screen
+│   └── index.tsx                          # Root redirect
 │
-├── components/                             # Reusable UI components
-│   ├── ui/                                # Modern UI Kit (Theme-Aware)
-│   │   ├── Typography.tsx                 # Text component with variants
-│   │   ├── AnimatedButton.tsx             # Button with spring animations
-│   │   ├── AnimatedCard.tsx               # Card with FadeInDown entrance ⭐
-│   │   ├── GlassCard.tsx                  # Glassmorphism card component ⭐ NEW
-│   │   ├── GradientButton.tsx             # Gradient button with press animation ⭐ NEW
-│   │   ├── NeumorphicInput.tsx            # Soft UI input field ⭐ NEW
-│   │   ├── ThemeToggle.tsx                # Theme toggle components ⭐ NEW
+├── components/
+│   ├── cards/
+│   │   ├── CareerPathHeroCard.tsx          # Career path card (15K)
+│   │   └── PostCardVariants.tsx            # Post display variants
+│   ├── ui/                                # 16 UI components
+│   │   ├── Typography.tsx                 # Text variants
+│   │   ├── AnimatedButton.tsx             # Spring-animated button
+│   │   ├── AnimatedCard.tsx               # FadeInDown card
+│   │   ├── GlassCard.tsx                  # Glassmorphism card
+│   │   ├── GradientButton.tsx             # Gradient button
+│   │   ├── NeumorphicInput.tsx            # Soft UI input
+│   │   ├── ProgressBar.tsx                # Progress bar
+│   │   ├── SkeletonLoader.tsx             # Skeleton loading
 │   │   ├── Toast.tsx                      # Toast notifications
-│   │   └── index.ts                       # Barrel export
-│   │
-│   ├── CommunityPost.tsx                  # Post card component ⭐
-│   ├── Post.tsx                           # Alternative post component
-│   ├── CareerPathDetails.tsx              # Career path info card ⭐
-│   ├── FilterModal.tsx                    # Modern Wizard Filter UI ⭐ REDESIGNED
-│   ├── Comment.tsx                        # Comment component
-│   ├── InitialLayout.tsx                  # Auth wrapper component
+│   │   ├── ThemeToggle.tsx                # Dark/light toggle
+│   │   ├── EmptyState.tsx                 # Empty state display
+│   │   ├── SelectableCardGrid.tsx         # Grid selector
+│   │   ├── FloatingActionButton.tsx       # FAB
+│   │   ├── FilterChip.tsx                 # Filter chip
+│   │   ├── AnimatedLikeButton.tsx         # Like animation
+│   │   └── index.ts                       # Barrel exports
+│   ├── CareerPathDetails.tsx              # Career path info card (20K)
+│   ├── CommentsModal.tsx                  # Comments bottom sheet
+│   ├── CommunityPost.tsx                  # Post card (12K)
+│   ├── FilterModal.tsx                    # Filter wizard (16K)
+│   ├── RankingBadge.tsx                   # Ranking badge ⭐ Phase 1A (partial)
+│   ├── VacancyChip.tsx                    # Annual vacancies ⭐ Phase 1A (partial)
+│   ├── ErrorBoundary.tsx                  # Error boundary
+│   ├── Notification.tsx                   # Notification component
 │   └── [other components]
 │
-├── convex/                                 # Backend (Convex serverless)
-│   ├── schema.ts                          # Database schema ⭐
-│   ├── seedData.ts                        # Data seeding scripts ⭐
-│   │
-│   ├── filter.ts                          # Filter queries ⭐
-│   ├── communityPosts.ts                  # Post CRUD operations ⭐
+├── convex/                                # Backend (25 tables)
+│   ├── schema.ts                          # Full schema (all 5 phases)
+│   ├── adminArticles.ts                   # Phase 1A articles CRUD
+│   ├── groups.ts                          # Phase 2 groups
+│   ├── messages.ts                        # Phase 2 chat
+│   ├── groupMembers.ts → (in groups.ts)   # Phase 2 membership
+│   ├── reports.ts                         # Phase 2 moderation
+│   ├── roadmaps.ts                        # Phase 3 roadmaps (26K)
+│   ├── quizzes.ts                         # Phase 4 quizzes (16K)
+│   ├── questions.ts                       # Phase 4 questions
+│   ├── quizAttempts.ts                    # Phase 4 attempts
+│   ├── challenges.ts                      # Phase 4 challenges (10K)
+│   ├── streaks.ts                         # Phase 4 streaks
+│   ├── leaderboard.ts                     # Phase 4 leaderboard (10K)
+│   ├── ai.ts                              # Phase 5 AI (8K)
+│   ├── analytics.ts                       # Phase 5 analytics (6K)
+│   ├── userPreferences.ts                 # Phase 5 preferences (4K)
+│   ├── pushNotifications.ts               # Push notifications
+│   ├── filter.ts                          # Filter queries
+│   ├── communityPosts.ts                  # Community post CRUD (27K)
 │   ├── users.ts                           # User management
-│   ├── comments.ts                        # Comment operations
-│   ├── likes.ts                           # Like functionality (disabled)
-│   ├── savedContent.ts                    # Save/bookmark operations
-│   ├── notifications.ts                   # Notification system
-│   │
-│   ├── _generated/                        # Auto-generated Convex types
-│   │   ├── api.d.ts
-│   │   └── dataModel.d.ts
-│   │
-│   └── convex.config.ts                   # Convex configuration
+│   ├── seedData.ts                        # Seeding scripts (27K)
+│   └── [other backend files]
 │
-├── providers/                              # Context providers
+├── admin-dashboard/                       # Next.js admin panel
+│   └── app/admin/
+│       ├── page.tsx                       # Dashboard (17K) ⭐
+│       ├── filters/page.tsx               # Filter tree management
+│       ├── posts/                         # Post management
+│       ├── articles/page.tsx              # Admin articles ⭐ Phase 1A
+│       ├── groups/                        # Group management ⭐ Phase 2
+│       │   ├── page.tsx                   # Groups list (19K)
+│       │   └── [id]/page.tsx              # Group detail
+│       ├── reports/page.tsx               # Content moderation ⭐ Phase 2
+│       ├── roadmaps/                      # Roadmap builder ⭐ Phase 3
+│       │   ├── page.tsx                   # Roadmaps list (24K)
+│       │   └── [id]/page.tsx              # Roadmap editor
+│       ├── quizzes/                       # Quiz management ⭐ Phase 4
+│       │   ├── page.tsx                   # Quiz list (18K)
+│       │   ├── new/page.tsx               # Quiz builder
+│       │   └── [id]/page.tsx              # Quiz editor
+│       ├── challenges/page.tsx            # Challenges ⭐ Phase 4
+│       ├── analytics/page.tsx             # Analytics dashboard ⭐ Phase 5
+│       ├── users/page.tsx                 # User management ⭐ Phase 5
+│       ├── ai-config/page.tsx             # AI configuration ⭐ Phase 5
+│       └── notifications/page.tsx         # Push notification manager
+│
+├── providers/
 │   ├── ClerkAndConvexProvider.tsx         # Auth + DB provider
-│   └── ThemeProvider.tsx                  # Dark/Light theme provider
+│   └── ThemeProvider.tsx                  # Dark/Light theme
 │
-├── constants/                              # App constants
-│   ├── Colors.ts                          # Dribbble-inspired color palettes ⭐ NEW
-│   └── theme.ts                           # Complete theme system (typography, spacing) ⭐
+├── constants/
+│   ├── Colors.ts                          # Color palettes
+│   └── theme.ts                           # Full theme system
 │
-├── types/                                  # TypeScript type definitions
-│   └── index.ts                           # All app types ⭐
+├── docs/
+│   ├── DEVELOPMENT_PHASES.md              # Phase-by-phase plan
+│   └── APP_FULL_REPORT.md                 # This file
 │
-├── styles/                                 # StyleSheets
-│   ├── feed.styles.ts                     # Feed screen styles
-│   └── [other style files]
-│
-├── scripts/                                # Utility scripts (deprecated)
-│   ├── seedFilters.ts                     # Old seeding approach
-│   └── seedPosts.ts                       # Old post seeding
-│
-├── assets/                                 # Static assets
-│   ├── images/
-│   └── fonts/
-│
-├── .env.local                              # Environment variables
-├── package.json                            # Dependencies
-├── tsconfig.json                           # TypeScript config
-├── app.json                               # Expo config
-└── README.md                              # Project documentation
-
-```
-
-### Key Files by Purpose
-
-| Purpose              | File Path                              | Description                                   |
-| -------------------- | -------------------------------------- | --------------------------------------------- |
-| **Main Feed Screen** | `app/(tabs)/index.tsx`                 | Home screen with filters, posts, career paths |
-| **Tab Navigation**   | `app/(tabs)/_layout.tsx`               | Floating tab bar with blur & glow effects ⭐  |
-| **Filter UI**        | `components/FilterModal.tsx`           | Modern wizard-style filter component ⭐       |
-| **Color Palettes**   | `constants/Colors.ts`                  | Light/Dark Dribbble-inspired colors ⭐ NEW    |
-| **Theme System**     | `constants/theme.ts`                   | Typography, spacing, shadows, borders         |
-| **Theme Provider**   | `providers/ThemeProvider.tsx`          | Theme context with toggleTheme & fonts ⭐     |
-| **UI Kit**           | `components/ui/`                       | GlassCard, GradientButton, ThemeToggle ⭐ NEW |
-| **Database Schema**  | `convex/schema.ts`                     | All table definitions                         |
-| **Data Seeding**     | `convex/seedData.ts`                   | Populate filters and posts                    |
-| **Filter Queries**   | `convex/filter.ts`                     | Backend queries for filter data               |
-| **Post Operations**  | `convex/communityPosts.ts`             | Create, read, update, delete posts            |
-| **Type Definitions** | `types/index.ts`                       | TypeScript interfaces                         |
-| **Career Path Card** | `components/CareerPathDetails.tsx`     | Display career details                        |
-| **Auth Setup**       | `providers/ClerkAndConvexProvider.tsx` | Authentication wrapper                        |
-
----
-
-## Database Schema
-
-### Tables Overview
-
-```typescript
-// convex/schema.ts
-
-defineSchema({
-  // 1. FilterOption - Hierarchical career paths
-  FilterOption: defineTable({
-    name: v.string(), // e.g., "React Developer"
-    type: v.union(
-      // Hierarchy level
-      v.literal("qualification"), // Level 1
-      v.literal("category"), // Level 2
-      v.literal("sector"), // Level 3
-      v.literal("subSector"), // Level 4
-      v.literal("branch"), // Level 5
-      v.literal("role"), // Level 6
-    ),
-    parentId: v.optional(v.id("FilterOption")), // Parent in hierarchy
-
-    // Rich content
-    description: v.optional(v.string()),
-    requirements: v.optional(v.string()),
-    avgSalary: v.optional(v.string()),
-    relevantExams: v.optional(v.string()),
-    image: v.optional(v.string()),
-
-    // Engagement
-    likes: v.optional(v.number()),
-    comments: v.optional(v.number()),
-    isActive: v.optional(v.boolean()),
-  }).index("by_parentId", ["parentId"]),
-
-  // 2. CommunityPosts - Admin-created content
-  communityPosts: defineTable({
-    userId: v.id("users"), // Admin who created
-    content: v.string(), // Post caption
-    imageUrl: v.optional(v.string()),
-    storageId: v.optional(v.id("_storage")),
-    linkedFilterOptionIds: v.array(
-      // Link to career paths
-      v.id("FilterOption"),
-    ),
-
-    // Engagement counters
-    likes: v.number(),
-    comments: v.number(),
-
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    isActive: v.optional(v.boolean()),
-  })
-    .index("by_created_at", ["createdAt"])
-    .index("by_user", ["userId"])
-    .index("by_linked_filter_option", [
-      "linkedFilterOptionIds",
-    ]),
-
-  // 3. Users
-  users: defineTable({
-    username: v.optional(v.string()),
-    fullname: v.optional(v.string()),
-    email: v.optional(v.string()),
-    bio: v.optional(v.string()),
-    profileImage: v.optional(v.string()),
-    clerkId: v.string(), // Clerk auth ID
-    isAdmin: v.optional(v.boolean()), // Admin flag
-
-    // Social (legacy)
-    followers: v.optional(v.number()),
-    following: v.optional(v.number()),
-    posts: v.optional(v.number()),
-  })
-    .index("by_clerkId", ["clerkId"])
-    .index("by_username", ["username"]),
-
-  // 4. Comments - On posts OR career paths
-  comments: defineTable({
-    userId: v.id("users"),
-    content: v.string(),
-    parentCommentId: v.optional(v.id("comments")), // Nested comments
-    communityPostId: v.optional(v.id("communityPosts")),
-    filterOptionId: v.optional(v.id("FilterOption")),
-    createdAt: v.number(),
-  })
-    .index("by_community_post", ["communityPostId"])
-    .index("by_filter_option", ["filterOptionId"])
-    .index("by_parent", ["parentCommentId"]),
-
-  // 5. Likes - On posts OR career paths
-  likes: defineTable({
-    userId: v.id("users"),
-    communityPostId: v.optional(v.id("communityPosts")),
-    filterOptionId: v.optional(v.id("FilterOption")),
-    createdAt: v.optional(v.number()),
-  })
-    .index("by_user_and_community_post", [
-      "userId",
-      "communityPostId",
-    ])
-    .index("by_user_and_filter_option", [
-      "userId",
-      "filterOptionId",
-    ]),
-
-  // 6. SavedContent - Bookmarks
-  savedContent: defineTable({
-    userId: v.id("users"),
-    communityPostId: v.optional(v.id("communityPosts")),
-    filterOptionId: v.optional(v.id("FilterOption")),
-    createdAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_and_community_post", [
-      "userId",
-      "communityPostId",
-    ])
-    .index("by_user_and_filter_option", [
-      "userId",
-      "filterOptionId",
-    ]),
-
-  // 7. Notifications
-  notifications: defineTable({
-    receiverId: v.id("users"),
-    senderId: v.id("users"),
-    type: v.union(
-      v.literal("like"),
-      v.literal("comment"),
-      v.literal("follow"),
-    ),
-    communityPostId: v.optional(v.id("communityPosts")),
-    filterOptionId: v.optional(v.id("FilterOption")),
-    commentId: v.optional(v.id("comments")),
-    isRead: v.boolean(),
-    createdAt: v.number(),
-  })
-    .index("by_receiver", ["receiverId"])
-    .index("by_receiver_and_read", [
-      "receiverId",
-      "isRead",
-    ]),
-});
-```
-
-### Hierarchy Example: Graduation → Defence → Navy → Executive Branch → Navy Pilot
-
-```
-FilterOption Documents:
-
-1. {
-     _id: "qualification_grad",
-     name: "Graduation",
-     type: "qualification",
-     parentId: null,  // Root level
-     description: "Bachelor's degree in any stream",
-     isActive: true
-   }
-
-2. {
-     _id: "category_govt",
-     name: "Government Jobs",
-     type: "category",
-     parentId: "qualification_grad",
-     description: "Central and state government positions",
-     isActive: true
-   }
-
-3. {
-     _id: "sector_defence",
-     name: "Defence Services",
-     type: "sector",
-     parentId: "category_govt",
-     description: "Join Indian Armed Forces and Paramilitary",
-     avgSalary: "₹56,000 - ₹2,50,000/month",
-     isActive: true
-   }
-
-4. {
-     _id: "subsector_navy",
-     name: "Indian Navy",
-     type: "subSector",
-     parentId: "sector_defence",
-     description: "Naval forces protecting Indian waters",
-     relevantExams: "INET, CDS, SSC",
-     isActive: true
-   }
-
-5. {
-     _id: "branch_executive",
-     name: "Executive Branch",
-     type: "branch",
-     parentId: "subsector_navy",
-     description: "Command and operational roles",
-     requirements: "Graduation in any stream, Age 19-25",
-     isActive: true
-   }
-
-6. {
-     _id: "role_navy_pilot",
-     name: "Navy Pilot",
-     type: "role",
-     parentId: "branch_executive",
-     description: "Fly fighter jets, helicopters from carriers",
-     requirements: "Physics & Math at 10+2 or B.E./B.Tech, Age 20-24",
-     avgSalary: "₹56,100 - ₹1,77,500/month",
-     relevantExams: "INET, SSB Interview",
-     likes: 0,
-     comments: 0,
-     isActive: true
-   }
+└── [config files: package.json, tsconfig.json, app.json, .env, .env.local]
 ```
 
 ---
 
-## Key Features
+## Database Schema (Current)
 
-### 1. Hierarchical Career Filter System ⭐
+All **25 tables** are defined in `convex/schema.ts`, covering all 5 development phases:
 
-**6-Level Deep Filtering:**
+### Phase Pre / Core Tables (7)
+| # | Table | Purpose |
+|---|-------|---------|
+| 1 | `users` | User profiles, auth, ban management, push tokens |
+| 2 | `FilterOption` | Hierarchical career paths (6 levels), with `ranking` & `annualVacancies` fields |
+| 3 | `communityPosts` | Admin/user posts linked to career paths |
+| 4 | `likes` | Likes on posts or career paths |
+| 5 | `comments` | Comments on posts or career paths |
+| 6 | `notifications` | Like/comment/follow notifications |
+| 7 | `savedContent` | Bookmarks for posts or career paths |
+
+### Phase 1A Tables (1)
+| # | Table | Purpose |
+|---|-------|---------|
+| 8 | `adminArticles` | Admin-authored articles/tips linked to career paths |
+
+### Phase 2 Tables (4)
+| # | Table | Purpose |
+|---|-------|---------|
+| 9 | `groups` | Community groups per career path |
+| 10 | `groupMembers` | Membership + roles + unread tracking |
+| 11 | `messages` | Real-time chat messages (text/image/announcement) + reactions |
+| 12 | `reports` | Reported messages, moderation actions |
+
+### Phase 3 Tables (4)
+| # | Table | Purpose |
+|---|-------|---------|
+| 13 | `roadmaps` | Career learning roadmaps per group |
+| 14 | `milestones` | Major phases within a roadmap |
+| 15 | `roadmapSteps` | Individual learning steps with resources |
+| 16 | `userRoadmapProgress` | Per-user step completion tracking |
+
+### Phase 4 Tables (6)
+| # | Table | Purpose |
+|---|-------|---------|
+| 17 | `quizzes` | Quiz definitions per group |
+| 18 | `questions` | MCQ questions with correct answer + explanation |
+| 19 | `quizAttempts` | User quiz submissions with score |
+| 20 | `challenges` | Group challenges (quiz/steps/streak types) |
+| 21 | `challengeSubmissions` | User challenge progress |
+| 22 | `streaks` | Consecutive daily activity tracking |
+
+### Phase 5 Tables (3)
+| # | Table | Purpose |
+|---|-------|---------|
+| 23 | `aiConversations` | AI chatbot Q&A history |
+| 24 | `userPreferences` | Onboarding preferences, language, interests |
+| 25 | `analytics` | App-wide metric tracking (DAU, events) |
+
+---
+
+## Development Phase Status
+
+---
+
+### Pre-Phase: Foundation ✅ Complete
+
+> All items were built before the formal phase system began.
+
+| Feature | Status | File/Location |
+|---------|--------|---------------|
+| User authentication (Google OAuth via Clerk) | ✅ Done | `app/(auth)/login.tsx`, `providers/ClerkAndConvexProvider.tsx` |
+| Hierarchical filter system (6 levels) | ✅ Done | `convex/filter.ts`, `components/FilterModal.tsx` |
+| Filter wizard UI with breadcrumbs & progress bar | ✅ Done | `components/FilterModal.tsx` |
+| Career Path Cards display | ✅ Done | `components/CareerPathDetails.tsx`, `components/cards/CareerPathHeroCard.tsx` |
+| Instagram-style feed | ✅ Done | `app/(tabs)/index.tsx` |
+| Like/Comment/Save functionality | ✅ Done | `convex/likes.ts`, `convex/comments.ts`, `convex/savedContent.ts` |
+| Community posts (user-generated, linked to career paths) | ✅ Done | `convex/communityPosts.ts` |
+| User profiles with edit capability | ✅ Done | `app/(tabs)/profile.tsx` |
+| Notifications system (like, comment, follow) | ✅ Done | `convex/notifications.ts`, `app/(tabs)/notifications.tsx` |
+| Bookmarks/saved content screen | ✅ Done | `app/(tabs)/bookmarks.tsx` |
+| Dark/light theme toggle with persistence | ✅ Done | `providers/ThemeProvider.tsx`, `components/ui/ThemeToggle.tsx` |
+| Skeleton loading states | ✅ Done | `components/ui/SkeletonLoader.tsx` |
+| Pull-to-refresh | ✅ Done | `app/(tabs)/index.tsx` |
+| Admin Panel (Next.js) — filter tree + post creation | ✅ Done | `admin-dashboard/app/admin/filters/`, `admin-dashboard/app/admin/posts/` |
+| Database seeding tools | ✅ Done | `convex/seedData.ts` |
+
+---
+
+### Phase 1A: Complete Foundation 🟡 ~60% Complete
+
+> **Goal:** Fill gaps in core discovery experience — sharing, ranking, vacancies, admin articles, improved card detail.
+
+#### ✅ Completed Items
+
+| Feature | Status | Evidence |
+|---------|--------|---------|
+| Schema: `ranking` & `annualVacancies` fields on FilterOption | ✅ Done | `convex/schema.ts` lines 52–53 |
+| Schema: `adminArticles` table created | ✅ Done | `convex/schema.ts` lines 166–175 |
+| Backend: `convex/adminArticles.ts` CRUD functions | ✅ Done | File exists (3.6KB) |
+| `RankingBadge.tsx` component created | ✅ Done | `components/RankingBadge.tsx` (2.9KB) |
+| `VacancyChip.tsx` component created | ✅ Done | `components/VacancyChip.tsx` (2.1KB) |
+| Admin Panel: Admin articles editor page | ✅ Done | `admin-dashboard/app/admin/articles/page.tsx` (12KB) |
+| Admin Panel: `ArticleEditor.tsx` component | ✅ Done | `admin-dashboard/components/admin/ArticleEditor.tsx` (10KB) |
+
+#### ❌ Still Pending / Missing
+
+| Feature | Status | What's Needed |
+|---------|--------|---------------|
+| **Share functionality** (`ShareButton.tsx`) | ❌ Missing | Create `components/ShareButton.tsx` using `expo-sharing`; add to `CareerPathDetails.tsx` |
+| **Ranking badge integration** on CareerPathHeroCard | ❌ Missing | Import & render `RankingBadge.tsx` in `components/cards/CareerPathHeroCard.tsx` |
+| **Annual vacancies display** on CareerPathHeroCard | ❌ Missing | Import & render `VacancyChip.tsx` in `components/cards/CareerPathHeroCard.tsx` |
+| **Improved card detail view** (5 structured sections) | ❌ Missing | Refactor `components/CareerPathDetails.tsx` with Requirements bullets, Salary, Exams cards, Admin Articles section |
+| **Admin articles** section in career detail | ❌ Missing | Fetch from `adminArticles` table in `CareerPathDetails.tsx` |
+| **Filter sorting by ranking** | ❌ Missing | Modify `convex/filter.ts` `getFilterChildren()` to sort by `ranking` field |
+| **Admin Panel: Ranking + vacancies fields** on AddFilterModal | ❌ Missing | Modify `admin-dashboard/components/admin/AddFilterModal.tsx` |
+| **Admin Panel: Engagement dashboard** stats on main page | ❌ Partial | Stats section exists on admin dashboard but per-card engagement may need enhancement |
+| **Admin Panel: Bulk operations** | ❌ Missing | Not yet implemented |
+| **Admin Panel: Card preview** | ❌ Missing | Not yet implemented |
+| **Content: 50+ career cards seeded** | 🟡 Unknown | Verify in Convex dashboard |
+| **Career card sorting by ranking** | ❌ Missing | Sort logic in filter query missing |
+
+---
+
+### Phase 2: Community Groups & Chat ✅ Complete
+
+> **Goal:** WhatsApp/Telegram-style community groups around each career path with real-time chat.
+
+#### Mobile App
+
+| Feature | Status | File |
+|---------|--------|------|
+| Groups tab in bottom navigation | ✅ Done | `app/(tabs)/groups.tsx`, `app/(tabs)/_layout.tsx` |
+| My Groups list with last message preview, unread badge | ✅ Done | `app/(tabs)/groups.tsx` (32KB) |
+| Group auto-creation when career card published | ✅ Done | `convex/groups.ts` |
+| Group chat screen with real-time messages | ✅ Done | `app/group/[id]/index.tsx` (101KB) |
+| Send text messages | ✅ Done | Real-time via Convex subscriptions |
+| Send images (picker + Convex storage) | ✅ Done | Image picker integration |
+| Message types (text, image, announcement) | ✅ Done | `convex/schema.ts` messages table |
+| Message reactions | ✅ Done | Reactions array in messages schema |
+| Member directory | ✅ Done | `app/group/[id]/members.tsx` (15KB) |
+| Admin announcements (pinned messages) | ✅ Done | isPinned field + AnnouncementBanner |
+| Group info screen | ✅ Done | `app/group/[id]/info.tsx` (15KB) |
+| Leave group (with confirmation) | ✅ Done | `app/group/[id]/info.tsx` |
+| Unread message count badge | ✅ Done | `groupMembers.lastReadAt` tracking |
+| Report message flow | ✅ Done | `convex/reports.ts` |
+| Join/Open Community button on career cards | ✅ Done | In `CareerPathDetails.tsx` |
+| Roadmap tab within group screen | ✅ Done | Tab navigation in `app/group/[id]/index.tsx` |
+| Scroll to bottom + message pagination | ✅ Done | Implemented in chat screen |
+| Delete own messages (soft delete) | ✅ Done | `isDeleted` flag |
+
+#### Admin Panel
+
+| Feature | Status | File |
+|---------|--------|------|
+| Group management page | ✅ Done | `admin-dashboard/app/admin/groups/page.tsx` (19KB) |
+| Group detail view (messages, members, reports) | ✅ Done | `admin-dashboard/app/admin/groups/[id]/page.tsx` |
+| Send announcement in group | ✅ Done | In group detail admin page |
+| Moderate messages (delete, warn, ban) | ✅ Done | Reports + user ban fields |
+| View & act on reports | ✅ Done | `admin-dashboard/app/admin/reports/page.tsx` |
+
+> **Notes:** Push notifications for group messages are configured via `convex/pushNotifications.ts` but may require additional Expo Notifications setup on device.
+
+---
+
+### Phase 3: Structured Roadmaps ✅ Complete
+
+> **Goal:** Step-by-step learning roadmaps inside community groups with personal progress tracking.
+
+#### Mobile App
+
+| Feature | Status | File |
+|---------|--------|------|
+| Roadmap tab in group screen | ✅ Done | Navigates to `app/group/[id]/roadmap.tsx` |
+| Visual timeline with milestone markers | ✅ Done | `app/group/[id]/roadmap.tsx` (48KB) |
+| Milestones (expandable sections) | ✅ Done | Milestone expand/collapse with animation |
+| Steps with checkbox, title, description | ✅ Done | Step toggle with Reanimated animation |
+| Resource links (tappable, open browser) | ✅ Done | `resourceUrl` field on steps |
+| Personal progress tracking (persisted) | ✅ Done | `convex/userRoadmapProgress` table |
+| Progress bar (overall %) | ✅ Done | Header progress bar |
+| Progress on profile | ✅ Done | `app/(tabs)/profile.tsx` roadmap section |
+| Milestone completion indicator | ✅ Done | Visual state in roadmap view |
+
+#### Admin Panel
+
+| Feature | Status | File |
+|---------|--------|------|
+| Roadmap management list | ✅ Done | `admin-dashboard/app/admin/roadmaps/page.tsx` (24KB) |
+| Roadmap builder/editor | ✅ Done | `admin-dashboard/app/admin/roadmaps/[id]/page.tsx` |
+| Milestone + step CRUD | ✅ Done | In roadmap editor |
+| Publish/draft roadmap toggle | ✅ Done | `isPublished` field |
+| Progress analytics (per-milestone) | ✅ Done | In roadmap editor page |
+
+> **Backend:** `convex/roadmaps.ts` is fully implemented (26KB) covering roadmaps, milestones, steps, and user progress queries.
+
+---
+
+### Phase 4: Quizzes, Tests & Engagement ✅ Complete
+
+> **Goal:** Daily quizzes, weekly challenges, leaderboards, streak tracking for daily engagement.
+
+#### Mobile App
+
+| Feature | Status | File |
+|---------|--------|------|
+| Quiz list tab in groups | ✅ Done | `app/group/[id]/quiz/index.tsx` (13KB) |
+| Daily/weekly quiz attempt flow | ✅ Done | `app/group/[id]/quiz/[quizId]/index.tsx` (23KB) |
+| MCQ question types | ✅ Done | Questions with options + correctIndex |
+| Timer per question / total | ✅ Done | Timer bar in quiz screen |
+| Instant results screen | ✅ Done | `app/group/[id]/quiz/[quizId]/results.tsx` (19KB) |
+| Answer explanations on review | ✅ Done | Explanation field in questions |
+| Group leaderboard | ✅ Done | `app/group/[id]/leaderboard.tsx` (17KB) |
+| Weekly/monthly/all-time toggle | ✅ Done | Period toggle in leaderboard |
+| Streak tracking (consecutive days) | ✅ Done | `convex/streaks.ts` (2KB) |
+| Streak badge on profile | ✅ Done | Fire emoji + count on profile |
+| Challenges list | ✅ Done | `app/group/[id]/challenges/index.tsx` (18KB) |
+| Challenge detail + submission | ✅ Done | `app/group/[id]/challenges/[challengeId].tsx` (24KB) |
+| Performance analytics | ✅ Done | Stats in profile screen |
+
+#### Admin Panel
+
+| Feature | Status | File |
+|---------|--------|------|
+| Quiz management list | ✅ Done | `admin-dashboard/app/admin/quizzes/page.tsx` (18KB) |
+| Quiz builder (create new) | ✅ Done | `admin-dashboard/app/admin/quizzes/new/page.tsx` |
+| Quiz editor + analytics | ✅ Done | `admin-dashboard/app/admin/quizzes/[id]/page.tsx` |
+| Challenge management | ✅ Done | `admin-dashboard/app/admin/challenges/page.tsx` |
+
+> **Backend:** `convex/quizzes.ts` (16KB), `convex/challenges.ts` (10KB), `convex/leaderboard.ts` (10KB), `convex/streaks.ts` all implemented.
+
+> **Note:** Push notifications for daily quiz availability are configured; full device-level Expo push setup may need verification.
+
+---
+
+### Phase 5: Intelligence & Polish ✅ Largely Complete
+
+> **Goal:** AI chatbot, personalized feed, onboarding, analytics dashboard, performance optimization.
+
+#### Mobile App
+
+| Feature | Status | File |
+|---------|--------|------|
+| Onboarding flow (qualification → interests) | ✅ Done | `app/onboarding.tsx` (18KB) |
+| AI chatbot in groups | ✅ Done | `convex/ai.ts` (8KB) — Gemini API integration |
+| User preferences saved | ✅ Done | `convex/userPreferences.ts` (4KB) |
+| Personalized feed (recommended content) | 🟡 Partial | Feed query exists; personalization scoring may be basic |
+| Multi-language support (Hindi) | ❌ Missing | Not yet implemented |
+| Offline mode | ❌ Missing | Not yet implemented |
+| App rating prompt | ❌ Missing | Not yet implemented |
+| Deep linking (universal links) | ❌ Missing | Basic deep links only; universal links not configured |
+
+#### Admin Panel
+
+| Feature | Status | File |
+|---------|--------|------|
+| Analytics dashboard (MAU, DAU, signups) | ✅ Done | `admin-dashboard/app/admin/analytics/page.tsx` (30KB) |
+| AI configuration per group | ✅ Done | `admin-dashboard/app/admin/ai-config/page.tsx` (17KB) |
+| User management (list, ban/unban) | ✅ Done | `admin-dashboard/app/admin/users/page.tsx` (23KB) |
+| Push notification manager | ✅ Done | `admin-dashboard/app/admin/notifications/page.tsx` |
+| Content performance stats | ✅ Done | In analytics page + admin dashboard |
+
+> **Backend:** `convex/ai.ts`, `convex/analytics.ts`, `convex/userPreferences.ts` all present.
+
+---
+
+## Overall Completion Summary
+
+### By Phase
 
 ```
-Level 1: Qualification
-  ├── 10th Standard
-  ├── 12th Standard
-  ├── Diploma
-  └── Graduation
-
-Level 2: Category (depends on qualification)
-  ├── Government Jobs
-  ├── Private Jobs
-  ├── Business & Entrepreneurship
-  ├── Sports & Fitness
-  └── Agriculture & Allied
-
-Level 3: Sector (e.g., under Government Jobs)
-  ├── Defence Services
-  ├── Banking & Finance
-  ├── Railways
-  ├── Civil Services
-  ├── Teaching
-  └── PSUs
-
-Level 4: SubSector (e.g., under Defence)
-  ├── Indian Army
-  ├── Indian Navy
-  ├── Indian Air Force
-  └── Paramilitary Forces (CAPF)
-
-Level 5: Branch (e.g., under Navy)
-  ├── Executive Branch
-  ├── Technical Branch
-  └── Logistics Branch
-
-Level 6: Role (e.g., under Executive)
-  ├── Navy Pilot
-  ├── SSC Officer
-  └── Permanent Commission Officer
+Pre-Phase Foundation  ████████████████████ 100%
+Phase 1A Foundation   ████████████░░░░░░░░  60%  ← NEEDS ATTENTION
+Phase 2 Groups & Chat ███████████████████░  95%
+Phase 3 Roadmaps      ██████████████████░░  90%
+Phase 4 Quizzes       ██████████████████░░  90%
+Phase 5 Intelligence  ████████████████░░░░  80%
+─────────────────────────────────────────────────
+Overall               ██████████████████░░  ~85%
 ```
 
-**Filter Features:**
+### Feature Count
 
-- Breadcrumb navigation showing selected path
-- Back button to go up one level
-- Clear All to reset filters
-- Prefetching next level for smooth UX
-- In-memory caching to prevent UI flicker
-- Apply button to activate filters
+| Category | Total Planned | Completed | Missing |
+|----------|--------------|-----------|---------|
+| Mobile App Screens | ~25 screens | ~23 | 2 (minor) |
+| Convex Backend Tables | 25 tables | **25** | 0 ✅ |
+| Convex Backend Files | ~18 files | 18 | 0 ✅ |
+| Admin Panel Pages | ~15 pages | 14 | 1 (bulk ops) |
+| UI Components | ~30+ | ~30+ | ShareButton |
+| Phase 1A Features | 12 | ~7 | 5 |
 
-**Modern Wizard Filter Experience:** ⭐ NEW
+---
 
-The FilterModal has been completely redesigned as a step-by-step wizard:
+## Pending Work & Gaps
 
+### 🔴 High Priority (Phase 1A incomplete items)
+
+1. **`components/ShareButton.tsx`** — Create share button using `expo-sharing`, add to `CareerPathDetails.tsx`. Generate deep link `skillmedia://career/{filterOptionId}`.
+
+2. **Integrate `RankingBadge.tsx` & `VacancyChip.tsx`** into `components/cards/CareerPathHeroCard.tsx` — components are created but not wired into the card UI.
+
+3. **Improve `CareerPathDetails.tsx`** — Refactor to 5 structured sections:
+   - Section 1: Overview (description)
+   - Section 2: Requirements (parse into bullet list with checkmarks)
+   - Section 3: Salary Range (formatted, fresher vs experienced if available)
+   - Section 4: Relevant Exams (as cards with exam name, frequency)
+   - Section 5: Admin Articles (from `adminArticles` table, expandable cards)
+
+4. **Filter sorting by ranking** — Modify `convex/filter.ts` `getFilterChildren()` to sort by `ranking` ascending (nulls last).
+
+5. **Admin `AddFilterModal.tsx`** — Add "Ranking" (number input) and "Annual Vacancies" (number input) fields to filter creation form.
+
+### 🟡 Medium Priority (Phase 5 optional items)
+
+6. **Multi-language support (Hindi)** — Toggle in settings; translate career card content.
+
+7. **Offline mode** — Cache career cards and roadmaps using AsyncStorage or Convex built-in caching.
+
+8. **Deep linking (universal links)** — Configure `expo-linking` for universal links for sharing career cards.
+
+9. **App rating prompt** — Show after milestones (5 quizzes completed, 7-day streak).
+
+10. **Personalized feed scoring** — Verify the feed ranking algorithm is properly implemented and scores cards based on user group membership and preferences.
+
+### 🟢 Low Priority (Nice to have)
+
+11. **Admin: Bulk operations** — Select multiple filter options and batch-update ranking/status.
+12. **Admin: Card preview** — Preview how a career card looks in mobile app before publishing.
+13. **Push notifications for daily quiz** — Verify Expo push token integration end-to-end.
+14. **Content seeding** — Verify 50+ career cards exist in production database.
+
+---
+
+## Admin Panel Status
+
+The Next.js admin panel at `/admin-dashboard` has full functionality built for all phases:
+
+| Page | Status | Purpose |
+|------|--------|---------|
+| `/admin` (Dashboard) | ✅ | Engagement stats, quick actions |
+| `/admin/filters` | ✅ | Filter tree management (create/edit/delete career paths) |
+| `/admin/posts` | ✅ | Community post management |
+| `/admin/articles` | ✅ | Admin articles per career path |
+| `/admin/groups` | ✅ | Group management list |
+| `/admin/groups/[id]` | ✅ | Group detail, messages, moderation |
+| `/admin/reports` | ✅ | Content moderation, reported messages |
+| `/admin/roadmaps` | ✅ | Roadmap management |
+| `/admin/roadmaps/[id]` | ✅ | Roadmap builder with milestones + steps |
+| `/admin/quizzes` | ✅ | Quiz management |
+| `/admin/quizzes/new` | ✅ | Quiz builder |
+| `/admin/quizzes/[id]` | ✅ | Quiz editor + analytics |
+| `/admin/challenges` | ✅ | Challenge management |
+| `/admin/analytics` | ✅ | MAU/DAU/engagement analytics |
+| `/admin/users` | ✅ | User management, ban/unban |
+| `/admin/ai-config` | ✅ | AI configuration per group |
+| `/admin/notifications` | ✅ | Push notification manager |
+
+> **Missing:** Ranking + vacancies input fields in `AddFilterModal.tsx`, bulk operations for filter options.
+
+---
+
+## Key User Flows
+
+### Flow 1: Career Discovery
 ```
-┌─────────────────────────────────────────────────────┐
-│  Step 1 of 6: Select Qualification                 │
-│  ═══════════════════━━━━━━━━━━━━━━━━━━  Progress   │
-│                                                     │
-│  ┌───────────────┐  ┌───────────────┐             │
-│  │      🎓       │  │      📚       │             │
-│  │  10th Std     │  │  12th Std     │  2-column   │
-│  │               │  │    ✓         │  selectable │
-│  └───────────────┘  └───────────────┘  cards      │
-│                                                     │
-│  ┌───────────────┐  ┌───────────────┐             │
-│  │      🎯       │  │      🏆       │             │
-│  │   Diploma     │  │  Graduation   │             │
-│  │               │  │               │             │
-│  └───────────────┘  └───────────────┘             │
-│                                                     │
-│  [← Back]                          [Apply Filters] │
-└─────────────────────────────────────────────────────┘
-```
-
-**Wizard Features:**
-
-- **Progress Bar**: Animated bar showing current level (e.g., "Step 2/6")
-- **Dynamic Titles**: Changes based on current hierarchy level
-- **Selectable Cards**: 2-column grid with tap animations
-- **Selected State**: Primary color fill + checkmark icon
-- **Slide Transitions**: SlideInRight/SlideOutLeft animations
-- **Backdrop Blur**: BlurView on iOS, solid overlay on Android
-- **Bottom Sheet Style**: Rounded corners (28px), max height 80%
-
-### 2. Dual Content Model
-
-**A. Career Path Cards (Structured Data)**
-
-- Displayed when user selects a specific filter
-- Shows: Description, Requirements, Salary, Exams, Image
-- Users can like, comment, save career paths
-- Acts like a "career information hub"
-
-**B. Community Posts (User-Generated Style)**
-
-- Admin creates posts (articles, tips, guides)
-- Linked to specific career paths via `linkedFilterOptionIds`
-- Users can like, comment, save posts
-- Image support
-- Chronological feed
-
-### 3. Admin-Only Posting
-
-**Current Behavior:**
-
-- Create tab exists but post creation should be restricted to admins
-- Posts are created through seeding or manual admin creation
-- Regular users can only: View, Like, Comment, Save
-
-**Admin Identification:**
-
-- `users.isAdmin` boolean flag in database
-- Set manually in Convex dashboard or via seeding
-
-### 4. Engagement Features
-
-**On Community Posts:**
-
-- ❤️ Like
-- 💬 Comment (with nested replies)
-- 🔖 Save/Bookmark
-- Share (future)
-
-**On Career Paths (FilterOptions):**
-
-- ❤️ Like specific career paths
-- 💬 Discuss career options in comments
-- 🔖 Save career paths for reference
-
-### 5. Real-Time Notifications
-
-- Like notifications
-- Comment notifications
-- Follow notifications (when implemented)
-- Mark as read/unread
-- Notification badge counter
-
-### 6. Modern Theme System ⭐ REDESIGNED
-
-**Design Philosophy:**
-
-- **Light Mode**: EdTech-inspired with clean, approachable colors
-- **Dark Mode**: AI/Futuristic-inspired with glowing accents
-
-**Dribbble-Inspired Color Palettes:**
-
-```typescript
-// constants/Colors.ts
-
-// Light Theme
-light: {
-  background: '#F8F9FE',      // Very light purple-white
-  surface: '#FFFFFF',          // Card background
-  primary: '#6C5DD3',          // Soft Purple (main accent)
-  secondary: '#FFCFA2',        // Peach/Orange (highlights)
-  textPrimary: '#1F2937',      // Dark gray-black
-  textSecondary: '#9CA3AF',    // Medium gray
-}
-
-// Dark Theme
-dark: {
-  background: '#0F1115',       // Deep Gunmetal
-  surface: '#181A20',          // Card surfaces
-  primary: '#A0A6FF',          // Glowing Lavender
-  accentGradientStart: '#6C5DD3',
-  accentGradientEnd: '#8676FF', // Gradient for buttons
-  textPrimary: '#FFFFFF',
-  textSecondary: '#9E9E9E',
-}
+Login → Onboarding (select qualification + interests) 
+→ Home Feed → Tap Filter → Wizard (6 levels) → Career Path Card 
+→ Like / Comment / Save / Share → Join Community Group
 ```
 
-**Typography (Poppins Font Family):**
-
-```typescript
-fontFamily: {
-  regular: 'Poppins-Regular',
-  semibold: 'Poppins-SemiBold',
-  bold: 'Poppins-Bold',
-}
-
-fontSize: xs(12) → sm(14) → base(16) → lg(18) → xl(20) → 2xl(24) → 3xl(30) → 4xl(36)
+### Flow 2: Community Learning
+```
+Groups Tab → Select Group → Chat Tab (real-time messages)
+→ Roadmap Tab → View milestones → Mark steps complete
+→ Quiz Tab → Take daily quiz → See results & streak update
+→ Leaderboard Tab → See ranking among members
 ```
 
-**Theme Toggle System:**
-
-```typescript
-// providers/ThemeProvider.tsx
-
-interface ThemeContextType {
-  theme: Theme;
-  themeMode: "light" | "dark" | "system";
-  setThemeMode: (mode) => void;
-  isDark: boolean;
-  toggleTheme: () => void; // Quick toggle between light/dark
-  fontsLoaded: boolean;
-}
+### Flow 3: Admin Content Creation
+```
+Admin Login → Admin Panel → Create Filter Option (career path) 
+→ Group auto-created → Create Admin Articles for that career path
+→ Build Roadmap (milestones + steps) → Create Quiz (questions + timer)
+→ Create Weekly Challenge → Monitor via Analytics Dashboard
 ```
 
-**Features:**
-
-- Auto-detection of system preference
-- Manual toggle with three modes: Light, Dark, System
-- Persistent across sessions (AsyncStorage)
-- Custom font loading with expo-font
-- Complete design token system (spacing, shadows, borders)
-- `useTheme()` hook for accessing theme anywhere
-- `useThemedStyles()` utility hook for styled components
-
-### 7. User Profile
-
-- Profile picture (from Google OAuth)
-- Editable bio and fullname
-- View user's comment history
-- Logout functionality
-- Stats (followers, following, posts) - legacy fields
-
-### 8. Bookmarks
-
-- Save career paths and posts
-- Organized in separate tab
-- Quick access to saved content
-- Toggle save/unsave
-
-### 9. Modern UI Component Library ⭐ NEW
-
-A collection of theme-aware, reusable components located in `components/ui/`:
-
-**GlassCard** - Glassmorphism Card Component
-
-```typescript
-// Usage
-<GlassCard padding="lg" bordered>
-  <Text>Your content here</Text>
-</GlassCard>
-
-// Dark Mode: Semi-transparent surface with subtle border
-// Light Mode: Pure white with soft purple shadow (elevation: 10)
+### Flow 4: Quiz Engagement
 ```
-
-**GradientButton** - Animated Gradient Button
-
-```typescript
-// Usage
-<GradientButton title="Get Started" onPress={handlePress} />
-
-// Dark Mode: LinearGradient from #6C5DD3 → #8676FF
-// Light Mode: Solid primary color with shadow
-// Animation: Scale to 0.98 on press with spring physics
-```
-
-**NeumorphicInput** - Soft UI Input Field
-
-```typescript
-// Usage
-<NeumorphicInput
-  placeholder="Search careers..."
-  leftIcon="search"
-  onChangeText={setQuery}
-/>
-
-// Features: Focus glow animation, clear button, icon support
-// Light Mode: Light gray background, soft inset feel
-// Dark Mode: Dark gray with purple glow on focus
-```
-
-**ThemeToggle** - Theme Switching Components
-
-```typescript
-// Quick toggle (light/dark)
-<ThemeToggle mode="quick" size="medium" />
-
-// Full toggle (light/dark/system with cycling)
-<ThemeToggle mode="full" showLabel showModeText />
-
-// Also available: QuickThemeToggle, ThemeModeSelector
-```
-
-**AnimatedCard** - Cards with Entrance Animations
-
-```typescript
-// Usage in lists
-<AnimatedCard index={index} useEnteringAnimation>
-  <PostContent />
-</AnimatedCard>
-
-// Animation: FadeInDown.delay(index * 100).springify()
-// Creates cascading entrance effect for lists
-```
-
-### 10. Floating Tab Bar ⭐ NEW
-
-Modern floating navigation with delight factors:
-
-```
-┌──────────────────────────────────────────────────┐
-│                     App Content                  │
-│                                                  │
-│                                                  │
-│                                                  │
-│    ┌────────────────────────────────────────┐   │
-│    │  🏠   📑   ➕   ❤️   👤               │   │ ← Floating
-│    │  ●                                     │   │   Tab Bar
-│    └────────────────────────────────────────┘   │
-│        ↑ Glowing dot indicator                  │
-└──────────────────────────────────────────────────┘
-```
-
-**Features:**
-
-- **Floating Design**: `margin: 20px`, `borderRadius: 30px`, `height: 70px`
-- **Blur Backdrop**: BlurView intensity 80 on iOS for glassmorphism
-- **Glowing Active Indicator**: Animated dot below active icon
-- **Shadow/Glow**: Purple shadow in dark mode, soft black in light
-- **Safe Area Aware**: Respects device notches and home indicators
-
-**Tab Icon with Glow Dot:**
-
-```typescript
-const TabIcon = ({ name, focused, glowColor }) => {
-  // Animated scale (0 → 1) and opacity for the dot
-  const dotScale = withSpring(focused ? 1 : 0);
-
-  return (
-    <View>
-      <Ionicons name={name} />
-      <Animated.View style={[styles.glowDot, {
-        backgroundColor: glowColor,
-        shadowColor: glowColor  // Creates glow effect
-      }]} />
-    </View>
-  );
-};
+Group → Quiz Tab → Available Quizzes → Start Daily Quiz
+→ Answer MCQ questions (with timer) → Submit → Results screen
+→ Streak updates (🔥 consecutive days) → Check Leaderboard
 ```
 
 ---
 
-## How to Add Posts
-
-### Method 1: Database Seeding (Recommended for Bulk)
-
-**File:** `convex/seedData.ts`
-
-**Step-by-step:**
-
-1. **Open `convex/seedData.ts`**
-
-2. **Find or create the `seedCommunityPosts` mutation**
-
-3. **Add your post to the seeding array:**
-
-```typescript
-// convex/seedData.ts
-
-export const seedCommunityPosts = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // Get or create admin user
-    const adminUser = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("isAdmin"), true))
-      .first();
-
-    if (!adminUser) {
-      throw new Error(
-        "Admin user not found. Create admin user first.",
-      );
-    }
-
-    // Clear existing posts (optional - remove if you want to keep old posts)
-    const existingPosts = await ctx.db
-      .query("communityPosts")
-      .collect();
-    for (const post of existingPosts) {
-      await ctx.db.delete(post._id);
-    }
-
-    // EXAMPLE 1: Post about React Developer career
-    // First, get the React Developer filter option ID
-    const reactDeveloperFilter = await ctx.db
-      .query("FilterOption")
-      .filter((q) =>
-        q.eq(q.field("name"), "React Developer"),
-      )
-      .first();
-
-    if (reactDeveloperFilter) {
-      await ctx.db.insert("communityPosts", {
-        userId: adminUser._id,
-        content:
-          "🚀 React Developer Roadmap 2026\n\nIf you're interested in becoming a React developer, here's your step-by-step guide:\n\n1. Master JavaScript ES6+ fundamentals\n2. Learn React basics (components, props, state)\n3. Understand React Hooks deeply\n4. Practice with Redux or Context API\n5. Build 3-5 portfolio projects\n6. Learn TypeScript\n7. Master Git & GitHub\n\nSalary range: ₹3-6 LPA for freshers, ₹6-15 LPA with experience.\n\nStart your journey today! 💪",
-        imageUrl: "https://example.com/react-roadmap.jpg", // Optional
-        linkedFilterOptionIds: [reactDeveloperFilter._id],
-        likes: 0,
-        comments: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        isActive: true,
-      });
-    }
-
-    // EXAMPLE 2: Post about Navy Pilot career
-    const navyPilotFilter = await ctx.db
-      .query("FilterOption")
-      .filter((q) => q.eq(q.field("name"), "Navy Pilot"))
-      .first();
-
-    if (navyPilotFilter) {
-      await ctx.db.insert("communityPosts", {
-        userId: adminUser._id,
-        content:
-          "✈️ Life as a Navy Pilot: My Journey\n\nI've been flying MiG-29Ks from INS Vikramaditya for 5 years. Here's what you need to know:\n\n🎯 Entry: INET exam + SSB Interview\n📚 Training: 3 years at Naval Academy\n💰 Salary: ₹56,100/month (starting)\n🏆 Benefits: Free accommodation, medical, pension\n\n#NavyPilot #IndianNavy #DefenceCareer",
-        linkedFilterOptionIds: [navyPilotFilter._id],
-        likes: 0,
-        comments: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        isActive: true,
-      });
-    }
-
-    // EXAMPLE 3: Post linked to MULTIPLE career paths
-    const ibpsClerkFilter = await ctx.db
-      .query("FilterOption")
-      .filter((q) => q.eq(q.field("name"), "IBPS Clerk"))
-      .first();
-
-    const sbiPoFilter = await ctx.db
-      .query("FilterOption")
-      .filter((q) => q.eq(q.field("name"), "SBI PO"))
-      .first();
-
-    if (ibpsClerkFilter && sbiPoFilter) {
-      await ctx.db.insert("communityPosts", {
-        userId: adminUser._id,
-        content:
-          "🏦 Banking Exam Preparation Tips\n\nPreparing for IBPS Clerk or SBI PO? Here are my top tips:\n\n1. Start with NCERT books for basics\n2. Practice daily quant for 2 hours\n3. Read newspaper for current affairs\n4. Mock tests are CRUCIAL\n5. Time management is key\n\nAll the best! 🎯",
-        linkedFilterOptionIds: [
-          ibpsClerkFilter._id,
-          sbiPoFilter._id,
-        ],
-        likes: 0,
-        comments: 0,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        isActive: true,
-      });
-    }
-
-    console.log("Community posts seeded successfully!");
-  },
-});
-```
-
-4. **Run the seeding mutation:**
-
-```bash
-# In terminal
-npx convex run seedData:seedCommunityPosts
-```
-
-**Output:**
-
-```
-✓ Community posts seeded successfully!
-```
-
----
-
-### Method 2: Convex Dashboard (Manual One-by-One)
-
-1. **Open Convex Dashboard:** https://dashboard.convex.dev
-2. **Select your project**
-3. **Go to "Data" tab**
-4. **Click on `communityPosts` table**
-5. **Click "Add Document"**
-6. **Fill in the fields:**
-
-```json
-{
-  "userId": "k123abc456...", // Get admin user ID from users table
-  "content": "Your post content here with emojis 🚀",
-  "imageUrl": "https://example.com/image.jpg", // Optional
-  "linkedFilterOptionIds": ["k789def012..."], // Array of FilterOption IDs
-  "likes": 0,
-  "comments": 0,
-  "createdAt": 1704067200000, // Use Date.now() value
-  "updatedAt": 1704067200000,
-  "isActive": true
-}
-```
-
-7. **Click "Add Document"**
-
----
-
-### Method 3: Programmatic via Mutation (Future Enhancement)
-
-Create a mutation in `convex/communityPosts.ts`:
-
-```typescript
-// convex/communityPosts.ts
-
-export const createCommunityPost = mutation({
-  args: {
-    content: v.string(),
-    imageUrl: v.optional(v.string()),
-    linkedFilterOptionIds: v.array(v.id("FilterOption")),
-  },
-  handler: async (ctx, args) => {
-    // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated");
-    }
-
-    // Get user from database
-    const user = await ctx.db
-      .query("users")
-      .filter((q) =>
-        q.eq(q.field("clerkId"), identity.subject),
-      )
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    // Check if user is admin
-    if (!user.isAdmin) {
-      throw new Error("Only admins can create posts");
-    }
-
-    // Create post
-    const postId = await ctx.db.insert("communityPosts", {
-      userId: user._id,
-      content: args.content,
-      imageUrl: args.imageUrl,
-      linkedFilterOptionIds: args.linkedFilterOptionIds,
-      likes: 0,
-      comments: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      isActive: true,
-    });
-
-    return postId;
-  },
-});
-```
-
-**Usage in app:**
-
-```typescript
-// app/(tabs)/create.tsx
-
-const createPost = useMutation(
-  api.communityPosts.createCommunityPost,
-);
-
-const handleShare = async () => {
-  if (!caption.trim()) {
-    alert("Please add a caption");
-    return;
-  }
-
-  await createPost({
-    content: caption,
-    imageUrl: uploadedImageUrl, // If image was uploaded
-    linkedFilterOptionIds: selectedFilters, // From filter selection
-  });
-
-  alert("Post created!");
-  setCaption("");
-};
-```
-
----
-
-### Post Content Best Practices
-
-**Good Post Examples:**
-
-```
-1. Career Roadmap Post:
-"🚀 Full Stack Developer Roadmap 2026
-
-Frontend:
-✅ HTML, CSS, JavaScript
-✅ React.js or Vue.js
-✅ Tailwind CSS
-
-Backend:
-✅ Node.js + Express
-✅ MongoDB or PostgreSQL
-✅ REST API design
-
-DevOps Basics:
-✅ Git & GitHub
-✅ Docker basics
-✅ Deploy on Vercel/Railway
-
-💰 Salary: ₹4-8 LPA (Fresher)
-📚 Timeline: 6-12 months of consistent learning
-
-#FullStackDeveloper #WebDev"
-```
-
-```
-2. Exam Preparation Post:
-"📚 UPSC CSE Preparation Strategy
-
-🎯 Prelims (200 marks each):
-- GS Paper 1: Current affairs, Polity, Economy, Geography
-- GS Paper 2: CSAT (Qualifying)
-
-📖 Study Material:
-- NCERT 6-12 (MUST read)
-- Laxmikant (Polity)
-- Ramesh Singh (Economy)
-- The Hindu newspaper (daily)
-
-⏰ Study Hours: 8-10 hours/day
-💪 Attempt: Usually takes 2-3 attempts
-
-Age Limit: 21-32 years
-Salary: ₹56,100 - ₹2,50,000/month
-
-Start early, stay consistent! 🔥"
-```
-
-```
-3. Success Story Post:
-"🏆 From 12th Pass to Sub-Inspector: My Story
-
-I cleared SSC CPO 2024 and joined Delhi Police as SI.
-
-My Journey:
-📌 Completed 12th in 2021
-📌 Started preparing in 2022
-📌 Failed first attempt (2022)
-📌 Cleared in second attempt (2024)
-
-Key Tips:
-1. Physical fitness is 50% of the game
-2. Mock tests saved me in written exam
-3. Interview preparation: Current affairs + confidence
-
-Salary: ₹35,400 - ₹1,12,400/month
-
-Never give up on your dreams! 💪
-
-#SSC #CPO #SubInspector #Success"
-```
-
----
-
-## How to Add Filter Options
-
-### Understanding Filter Hierarchy
-
-Before adding filters, understand the 6-level hierarchy:
-
-```
-1. Qualification (Root)
-   └── 2. Category
-       └── 3. Sector
-           └── 4. SubSector
-               └── 5. Branch
-                   └── 6. Role
-```
-
-**Each level must have a `parentId` pointing to its parent (except Level 1).**
-
----
-
-### Method 1: Database Seeding (Recommended)
-
-**File:** `convex/seedData.ts`
-
-#### Example: Adding Complete "Defence After Graduation" Hierarchy
-
-```typescript
-// convex/seedData.ts
-
-export const seedFilterOptions = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // Clear existing filters (optional)
-    const existingFilters = await ctx.db
-      .query("FilterOption")
-      .collect();
-    for (const filter of existingFilters) {
-      await ctx.db.delete(filter._id);
-    }
-
-    // ==========================================
-    // LEVEL 1: QUALIFICATIONS (Root)
-    // ==========================================
-    const graduation = await ctx.db.insert("FilterOption", {
-      name: "Graduation",
-      type: "qualification",
-      parentId: null, // Root level
-      description:
-        "Bachelor's degree in any stream (Arts, Commerce, Science, Engineering)",
-      isActive: true,
-    });
-
-    const twelfth = await ctx.db.insert("FilterOption", {
-      name: "12th Standard",
-      type: "qualification",
-      parentId: null,
-      description:
-        "Higher Secondary Certificate (HSC) or 10+2",
-      isActive: true,
-    });
-
-    const tenth = await ctx.db.insert("FilterOption", {
-      name: "10th Standard",
-      type: "qualification",
-      parentId: null,
-      description:
-        "Secondary School Certificate (SSC) or Matriculation",
-      isActive: true,
-    });
-
-    // ==========================================
-    // LEVEL 2: CATEGORIES (Under Graduation)
-    // ==========================================
-    const govtJobs = await ctx.db.insert("FilterOption", {
-      name: "Government Jobs",
-      type: "category",
-      parentId: graduation,
-      description:
-        "Central and State Government job opportunities with job security and benefits",
-      isActive: true,
-    });
-
-    const privateJobs = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Private Jobs",
-        type: "category",
-        parentId: graduation,
-        description:
-          "Corporate sector opportunities in various industries",
-        isActive: true,
-      },
-    );
-
-    // ==========================================
-    // LEVEL 3: SECTORS (Under Government Jobs)
-    // ==========================================
-    const defence = await ctx.db.insert("FilterOption", {
-      name: "Defence Services",
-      type: "sector",
-      parentId: govtJobs,
-      description:
-        "Join Indian Armed Forces and Paramilitary to serve the nation",
-      avgSalary: "₹56,100 - ₹2,50,000 per month",
-      relevantExams: "CDS, AFCAT, INET, NDA",
-      isActive: true,
-    });
-
-    const banking = await ctx.db.insert("FilterOption", {
-      name: "Banking & Finance",
-      type: "sector",
-      parentId: govtJobs,
-      description:
-        "Government banks and financial institutions",
-      avgSalary: "₹25,000 - ₹80,000 per month",
-      relevantExams:
-        "IBPS PO, IBPS Clerk, SBI PO, RBI Grade B",
-      isActive: true,
-    });
-
-    // ==========================================
-    // LEVEL 4: SUB-SECTORS (Under Defence)
-    // ==========================================
-    const indianArmy = await ctx.db.insert("FilterOption", {
-      name: "Indian Army",
-      type: "subSector",
-      parentId: defence,
-      description:
-        "Land-based branch of Indian Armed Forces",
-      requirements:
-        "Graduation in any stream, Age 19-24 years",
-      relevantExams:
-        "CDS (Combined Defence Services), NDA, TES, TGC",
-      isActive: true,
-    });
-
-    const indianNavy = await ctx.db.insert("FilterOption", {
-      name: "Indian Navy",
-      type: "subSector",
-      parentId: defence,
-      description:
-        "Naval forces protecting Indian maritime interests",
-      requirements:
-        "Graduation (Technical: B.E./B.Tech, Non-Tech: Any degree)",
-      relevantExams: "INET, CDS, SSC",
-      avgSalary: "₹56,100 - ₹1,77,500 per month",
-      isActive: true,
-    });
-
-    const indianAirForce = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Indian Air Force",
-        type: "subSector",
-        parentId: defence,
-        description: "Aerial warfare and air defence",
-        requirements:
-          "Physics & Math at 10+2 for Flying, B.E./B.Tech for Technical",
-        relevantExams: "AFCAT, CDS, NDA",
-        isActive: true,
-      },
-    );
-
-    const capf = await ctx.db.insert("FilterOption", {
-      name: "Paramilitary Forces (CAPF)",
-      type: "subSector",
-      parentId: defence,
-      description:
-        "BSF, CRPF, CISF, ITBP, SSB under Ministry of Home Affairs",
-      requirements:
-        "Graduation in any stream, Age 20-25 years",
-      relevantExams: "UPSC CAPF",
-      avgSalary: "₹44,900 - ₹1,42,400 per month",
-      isActive: true,
-    });
-
-    // ==========================================
-    // LEVEL 5: BRANCHES (Under Indian Navy)
-    // ==========================================
-    const executiveBranch = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Executive Branch",
-        type: "branch",
-        parentId: indianNavy,
-        description:
-          "Command and operational roles including navigation, weapon systems",
-        requirements:
-          "Graduation in any stream, Age 19-25 years",
-        isActive: true,
-      },
-    );
-
-    const technicalBranch = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Technical Branch",
-        type: "branch",
-        parentId: indianNavy,
-        description:
-          "Engineering roles maintaining ships and aircraft",
-        requirements:
-          "B.E./B.Tech in Mechanical/Electrical/Electronics",
-        isActive: true,
-      },
-    );
-
-    const logisticsBranch = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Logistics Branch",
-        type: "branch",
-        parentId: indianNavy,
-        description:
-          "Supply chain, inventory, provisioning for naval operations",
-        requirements: "Graduation in any stream",
-        isActive: true,
-      },
-    );
-
-    // ==========================================
-    // LEVEL 6: ROLES (Under Executive Branch)
-    // ==========================================
-    await ctx.db.insert("FilterOption", {
-      name: "Navy Pilot",
-      type: "role",
-      parentId: executiveBranch,
-      description:
-        "Fly fighter jets, helicopters, and maritime patrol aircraft from aircraft carriers and naval air stations",
-      requirements:
-        "Physics & Math at 10+2 or B.E./B.Tech, Age 20-24 years, Excellent physical fitness, 20/20 vision",
-      avgSalary:
-        "₹56,100 - ₹1,77,500 per month (+ Flying Allowance)",
-      relevantExams:
-        "INET (Indian Navy Entrance Test), SSB Interview (5 days)",
-      image: "https://example.com/navy-pilot.jpg",
-      likes: 0,
-      comments: 0,
-      isActive: true,
-    });
-
-    await ctx.db.insert("FilterOption", {
-      name: "SSC Officer (Short Service)",
-      type: "role",
-      parentId: executiveBranch,
-      description:
-        "10-year commission with option to extend to permanent",
-      requirements:
-        "Graduation in any stream, Age 19-25 years",
-      avgSalary: "₹56,100 - ₹1,42,400 per month",
-      relevantExams: "Direct SSB or via CDS written exam",
-      likes: 0,
-      comments: 0,
-      isActive: true,
-    });
-
-    await ctx.db.insert("FilterOption", {
-      name: "Permanent Commission Officer",
-      type: "role",
-      parentId: executiveBranch,
-      description:
-        "Serve until retirement with full pension benefits",
-      requirements:
-        "Graduation, Age 19-25 years, Must clear CDS + SSB",
-      avgSalary: "₹56,100 - ₹2,50,000 per month",
-      relevantExams:
-        "CDS (Combined Defence Services) by UPSC",
-      likes: 0,
-      comments: 0,
-      isActive: true,
-    });
-
-    console.log("✅ Filter options seeded successfully!");
-  },
-});
-```
-
-**Run the seeding:**
-
-```bash
-npx convex run seedData:seedFilterOptions
-```
-
----
-
-### Method 2: Incremental Addition (Adding to Existing Hierarchy)
-
-If you already have filters and want to add new ones:
-
-```typescript
-// Add new role under existing branch
-
-export const addReactDeveloperRole = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // 1. Find the parent (Frontend Development branch)
-    const frontendBranch = await ctx.db
-      .query("FilterOption")
-      .filter((q) =>
-        q.eq(q.field("name"), "Frontend Development"),
-      )
-      .first();
-
-    if (!frontendBranch) {
-      throw new Error(
-        "Frontend Development branch not found",
-      );
-    }
-
-    // 2. Insert new role
-    await ctx.db.insert("FilterOption", {
-      name: "React Developer",
-      type: "role",
-      parentId: frontendBranch._id,
-      description:
-        "Specializes in building dynamic, responsive user interfaces using React.js",
-      requirements:
-        "JavaScript (ES6+), React.js, Redux/Context API, HTML5, CSS3, Git, REST APIs",
-      avgSalary:
-        "Fresher: ₹3-6 LPA, Experienced: ₹6-15 LPA",
-      relevantExams:
-        "N/A (Portfolio & skills-based hiring)",
-      likes: 0,
-      comments: 0,
-      isActive: true,
-    });
-
-    console.log("✅ React Developer role added!");
-  },
-});
-```
-
-**Run:**
-
-```bash
-npx convex run seedData:addReactDeveloperRole
-```
-
----
-
-### Method 3: Convex Dashboard (Manual)
-
-1. **Open Convex Dashboard**
-2. **Go to Data → FilterOption table**
-3. **Click "Add Document"**
-4. **IMPORTANT: Get Parent ID first**
-   - Query the parent filter option
-   - Copy its `_id` value
-
-5. **Fill in the form:**
-
-```json
-{
-  "name": "Python Developer",
-  "type": "role",
-  "parentId": "k123abc456...", // Parent's _id from Backend Development
-  "description": "Build scalable backend systems using Python",
-  "requirements": "Python, Django/Flask, PostgreSQL, REST APIs, Git",
-  "avgSalary": "₹4-7 LPA (Fresher), ₹8-20 LPA (Experienced)",
-  "relevantExams": "N/A",
-  "likes": 0,
-  "comments": 0,
-  "isActive": true
-}
-```
-
-6. **Click "Add Document"**
-
----
-
-### Filter Template: Government Defence After Graduation
-
-Here's a complete, copy-paste template for the entire Defence hierarchy:
-
-```typescript
-export const seedDefenceHierarchy = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // Get Graduation qualification
-    const graduation = await ctx.db
-      .query("FilterOption")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("name"), "Graduation"),
-          q.eq(q.field("type"), "qualification"),
-        ),
-      )
-      .first();
-
-    if (!graduation) {
-      throw new Error(
-        "Graduation qualification not found. Seed qualifications first.",
-      );
-    }
-
-    // Get Government Jobs category
-    let govtJobs = await ctx.db
-      .query("FilterOption")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("name"), "Government Jobs"),
-          q.eq(q.field("parentId"), graduation._id),
-        ),
-      )
-      .first();
-
-    if (!govtJobs) {
-      govtJobs = await ctx.db.insert("FilterOption", {
-        name: "Government Jobs",
-        type: "category",
-        parentId: graduation._id,
-        description:
-          "Central and State Government positions",
-        isActive: true,
-      });
-    }
-
-    // Defence Services Sector
-    const defence = await ctx.db.insert("FilterOption", {
-      name: "Defence & Paramilitary",
-      type: "sector",
-      parentId: govtJobs._id,
-      description:
-        "Indian Armed Forces and Central Armed Police Forces",
-      avgSalary: "₹56,000 - ₹2,50,000 per month",
-      isActive: true,
-    });
-
-    // SUB-SECTORS
-    const army = await ctx.db.insert("FilterOption", {
-      name: "Indian Army",
-      type: "subSector",
-      parentId: defence._id,
-      description: "Land warfare force",
-      relevantExams: "CDS, TES, TGC",
-      isActive: true,
-    });
-
-    const navy = await ctx.db.insert("FilterOption", {
-      name: "Indian Navy",
-      type: "subSector",
-      parentId: defence._id,
-      description: "Naval warfare force",
-      relevantExams: "INET, CDS",
-      isActive: true,
-    });
-
-    const airforce = await ctx.db.insert("FilterOption", {
-      name: "Indian Air Force",
-      type: "subSector",
-      parentId: defence._id,
-      description: "Aerial warfare force",
-      relevantExams: "AFCAT, CDS",
-      isActive: true,
-    });
-
-    const capf = await ctx.db.insert("FilterOption", {
-      name: "CAPF (Paramilitary)",
-      type: "subSector",
-      parentId: defence._id,
-      description: "BSF, CRPF, CISF, ITBP, SSB",
-      relevantExams: "UPSC CAPF AC",
-      isActive: true,
-    });
-
-    // ARMY BRANCHES
-    const armyIMA = await ctx.db.insert("FilterOption", {
-      name: "IMA (Indian Military Academy)",
-      type: "branch",
-      parentId: army._id,
-      description: "Officer training for Army",
-      requirements: "Any graduation, Age 19-24",
-      isActive: true,
-    });
-
-    const armyOTA = await ctx.db.insert("FilterOption", {
-      name: "OTA (Officers Training Academy)",
-      type: "branch",
-      parentId: army._id,
-      description: "SSC officer training",
-      requirements: "Any graduation, Age 19-25",
-      isActive: true,
-    });
-
-    const armyJAG = await ctx.db.insert("FilterOption", {
-      name: "JAG (Law Officers)",
-      type: "branch",
-      parentId: army._id,
-      description: "Legal wing of Army",
-      requirements: "LLB with 55% marks, Age 21-27",
-      isActive: true,
-    });
-
-    // NAVY BRANCHES
-    const navyExecutive = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Executive Branch",
-        type: "branch",
-        parentId: navy._id,
-        description: "Command and operational roles",
-        isActive: true,
-      },
-    );
-
-    const navyTechnical = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Technical Branch",
-        type: "branch",
-        parentId: navy._id,
-        description: "Engineering maintenance",
-        requirements: "B.E./B.Tech",
-        isActive: true,
-      },
-    );
-
-    const navyLogistics = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Logistics Branch",
-        type: "branch",
-        parentId: navy._id,
-        description: "Supply chain and inventory",
-        isActive: true,
-      },
-    );
-
-    // AIR FORCE BRANCHES
-    const afFlying = await ctx.db.insert("FilterOption", {
-      name: "Flying Branch",
-      type: "branch",
-      parentId: airforce._id,
-      description: "Pilot and navigator roles",
-      requirements:
-        "Physics & Math at 10+2 or B.E./B.Tech, Age 20-24",
-      isActive: true,
-    });
-
-    const afGroundTech = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Ground Duty (Technical)",
-        type: "branch",
-        parentId: airforce._id,
-        description: "Engineering roles",
-        requirements: "B.E./B.Tech, Age 20-26",
-        isActive: true,
-      },
-    );
-
-    const afGroundNonTech = await ctx.db.insert(
-      "FilterOption",
-      {
-        name: "Ground Duty (Non-Technical)",
-        type: "branch",
-        parentId: airforce._id,
-        description: "Administration, logistics, accounts",
-        requirements: "Any graduation, Age 20-26",
-        isActive: true,
-      },
-    );
-
-    // CAPF BRANCHES
-    const capfBSF = await ctx.db.insert("FilterOption", {
-      name: "BSF - Border Security Force",
-      type: "branch",
-      parentId: capf._id,
-      description: "Guards India's borders",
-      isActive: true,
-    });
-
-    const capfCRPF = await ctx.db.insert("FilterOption", {
-      name: "CRPF - Central Reserve Police Force",
-      type: "branch",
-      parentId: capf._id,
-      description: "Internal security",
-      isActive: true,
-    });
-
-    const capfCISF = await ctx.db.insert("FilterOption", {
-      name: "CISF - Central Industrial Security Force",
-      type: "branch",
-      parentId: capf._id,
-      description: "Secures vital installations",
-      isActive: true,
-    });
-
-    const capfITBP = await ctx.db.insert("FilterOption", {
-      name: "ITBP - Indo-Tibetan Border Police",
-      type: "branch",
-      parentId: capf._id,
-      description: "Guards Himalayan borders",
-      isActive: true,
-    });
-
-    const capfSSB = await ctx.db.insert("FilterOption", {
-      name: "SSB - Sashastra Seema Bal",
-      type: "branch",
-      parentId: capf._id,
-      description: "Guards Nepal & Bhutan borders",
-      isActive: true,
-    });
-
-    // ROLES (Examples under Navy Executive Branch)
-    await ctx.db.insert("FilterOption", {
-      name: "Navy Pilot",
-      type: "role",
-      parentId: navyExecutive._id,
-      description:
-        "Fly fighter jets, helicopters from aircraft carriers",
-      requirements:
-        "Physics & Math at 10+2 or B.E./B.Tech, Age 20-24, Medical fit",
-      avgSalary:
-        "₹56,100 - ₹1,77,500/month + Flying Allowance",
-      relevantExams: "INET, SSB Interview",
-      isActive: true,
-    });
-
-    await ctx.db.insert("FilterOption", {
-      name: "SSC Officer (Navy)",
-      type: "role",
-      parentId: navyExecutive._id,
-      description: "10-year Short Service Commission",
-      requirements: "Any graduation, Age 19-25",
-      avgSalary: "₹56,100 - ₹1,42,400/month",
-      relevantExams: "SSB Interview",
-      isActive: true,
-    });
-
-    // ROLES under Air Force Flying Branch
-    await ctx.db.insert("FilterOption", {
-      name: "Fighter Pilot",
-      type: "role",
-      parentId: afFlying._id,
-      description: "Fly Sukhoi, MiG, Rafale fighter jets",
-      requirements:
-        "Physics & Math at 10+2, Age 20-24, Height 162.5-190cm",
-      avgSalary:
-        "₹56,100 - ₹1,77,500/month + Flying Allowance",
-      relevantExams: "AFCAT, NDA, SSB",
-      isActive: true,
-    });
-
-    await ctx.db.insert("FilterOption", {
-      name: "Transport Pilot",
-      type: "role",
-      parentId: afFlying._id,
-      description: "Fly C-130, C-17 transport aircraft",
-      requirements: "Physics & Math at 10+2, Age 20-24",
-      avgSalary: "₹56,100 - ₹1,77,500/month",
-      relevantExams: "AFCAT, NDA",
-      isActive: true,
-    });
-
-    // ROLES under CAPF
-    await ctx.db.insert("FilterOption", {
-      name: "Assistant Commandant",
-      type: "role",
-      parentId: capfBSF._id,
-      description: "Officer rank in BSF via UPSC",
-      requirements: "Any graduation, Age 20-25",
-      avgSalary: "₹44,900 - ₹1,42,400/month",
-      relevantExams:
-        "UPSC CAPF AC Exam + Physical + Interview",
-      isActive: true,
-    });
-
-    console.log("✅ Complete Defence hierarchy seeded!");
-  },
-});
-```
-
-**Run:**
-
-```bash
-npx convex run seedData:seedDefenceHierarchy
-```
-
----
-
-## Filter System Deep Dive
-
-### How FilterModal Works
-
-**File:** `components/FilterModal.tsx`
-
-**Key Features:**
-
-1. **Hierarchical Navigation**: Displays child options based on current parent
-2. **Breadcrumb Trail**: Shows path like "Graduation > Govt Jobs > Defence"
-3. **Caching**: Prevents UI flicker by caching queries
-4. **Prefetching**: Loads next level ahead of time for smooth UX
-
-**State Management:**
-
-```typescript
-const [selectedPath, setSelectedPath] = useState<
-  Id<"FilterOption">[]
->([]);
-const [currentLevel, setCurrentLevel] = useState(0);
-
-// selectedPath = [graduation_id, govtJobs_id, defence_id]
-// currentLevel = 3 (showing Defence's children)
-```
-
-**Query Flow:**
-
-```typescript
-// Get children of current parent
-const filterOptions = useQuery(
-  api.filter.getFilterChildren,
-  currentParentId
-    ? { parentId: currentParentId }
-    : { parentId: null },
-);
-```
-
-**Breadcrumb Display:**
-
-```typescript
-const filterNames = useQuery(
-  api.filter.getFilterNamesByIds,
-  selectedPath.length > 0 ? { ids: selectedPath } : "skip",
-);
-
-// Returns: ["Graduation", "Government Jobs", "Defence Services"]
-```
-
----
-
-### Backend Query Logic
-
-**File:** `convex/filter.ts`
-
-```typescript
-// 1. Get children of a parent (or root if no parent)
-export const getFilterChildren = query({
-  args: {
-    parentId: v.optional(v.id("FilterOption")),
-  },
-  handler: async (ctx, args) => {
-    if (args.parentId === undefined) {
-      // Get root level (qualifications)
-      return await ctx.db
-        .query("FilterOption")
-        .filter((q) => q.eq(q.field("parentId"), null))
-        .filter((q) => q.eq(q.field("isActive"), true))
-        .collect();
-    } else {
-      // Get children of specific parent
-      return await ctx.db
-        .query("FilterOption")
-        .withIndex("by_parentId", (q) =>
-          q.eq("parentId", args.parentId),
-        )
-        .filter((q) => q.eq(q.field("isActive"), true))
-        .collect();
-    }
-  },
-});
-
-// 2. Get filter option details by ID (for career path card)
-export const getFilterOptionById = query({
-  args: { id: v.id("FilterOption") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
-});
-
-// 3. Get names for breadcrumb
-export const getFilterNamesByIds = query({
-  args: { ids: v.array(v.id("FilterOption")) },
-  handler: async (ctx, args) => {
-    const filters = await Promise.all(
-      args.ids.map((id) => ctx.db.get(id)),
-    );
-    return filters
-      .filter((f) => f !== null)
-      .map((f) => f!.name);
-  },
-});
-```
-
----
-
-### Integration in Feed Screen
-
-**File:** `app/(tabs)/index.tsx`
-
-**Dual Mode Display:**
-
-```typescript
-const [selectedFilters, setSelectedFilters] = useState<Id<"FilterOption">[]>([]);
-
-// Mode 1: No filters selected → Show all posts
-const communityPosts = useQuery(api.communityPosts.getCommunityPosts);
-
-// Mode 2: Filter selected → Show career path card + related posts
-const selectedCareerPath = useQuery(
-  api.filter.getFilterOptionById,
-  selectedFilters.length > 0
-    ? { id: selectedFilters[selectedFilters.length - 1] }
-    : "skip"
-);
-
-return (
-  <View>
-    {/* Filter button */}
-    <FilterModal
-      visible={filterModalVisible}
-      onClose={() => setFilterModalVisible(false)}
-      selectedFilters={selectedFilters}
-      onFiltersChange={setSelectedFilters}
-    />
-
-    {/* Show career path card if filter selected */}
-    {selectedCareerPath && (
-      <CareerPathDetails careerPath={selectedCareerPath} />
-    )}
-
-    {/* Show community posts */}
-    <FlatList
-      data={communityPosts}
-      renderItem={({ item }) => <CommunityPost post={item} />}
-    />
-  </View>
-);
-```
-
----
-
-## API Reference
-
-### Filter Queries
-
-| Endpoint                     | Type  | Args                | Returns                |
-| ---------------------------- | ----- | ------------------- | ---------------------- |
-| `filter.getFilterChildren`   | Query | `{ parentId?: Id }` | `FilterOption[]`       |
-| `filter.getAllFilterOptions` | Query | None                | `FilterOption[]`       |
-| `filter.getFilterOptionById` | Query | `{ id: Id }`        | `FilterOption \| null` |
-| `filter.getFilterNamesByIds` | Query | `{ ids: Id[] }`     | `string[]`             |
-
-### Community Post Queries/Mutations
-
-| Endpoint                                         | Type     | Args                                            | Returns                    |
-| ------------------------------------------------ | -------- | ----------------------------------------------- | -------------------------- |
-| `communityPosts.getCommunityPosts`               | Query    | None                                            | `CommunityPost[]` (max 20) |
-| `communityPosts.getCommunityPostById`            | Query    | `{ id: Id }`                                    | `CommunityPost`            |
-| `communityPosts.getCommunityPostsByFilterOption` | Query    | `{ filterOptionId: Id }`                        | `CommunityPost[]`          |
-| `communityPosts.getCommunityPostsByUser`         | Query    | `{ userId: Id }`                                | `CommunityPost[]`          |
-| `communityPosts.createCommunityPost`             | Mutation | `{ content, imageUrl?, linkedFilterOptionIds }` | `Id`                       |
-| `communityPosts.deleteCommunityPost`             | Mutation | `{ id: Id }`                                    | `void`                     |
-
-### Comment Queries/Mutations
-
-| Endpoint               | Type     | Args                                                               | Returns     |
-| ---------------------- | -------- | ------------------------------------------------------------------ | ----------- |
-| `comments.getComments` | Query    | `{ communityPostId?: Id, filterOptionId?: Id }`                    | `Comment[]` |
-| `comments.addComment`  | Mutation | `{ content, communityPostId?, filterOptionId?, parentCommentId? }` | `Id`        |
-
-### Saved Content Mutations
-
-| Endpoint                       | Type     | Args                                            | Returns          |
-| ------------------------------ | -------- | ----------------------------------------------- | ---------------- |
-| `savedContent.toggleSave`      | Mutation | `{ communityPostId?: Id, filterOptionId?: Id }` | `boolean`        |
-| `savedContent.getIsSaved`      | Query    | `{ communityPostId?: Id, filterOptionId?: Id }` | `boolean`        |
-| `savedContent.getSavedContent` | Query    | None                                            | `SavedContent[]` |
-
-### User Queries/Mutations
-
-| Endpoint                 | Type     | Args                                                   | Returns |
-| ------------------------ | -------- | ------------------------------------------------------ | ------- |
-| `users.getUserById`      | Query    | `{ userId: Id }`                                       | `User`  |
-| `users.getUserByClerkId` | Query    | `{ clerkId: string }`                                  | `User`  |
-| `users.createUser`       | Mutation | `{ email, username, fullname, profileImage, clerkId }` | `Id`    |
-| `users.updateUser`       | Mutation | `{ bio?, fullname? }`                                  | `void`  |
-
----
-
-## User Flows
-
-### Flow 1: First-Time User Onboarding
-
-```
-1. User downloads app from Play Store
-   ↓
-2. Opens app → Sees login screen
-   ↓
-3. Taps "Continue with Google"
-   ↓
-4. Google OAuth flow (Clerk)
-   ↓
-5. User authenticated → Profile created in Convex
-   ↓
-6. Redirected to Home (Feed) screen
-   ↓
-7. Sees all community posts (no filter applied)
-   ↓
-8. Explores posts by scrolling
-```
-
-### Flow 2: Discovering Career Path via Filter
-
-```
-1. User on Home screen
-   ↓
-2. Taps "Filter" button (floating action button)
-   ↓
-3. FilterModal opens
-   ↓
-4. Level 1: Selects "Graduation"
-   ↓
-5. Level 2: Sees categories → Selects "Government Jobs"
-   ↓
-6. Level 3: Sees sectors → Selects "Defence Services"
-   ↓
-7. Level 4: Sees branches → Selects "Indian Navy"
-   ↓
-8. Level 5: Sees sub-branches → Selects "Executive Branch"
-   ↓
-9. Level 6: Sees roles → Selects "Navy Pilot"
-   ↓
-10. Taps "Apply Filters"
-    ↓
-11. Modal closes
-    ↓
-12. Home screen now shows:
-    - Breadcrumb: "Graduation > Govt Jobs > Defence > Navy > Executive > Navy Pilot"
-    - Career Path Card with full details
-    - Related community posts tagged with this path
-    ↓
-13. User reads career details, salary, exam info
-    ↓
-14. Taps "Save" icon to bookmark this career
-    ↓
-15. Reads admin posts about Navy Pilot life
-    ↓
-16. Likes posts, adds comments asking questions
-```
-
-### Flow 3: Admin Creating Post
-
-```
-1. Admin logs in (has isAdmin: true flag)
-   ↓
-2. Goes to "Create" tab
-   ↓
-3. Writes post content:
-   "🚀 How to prepare for INET exam for Navy Pilot..."
-   ↓
-4. Optionally uploads image
-   ↓
-5. Selects linked filter:
-   - Finds "Navy Pilot" filter option
-   - Links post to it
-   ↓
-6. Taps "Share"
-   ↓
-7. Post created with linkedFilterOptionIds = [navyPilot_id]
-   ↓
-8. Post appears in:
-   - Global feed (Home with no filters)
-   - Filtered feed when user selects "Navy Pilot" path
-```
-
-### Flow 4: User Engaging with Content
-
-```
-1. User sees interesting post about React Developer roadmap
-   ↓
-2. Taps ❤️ Like button
-   ↓
-3. Like count increments
-   ↓
-4. Admin (post creator) gets notification
-   ↓
-5. User taps comment icon
-   ↓
-6. Writes comment: "Thanks! This roadmap is super helpful"
-   ↓
-7. Comment posted
-   ↓
-8. Admin gets notification about comment
-   ↓
-9. User taps Save icon
-   ↓
-10. Post added to Bookmarks tab
-    ↓
-11. Later, user opens Bookmarks tab
-    ↓
-12. Sees all saved posts and career paths
-```
-
----
-
-## Future Enhancements
-
-### Phase 1: Core Improvements
-
-1. **Implement Likes Functionality**
-   - Complete backend in `convex/likes.ts`
-   - Enable like/unlike on posts and career paths
-   - Show like count in real-time
-
-2. **Search Feature**
-   - Search posts by keywords
-   - Search career paths by name
-   - Search by exam name (e.g., "UPSC", "AFCAT")
-
-3. **Post Creation with Filter Linking**
-   - Allow admins to select filters while creating posts in the app
-   - Multi-select filter options
-   - Preview linked career paths before posting
-
-4. **Comment Reply UI**
-   - Nested comment threads
-   - Reply button on each comment
-   - Indent nested replies
-
-5. **Push Notifications**
-   - Expo push notifications
-   - Notify on new likes, comments
-   - Daily digest of new posts in saved career paths
-
-### Phase 2: Advanced Features
-
-6. **User Career Journey Tracking**
-   - User selects their current qualification
-   - App suggests relevant career paths
-   - Track progress: "Preparing for UPSC", "Appeared for AFCAT"
-
-7. **Exam Calendar**
-   - Show upcoming exam dates
-   - Reminders for application deadlines
-   - Link to official exam websites
-
-8. **Success Stories**
-   - Dedicated section for user success stories
-   - "I cleared UPSC" posts
-   - Filter by career path
-
-9. **Career Path Comparison**
-   - Compare 2-3 career options side by side
-   - Salary, requirements, difficulty, job availability
-
-10. **Regional Language Support**
-    - Hindi, Tamil, Telugu, Marathi, Bengali
-    - Localized career path descriptions
-    - OCR for regional language posts
-
-### Phase 3: Community Features
-
-11. **Q&A Section**
-    - Dedicated questions tab
-    - Users ask career-related doubts
-    - Community answers (upvote/downvote)
-    - Mark accepted answer
-
-12. **Mentorship Matching**
-    - Connect users with mentors in their desired field
-    - Chat functionality
-    - Video call integration
-
-13. **Study Groups**
-    - Create groups for specific exams (UPSC, AFCAT, GATE)
-    - Share resources, notes
-    - Group challenges and leaderboards
-
-14. **Career Assessment Quiz**
-    - Personality-based career suggestions
-    - Interest inventory
-    - Skill assessment tests
-
-15. **Job Alerts Integration**
-    - Scrape government job portals
-    - Notify users when relevant job notification drops
-    - Direct links to application forms
-
-### Phase 4: Monetization & Scale
-
-16. **Premium Courses**
-    - Partner with coaching institutes
-    - Sell exam prep courses within app
-    - Revenue sharing model
-
-17. **Sponsored Career Paths**
-    - Companies sponsor specific career paths
-    - Featured placements for private jobs
-
-18. **Analytics Dashboard for Admins**
-    - Most viewed career paths
-    - Engagement metrics per post
-    - User demographics (age, location, qualification)
-
-19. **AI-Powered Recommendations**
-    - ML model to suggest career paths based on user behavior
-    - "Users similar to you also viewed..."
-
-20. **Offline Mode**
-    - Download posts for offline reading
-    - Sync when back online
+## API Reference (Convex Functions)
+
+### Career Paths (filter.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `getFilterChildren(parentId?)` | query | Get child filter options (career paths) |
+| `getFilterOptionById(id)` | query | Get single career path with all fields |
+| `getRootFilters()` | query | Get top-level qualifications |
+
+### Groups (groups.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `createGroup(filterOptionId, name)` | mutation | Admin: create group |
+| `getGroup(groupId)` | query | Get group details |
+| `getUserGroups(userId)` | query | Groups user has joined |
+| `joinGroup(groupId)` | mutation | Join a group |
+| `leaveGroup(groupId)` | mutation | Leave a group |
+| `getAllGroups()` | query | Admin: all groups with stats |
+
+### Messages (messages.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `sendMessage(groupId, content, type)` | mutation | Send chat message |
+| `getMessages(groupId, limit, cursor?)` | query | Paginated messages |
+| `deleteMessage(messageId)` | mutation | Soft delete |
+| `pinMessage(messageId)` | mutation | Admin: pin message |
+
+### Roadmaps (roadmaps.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `getRoadmapByGroup(groupId)` | query | Get published roadmap for group |
+| `getMilestones(roadmapId)` | query | Milestones ordered by order field |
+| `getSteps(milestoneId)` | query | Steps ordered by order field |
+| `toggleStepComplete(stepId, roadmapId)` | mutation | Mark/unmark step done |
+| `getUserProgress(userId, roadmapId)` | query | All completed steps |
+
+### Quizzes (quizzes.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `getQuizzes(groupId)` | query | Available quizzes for group |
+| `getQuiz(quizId)` | query | Quiz with questions |
+| `submitAttempt(quizId, answers, timeTaken)` | mutation | Submit quiz, updates streak |
+
+### AI (ai.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `askAI(groupId, userId, question)` | action | Gemini API query with career context |
+
+### Analytics (analytics.ts)
+| Function | Type | Description |
+|----------|------|-------------|
+| `trackEvent(type, value, metadata?)` | mutation | Record analytics event |
+| `getDailyStats(startDate, endDate)` | query | Admin: daily active users |
 
 ---
 
@@ -2440,147 +707,64 @@ return (
 # Install dependencies
 npm install
 
-# Start Convex backend
-npx convex dev
-
-# Start Expo development server
-npm start
+# Start Expo dev server
+npm run dev
+# or
+npx expo start
 
 # Run on Android
-npm run android
+npx expo run:android
 
-# Run on iOS
-npm run ios
+# Run on iOS (Mac only)
+npx expo run:ios
+```
 
-# Run on Web
-npm run web
+### Running the Admin Panel
+
+```bash
+cd admin-dashboard
+npm install
+npm run dev
+# Opens at http://localhost:3000/admin
+```
+
+### Convex Backend
+
+```bash
+# Start Convex dev server (runs alongside Expo)
+npx convex dev
+
+# Deploy to production
+npx convex deploy
+```
+
+### Environment Variables
+
+**Root `.env.local`:**
+```
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+EXPO_PUBLIC_CONVEX_URL=...
+```
+
+**Admin Dashboard `.env.local`:**
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+NEXT_PUBLIC_CONVEX_URL=...
+CONVEX_DEPLOY_KEY=...
+```
+
+**Convex environment (set via dashboard):**
+```
+GOOGLE_GEMINI_API_KEY=...
 ```
 
 ### Seeding Data
 
 ```bash
-# Seed filter options
-npx convex run seedData:seedFilterOptions
-
-# Seed community posts
-npx convex run seedData:seedCommunityPosts
-
-# Alternative: Run both
-npx convex run seedData:seedAll  # If you create this wrapper
+# Run from Convex dashboard or via npm script
+# convex/seedData.ts contains full seeding logic
 ```
-
-### Environment Variables
-
-Create `.env.local`:
-
-```
-EXPO_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-```
-
-### Building for Production
-
-```bash
-# Android APK
-eas build --platform android
-
-# iOS IPA
-eas build --platform ios
-
-# Submit to Google Play
-eas submit --platform android
-
-# Submit to App Store
-eas submit --platform ios
-```
-
----
-
-## Testing Strategy
-
-### Manual Testing Checklist
-
-**Authentication:**
-
-- [ ] Login with Google works
-- [ ] User profile created in Convex
-- [ ] Logout clears session
-- [ ] Profile image synced from Google
-
-**Theme System:** ⭐ NEW
-
-- [ ] Light mode colors display correctly
-- [ ] Dark mode colors display correctly
-- [ ] System mode follows device preference
-- [ ] Theme toggle switches modes
-- [ ] Theme persists after app restart
-- [ ] Poppins fonts load correctly
-- [ ] ThemeToggle component cycles through modes
-
-**UI Components:** ⭐ NEW
-
-- [ ] GlassCard shows blur effect on iOS
-- [ ] GlassCard shows solid surface on Android
-- [ ] GradientButton gradient visible in dark mode
-- [ ] GradientButton scales on press (0.98)
-- [ ] NeumorphicInput focus glow animation works
-- [ ] AnimatedCard FadeInDown animation plays
-
-**Filter System (Wizard Experience):** ⭐ UPDATED
-
-- [ ] Progress bar updates with each level
-- [ ] 2-column card grid displays correctly
-- [ ] Card selection shows primary color + checkmark
-- [ ] SlideInRight animation on forward navigation
-- [ ] SlideOutLeft animation on back navigation
-- [ ] Backdrop blur visible on iOS
-- [ ] Root qualifications load
-- [ ] Drilling down shows correct children
-- [ ] Back button works correctly
-- [ ] Apply Filters closes modal and updates feed
-
-**Floating Tab Bar:** ⭐ NEW
-
-- [ ] Tab bar floats with margin on all sides
-- [ ] BorderRadius 30 visible
-- [ ] Blur backdrop visible on iOS
-- [ ] Glowing dot appears under active tab
-- [ ] Dot scales in/out on tab change
-- [ ] Shadow/glow effect visible
-- [ ] Safe area insets respected
-
-**Feed Display:**
-
-- [ ] Posts load on home screen
-- [ ] List items animate in with cascade effect
-- [ ] Pull-to-refresh updates posts
-- [ ] Filtered mode shows career path card
-- [ ] Related posts display correctly
-- [ ] Infinite scroll works (if implemented)
-
-**Engagement:**
-
-- [ ] Like button increments count
-- [ ] Comment submission works
-- [ ] Comments display under posts
-- [ ] Save/Unsave toggles correctly
-- [ ] Saved content shows in Bookmarks tab
-
-**Admin Features:**
-
-- [ ] Only admins can create posts
-- [ ] Create tab hidden for non-admins
-- [ ] Post creation links to filters
-- [ ] Image upload works
-- [ ] Post appears in feed immediately
-
-**Edge Cases:**
-
-- [ ] Empty states (no posts, no saved content)
-- [ ] Loading states show spinners
-- [ ] Error handling (network failures)
-- [ ] Long text truncation
-- [ ] Image load failures show placeholder
 
 ---
 
@@ -2588,124 +772,40 @@ eas submit --platform ios
 
 ### Common Issues
 
-**1. "Cannot find module 'convex'"**
-
-```bash
-npm install convex
-npx convex dev
-```
-
-**2. Authentication failing**
-
-- Check Clerk publishable key in `.env.local`
-- Verify Clerk dashboard has correct OAuth settings
-- Clear app data and re-login
-
-**3. Filters not loading**
-
-- Run seeding: `npx convex run seedData:seedFilterOptions`
-- Check Convex dashboard for FilterOption documents
-- Verify `isActive: true` on filter options
-
-**4. Posts not showing**
-
-- Seed posts: `npx convex run seedData:seedCommunityPosts`
-- Check if admin user exists
-- Verify `linkedFilterOptionIds` are valid
-
-**5. "User not found" errors**
-
-- Clear Convex database
-- Re-seed filters and posts
-- Delete and reinstall app
-
----
-
-## Support & Resources
-
-### Documentation
-
-- **Expo**: https://docs.expo.dev
-- **Convex**: https://docs.convex.dev
-- **Clerk**: https://clerk.com/docs
-- **React Native**: https://reactnative.dev
-- **React Native Reanimated**: https://docs.swmansion.com/react-native-reanimated/
-
-### Community
-
-- GitHub Issues: (Add your repo link)
-- Discord: (Add community link)
-- Email: support@skillsapp.in
+| Issue | Solution |
+|-------|---------|
+| Convex auth errors | Check Clerk webhook is configured in Convex dashboard |
+| Images not loading | Verify Convex storage URL is correct |
+| Groups not updating in real-time | Ensure Convex dev server is running (`npx convex dev`) |
+| AI chatbot not responding | Verify `GOOGLE_GEMINI_API_KEY` is set in Convex environment |
+| Push notifications not arriving | Check push token is saved to users table; verify Expo push service |
+| Admin panel 401 errors | Verify Clerk middleware in `admin-dashboard/middleware.ts` |
+| Dark mode not persisting | ThemeProvider uses AsyncStorage — ensure permission is granted |
 
 ---
 
 ## Changelog
 
-### Version 1.1.0 - UI/UX Overhaul (2026-02-01)
+### v2.0 — April 2026
 
-**New Features:**
+- **Phase 2 (Community Groups):** Full group system with real-time chat, member directory, admin announcements, message moderation, reports
+- **Phase 3 (Roadmaps):** Visual roadmap timeline, milestone tracking, personal progress persistence, admin roadmap builder
+- **Phase 4 (Quizzes):** Daily/weekly quizzes, MCQ flow with timer, results + explanations, group leaderboards, streak tracking, challenges system
+- **Phase 5 (AI + Analytics):** Gemini AI chatbot in groups, user onboarding flow, analytics dashboard, user management, AI configuration
+- **Schema:** All 25 tables implemented across 5 phases
+- **Admin Panel:** Complete admin panel covering all phases (17 pages)
 
-- ✨ **Dribbble-Inspired Theme System**: Completely redesigned color palettes
-  - Light Theme: EdTech-inspired with soft purple (#6C5DD3) primary
-  - Dark Theme: AI/Futuristic with glowing lavender (#A0A6FF) accents
-- ✨ **Poppins Typography**: Professional font family with Regular, SemiBold, Bold variants
-- ✨ **Theme Toggle**: Quick toggle (light/dark) and full toggle (light/dark/system)
-- ✨ **Modern UI Component Library**:
-  - `GlassCard`: Glassmorphism cards with theme-aware styling
-  - `GradientButton`: Animated gradient buttons with press feedback
-  - `NeumorphicInput`: Soft UI input fields with glow effects
-  - `ThemeToggle`: Multiple theme switching components
-- ✨ **Wizard-Style Filter Modal**: Complete redesign with:
-  - Progress bar showing current level
-  - 2-column selectable card grid
-  - Slide transitions (SlideInRight/SlideOutLeft)
-  - Backdrop blur on iOS
-- ✨ **Floating Tab Bar**: Modern navigation with:
-  - Floating design with rounded corners (30px)
-  - BlurView backdrop on iOS
-  - Glowing dot active indicator
-  - Animated scale/opacity transitions
-- ✨ **List Animations**: FadeInDown entering animations with cascade delay
+### v1.0 — February 2026
 
-**Technical Improvements:**
-
-- 📦 Added expo-blur for glassmorphism effects
-- 📦 Added expo-linear-gradient for gradient buttons
-- 📦 Added @gorhom/bottom-sheet
-- 📦 Added expo-font for custom typography
-- 🔧 Font loading with useFonts hook and SplashScreen management
-- 🔧 `toggleTheme()` function in ThemeContext
-- 🔧 `useThemedStyles()` utility hook
-
-**Files Modified:**
-
-- `constants/Colors.ts` - NEW: Dribbble color palettes
-- `constants/theme.ts` - UPDATED: Poppins typography, integrated Colors
-- `providers/ThemeProvider.tsx` - UPDATED: Font loading, toggleTheme
-- `components/ui/GlassCard.tsx` - NEW
-- `components/ui/GradientButton.tsx` - NEW
-- `components/ui/NeumorphicInput.tsx` - NEW
-- `components/ui/ThemeToggle.tsx` - NEW
-- `components/ui/index.ts` - NEW: Barrel export
-- `components/FilterModal.tsx` - REDESIGNED: Wizard experience
-- `app/(tabs)/_layout.tsx` - UPDATED: Floating tab bar with blur
-- `components/ui/AnimatedCard.tsx` - UPDATED: FadeInDown animations
+- Core foundation built: auth, hierarchical filter system (6 levels), career path cards, community posts, feed, bookmarks, notifications, dark/light theme
+- Admin panel: filter tree management, post creation
+- Phase 1A schema additions: `ranking`, `annualVacancies` on FilterOption; `adminArticles` table
+- `RankingBadge.tsx` and `VacancyChip.tsx` components created (not yet integrated into card UI)
+- `adminArticles.ts` backend CRUD created
+- Admin articles management page and `ArticleEditor.tsx` built
 
 ---
 
-### Version 1.0.0 - Initial Release (2026-01-11)
-
-- 🚀 Career discovery platform launch
-- 📱 6-level hierarchical filter system
-- 👥 Admin-only posting model
-- 💬 Comments and likes on posts/career paths
-- 🔖 Bookmarks functionality
-- 🔔 Real-time notifications
-- 🔐 Google OAuth authentication via Clerk
-- 📊 Convex real-time database
-
----
-
-**Last Updated:** 2026-02-01
-**Version:** 1.1.0
-**Author:** SkillsApp Team
+_Updated: April 10, 2026_  
+_Project: SkillMedia — Career Discovery Platform for Indian Students_  
+_Report covers: Complete codebase analysis of `d:\SKILLMEDIA\SkillsAppNew`_

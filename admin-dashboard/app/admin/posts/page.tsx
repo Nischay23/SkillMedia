@@ -1,37 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import Link from "next/link";
+import { useMutation, useQuery } from "convex/react";
 import {
-  Plus,
-  Trash2,
+  Calendar,
   Edit,
+  Eye,
+  Filter,
   Heart,
   MessageCircle,
-  Calendar,
+  Plus,
   Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
+  Trash2,
 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function PostsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
-  const [deletePostId, setDeletePostId] = useState<Id<"communityPosts"> | null>(null);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "published" | "draft"
+  >("all");
+  const [deletePostId, setDeletePostId] =
+    useState<Id<"communityPosts"> | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch posts
-  const posts = useQuery(api.communityPosts.getCommunityPosts, {
-    statusFilter: statusFilter,
-  });
+  const posts = useQuery(
+    api.communityPosts.getCommunityPosts,
+    {
+      statusFilter: statusFilter,
+    },
+  );
 
   // Delete mutation (bulkDeletePosts with single ID for admin)
-  const deletePost = useMutation(api.communityPosts.bulkDeletePosts);
+  const deletePost = useMutation(
+    api.communityPosts.bulkDeletePosts,
+  );
 
   // Filter posts by search query
   const filteredPosts = posts?.filter((post) => {
@@ -70,7 +77,10 @@ export default function PostsPage() {
   };
 
   // Truncate content
-  const truncate = (text: string, maxLength: number = 80) => {
+  const truncate = (
+    text: string,
+    maxLength: number = 80,
+  ) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength).trim() + "...";
   };
@@ -82,7 +92,9 @@ export default function PostsPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Posts</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Posts
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Manage all community posts
           </p>
@@ -115,7 +127,11 @@ export default function PostsPage() {
           <Filter className="h-4 w-4 text-muted-foreground" />
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value as typeof statusFilter,
+              )
+            }
             className="input-field w-auto"
           >
             <option value="all">All Status</option>
@@ -152,7 +168,8 @@ export default function PostsPage() {
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  <Calendar className="inline h-4 w-4" /> Created
+                  <Calendar className="inline h-4 w-4" />{" "}
+                  Created
                 </th>
                 <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Actions
@@ -163,7 +180,10 @@ export default function PostsPage() {
               {isLoading ? (
                 // Loading skeleton
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse-subtle">
+                  <tr
+                    key={i}
+                    className="animate-pulse-subtle"
+                  >
                     <td className="px-6 py-4">
                       <div className="space-y-2">
                         <div className="h-4 w-48 rounded bg-muted" />
@@ -190,7 +210,8 @@ export default function PostsPage() {
                     </td>
                   </tr>
                 ))
-              ) : filteredPosts && filteredPosts.length > 0 ? (
+              ) : filteredPosts &&
+                filteredPosts.length > 0 ? (
                 filteredPosts.map((post) => (
                   <tr
                     key={post._id}
@@ -219,7 +240,9 @@ export default function PostsPage() {
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                            {post.user?.username?.charAt(0).toUpperCase() || "?"}
+                            {post.user?.username
+                              ?.charAt(0)
+                              .toUpperCase() || "?"}
                           </div>
                         )}
                         <span className="text-sm text-foreground">
@@ -251,7 +274,9 @@ export default function PostsPage() {
                             : "badge-warning"
                         }`}
                       >
-                        {post.status === "published" ? "Published" : "Draft"}
+                        {post.status === "published"
+                          ? "Published"
+                          : "Draft"}
                       </span>
                     </td>
 
@@ -280,7 +305,9 @@ export default function PostsPage() {
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
-                          onClick={() => setDeletePostId(post._id)}
+                          onClick={() =>
+                            setDeletePostId(post._id)
+                          }
                           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-error-muted hover:text-error"
                           title="Delete"
                         >
@@ -292,7 +319,10 @@ export default function PostsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center"
+                  >
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                         <Search className="h-6 w-6 text-muted-foreground" />
