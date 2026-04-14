@@ -12,7 +12,6 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
-  FadeInUp,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -39,7 +38,9 @@ const SkeletonLoader = () => {
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      opacity.value = withSpring(opacity.value === 0.3 ? 0.6 : 0.3);
+      opacity.value = withSpring(
+        opacity.value === 0.3 ? 0.6 : 0.3,
+      );
     }, 700);
     return () => clearInterval(interval);
   }, [opacity]);
@@ -53,11 +54,11 @@ const SkeletonLoader = () => {
       <Animated.View
         style={[
           {
-            width: 80,
-            height: 80,
-            borderRadius: 40,
+            width: 64,
+            height: 64,
+            borderRadius: 32,
             backgroundColor: theme.colors.surface,
-            marginTop: 32,
+            marginTop: 16,
           },
           animatedStyle,
         ]}
@@ -74,65 +75,23 @@ const SkeletonLoader = () => {
           animatedStyle,
         ]}
       />
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
-        {[0, 1, 2].map((i) => (
-          <Animated.View
-            key={i}
-            style={[
-              {
-                flex: 1,
-                height: 80,
-                borderRadius: 16,
-                backgroundColor: theme.colors.surface,
-              },
-              animatedStyle,
-            ]}
-          />
-        ))}
-      </View>
+      <Animated.View
+        style={[
+          {
+            width: 200,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: theme.colors.surface,
+            marginTop: 8,
+          },
+          animatedStyle,
+        ]}
+      />
     </View>
   );
 };
 
-// Stat Box Component
-const StatBox = ({
-  value,
-  label,
-  index,
-}: {
-  value: string | number;
-  label: string;
-  index: number;
-}) => {
-  const { theme } = useTheme();
-
-  return (
-    <Animated.View
-      entering={FadeInUp.duration(400).delay(200 + index * 80)}
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.surface,
-        borderRadius: 16,
-        padding: 16,
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-      }}
-    >
-      <Typography
-        variant="h2"
-        weight="bold"
-        color="text"
-        style={{ fontSize: typeof value === "string" && value.length > 6 ? 16 : 24 }}
-      >
-        {value}
-      </Typography>
-      <Typography variant="caption" color="textMuted" style={{ marginTop: 4 }}>
-        {label}
-      </Typography>
-    </Animated.View>
-  );
-};
+// Stat Box Component removed in favor of simple subtitle text
 
 // Member Avatar (small version for preview)
 const MemberPreviewAvatar = ({
@@ -197,9 +156,15 @@ export default function GroupInfoScreen() {
   const insets = useSafeAreaInsets();
 
   const groupId = id as Id<"groups">;
-  const group = useQuery(api.groups.getGroupById, { groupId });
-  const members = useQuery(api.groups.getGroupMembers, { groupId });
-  const leaveGroupMutation = useMutation(api.groups.leaveGroup);
+  const group = useQuery(api.groups.getGroupById, {
+    groupId,
+  });
+  const members = useQuery(api.groups.getGroupMembers, {
+    groupId,
+  });
+  const leaveGroupMutation = useMutation(
+    api.groups.leaveGroup,
+  );
 
   // Leave button animation
   const leaveScale = useSharedValue(1);
@@ -239,13 +204,13 @@ export default function GroupInfoScreen() {
     },
     identitySection: {
       alignItems: "center" as const,
-      paddingTop: 32,
+      paddingTop: 16,
       paddingBottom: 24,
     },
     avatarContainer: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
@@ -259,14 +224,9 @@ export default function GroupInfoScreen() {
       borderRadius: 20,
       marginTop: 12,
     },
-    statsRow: {
-      flexDirection: "row" as const,
-      gap: 10,
-      marginHorizontal: 16,
-    },
     section: {
       marginHorizontal: 16,
-      marginTop: 20,
+      marginTop: 12,
       backgroundColor: t.colors.surface,
       borderRadius: 16,
       padding: 16,
@@ -315,7 +275,7 @@ export default function GroupInfoScreen() {
             router.back();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -330,10 +290,13 @@ export default function GroupInfoScreen() {
           style: "destructive",
           onPress: async () => {
             // TODO: Implement delete group mutation
-            Alert.alert("Info", "Delete group feature coming soon");
+            Alert.alert(
+              "Info",
+              "Delete group feature coming soon",
+            );
           },
         },
-      ]
+      ],
     );
   };
 
@@ -359,12 +322,26 @@ export default function GroupInfoScreen() {
       />
 
       {/* Header */}
-      <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+      <Animated.View
+        entering={FadeIn.duration(300)}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color={theme.colors.text} />
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={20}
+              color={theme.colors.text}
+            />
           </Pressable>
-          <Typography variant="h3" weight="bold" color="text">
+          <Typography
+            variant="h3"
+            weight="bold"
+            color="text"
+          >
             Group Info
           </Typography>
         </View>
@@ -394,9 +371,10 @@ export default function GroupInfoScreen() {
               <Typography
                 variant="h1"
                 weight="bold"
-                style={{ color: "#FFFFFF", fontSize: 32 }}
+                style={{ color: "#FFFFFF", fontSize: 28 }}
               >
-                {group?.name?.charAt(0)?.toUpperCase() || "G"}
+                {group?.name?.charAt(0)?.toUpperCase() ||
+                  "G"}
               </Typography>
             </LinearGradient>
 
@@ -404,9 +382,23 @@ export default function GroupInfoScreen() {
               variant="h2"
               weight="bold"
               color="text"
-              style={{ marginTop: 16, textAlign: "center", paddingHorizontal: 24 }}
+              style={{
+                marginTop: 12,
+                textAlign: "center",
+                paddingHorizontal: 24,
+              }}
             >
               {group?.name}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 4, textAlign: "center" }}
+            >
+              {group?.memberCount ?? 0} Members •{" "}
+              {group?.messageCount ?? 0} Messages • Created{" "}
+              {formatDate(group?.createdAt ?? Date.now())}
             </Typography>
 
             {group?.filterOptionName && (
@@ -422,35 +414,20 @@ export default function GroupInfoScreen() {
                   size={12}
                   color={theme.colors.primary}
                 />
-                <Typography variant="caption" weight="medium" color="primary">
+                <Typography
+                  variant="caption"
+                  weight="medium"
+                  color="primary"
+                >
                   {group.filterOptionName}
                 </Typography>
               </Pressable>
             )}
           </Animated.View>
 
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            <StatBox
-              value={group?.memberCount ?? 0}
-              label="Members"
-              index={0}
-            />
-            <StatBox
-              value={formatDate(group?.createdAt ?? Date.now())}
-              label="Created"
-              index={1}
-            />
-            <StatBox
-              value={group?.messageCount ?? 0}
-              label="Messages"
-              index={2}
-            />
-          </View>
-
           {/* Description Section */}
           <Animated.View
-            entering={FadeInDown.duration(350).delay(280)}
+            entering={FadeInDown.duration(350).delay(200)}
             style={styles.section}
           >
             <Typography
@@ -463,10 +440,14 @@ export default function GroupInfoScreen() {
             </Typography>
             <Typography
               variant="body"
-              color={group?.description ? "text" : "textMuted"}
+              color={
+                group?.description ? "text" : "textMuted"
+              }
               style={{
                 lineHeight: 22,
-                fontStyle: group?.description ? "normal" : "italic",
+                fontStyle: group?.description
+                  ? "normal"
+                  : "italic",
               }}
             >
               {group?.description || "No description added"}
@@ -479,14 +460,29 @@ export default function GroupInfoScreen() {
             style={styles.section}
           >
             <Pressable
-              onPress={() => router.push(`/group/${id}/members`)}
+              onPress={() =>
+                router.push(`/group/${id}/members`)
+              }
               style={styles.sectionHeader}
             >
-              <Typography variant="body" weight="semibold" color="text">
+              <Typography
+                variant="body"
+                weight="semibold"
+                color="text"
+              >
                 Members
               </Typography>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Typography variant="caption" color="primary">
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="primary"
+                >
                   See all
                 </Typography>
                 <Ionicons
@@ -498,14 +494,16 @@ export default function GroupInfoScreen() {
             </Pressable>
 
             <View style={styles.membersPreviewRow}>
-              {previewMembers.map((member: any, index: number) => (
-                <MemberPreviewAvatar
-                  key={member._id}
-                  profileImage={member.profileImage}
-                  name={member.fullname}
-                  index={index}
-                />
-              ))}
+              {previewMembers.map(
+                (member: any, index: number) => (
+                  <MemberPreviewAvatar
+                    key={member._id}
+                    profileImage={member.profileImage}
+                    name={member.fullname}
+                    index={index}
+                  />
+                ),
+              )}
               {remainingCount > 0 && (
                 <Typography
                   variant="caption"
@@ -532,8 +530,17 @@ export default function GroupInfoScreen() {
               }}
               onPress={handleLeave}
             >
-              <Animated.View style={[styles.leaveButton, leaveScaleStyle]}>
-                <Ionicons name="exit-outline" size={20} color="#EF4444" />
+              <Animated.View
+                style={[
+                  styles.leaveButton,
+                  leaveScaleStyle,
+                ]}
+              >
+                <Ionicons
+                  name="exit-outline"
+                  size={20}
+                  color="#EF4444"
+                />
                 <Typography
                   variant="body"
                   weight="semibold"

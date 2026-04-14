@@ -255,9 +255,11 @@ export default function OnboardingScreen() {
     },
     qualificationCard: {
       width: "47%",
+      minWidth: 140, // Ensuring the card doesn't shrink aggressively to fit the screen causing wrapping
       backgroundColor: theme.colors.surface,
       borderRadius: 20,
-      padding: 20,
+      paddingHorizontal: 8,
+      paddingVertical: 16,
       alignItems: "center",
       gap: 10,
       borderWidth: 1.5,
@@ -460,6 +462,8 @@ export default function OnboardingScreen() {
                   <Typography
                     variant="body"
                     weight="semibold"
+                    align="center"
+                    style={{ fontSize: 14 }}
                   >
                     {qual.label}
                   </Typography>

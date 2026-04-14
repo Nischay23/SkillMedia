@@ -20,8 +20,8 @@ import BottomSheet, {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import * as Haptics from "expo-haptics";
 import { useConvex, useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
 import React, {
   useCallback,
   useEffect,
@@ -41,8 +41,8 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import SelectableCardGrid from "@/components/ui/SelectableCardGrid";
 import { Typography } from "@/components/ui/Typography";
 import {
-  SpacingValues,
   ScreenPadding,
+  SpacingValues,
 } from "@/constants/theme";
 
 const MAX_FILTER_LEVELS = 6;
@@ -157,7 +157,8 @@ export default function FilterModal({
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [isVisible, initialSelected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]); // Only run when isVisible changes
 
   // Prefetch first child's children
   useEffect(() => {

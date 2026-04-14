@@ -1,6 +1,6 @@
 // convex/savedContent.ts
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
 
 export const getIsSaved = query({
@@ -11,7 +11,7 @@ export const getIsSaved = query({
   handler: async (ctx, args) => {
     if (!args.communityPostId && !args.filterOptionId) {
       throw new Error(
-        "Must provide either communityPostId or filterOptionId."
+        "Must provide either communityPostId or filterOptionId.",
       );
     }
     try {
@@ -24,7 +24,7 @@ export const getIsSaved = query({
           .withIndex("by_user_and_community_post", (q) =>
             q
               .eq("userId", currentUser._id)
-              .eq("communityPostId", args.communityPostId!)
+              .eq("communityPostId", args.communityPostId!),
           )
           .first();
       } else if (args.filterOptionId) {
@@ -33,7 +33,7 @@ export const getIsSaved = query({
           .withIndex("by_user_and_filter_option", (q) =>
             q
               .eq("userId", currentUser._id)
-              .eq("filterOptionId", args.filterOptionId!)
+              .eq("filterOptionId", args.filterOptionId!),
           )
           .first();
       }
@@ -52,7 +52,7 @@ export const toggleSave = mutation({
   handler: async (ctx, args) => {
     if (!args.communityPostId && !args.filterOptionId) {
       throw new Error(
-        "Must provide either communityPostId or filterOptionId."
+        "Must provide either communityPostId or filterOptionId.",
       );
     }
     const currentUser = await getAuthenticatedUser(ctx);
@@ -66,7 +66,7 @@ export const toggleSave = mutation({
         .withIndex("by_user_and_community_post", (q) =>
           q
             .eq("userId", currentUser._id)
-            .eq("communityPostId", args.communityPostId!)
+            .eq("communityPostId", args.communityPostId!),
         )
         .first();
     } else if (args.filterOptionId) {
@@ -75,7 +75,7 @@ export const toggleSave = mutation({
         .withIndex("by_user_and_filter_option", (q) =>
           q
             .eq("userId", currentUser._id)
-            .eq("filterOptionId", args.filterOptionId!)
+            .eq("filterOptionId", args.filterOptionId!),
         )
         .first();
     }
@@ -91,6 +91,55 @@ export const toggleSave = mutation({
         createdAt: Date.now(),
       });
       return { saved: true };
+    }
+  },
+});
+
+export const getBookmarkedContent = query({
+  handler: async (ctx) => {
+    try {
+      const currentUser = await getAuthenticatedUser(ctx);
+
+      const savedRecords = await ctx.db
+        .query("savedContent")
+        .withIndex("by_user", (q) =>
+          q.eq("userId", currentUser._id),
+        )
+        .order("desc") // newest first
+        .collect();
+
+      const results = await Promise.all(
+        savedRecords.map(async (record) => {
+          if (record.communityPostId) {
+            const post = await ctx.db.get(
+              record.communityPostId,
+            );
+            if (post) {
+              return {
+                ...post,
+                itemType: "communityPost" as const,
+                savedAt: record.createdAt,
+              };
+            }
+          } else if (record.filterOptionId) {
+            const filterOption = await ctx.db.get(
+              record.filterOptionId,
+            );
+            if (filterOption) {
+              return {
+                ...filterOption,
+                itemType: "filterOption" as const,
+                savedAt: record.createdAt,
+              };
+            }
+          }
+          return null;
+        }),
+      );
+
+      return results.filter(Boolean) as any[]; // Need to cast as any for returning heterogeneous array
+    } catch {
+      return [];
     }
   },
 });

@@ -1,30 +1,31 @@
 import { Loader } from "@/components/Loader";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { Typography } from "@/components/ui/Typography";
 import { useToast } from "@/components/ui/Toast";
+import { Typography } from "@/components/ui/Typography";
 import { api } from "@/convex/_generated/api";
-import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "convex/react";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
-import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from "react-native";
 import {
   useTheme,
   useThemedStyles,
 } from "@/providers/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation } from "convex/react";
+import * as FileSystem from "expo-file-system";
+import { Image } from "expo-image";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function CreatePost() {
   const { theme, isDark } = useTheme();
@@ -35,6 +36,9 @@ export default function CreatePost() {
   const [selectedImage, setSelectedImage] = useState<
     string | null
   >(null);
+  const [imageSize, setImageSize] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const generateUploadUrl = useMutation(
@@ -91,6 +95,23 @@ export default function CreatePost() {
     buttonContainer: {
       marginTop: theme.spacing.xl,
     },
+    imageSizeBadge: {
+      position: "absolute" as const,
+      bottom: theme.spacing.sm,
+      right: theme.spacing.sm,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: theme.borderRadius.full,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: theme.spacing.xs,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
   }));
 
   const pickImage = async () => {
@@ -103,27 +124,68 @@ export default function CreatePost() {
       });
 
     if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+      setIsLoading(true);
+      try {
+        const { uri, size } = await compressImage(
+          result.assets[0].uri,
+        );
+        setSelectedImage(uri);
+        setImageSize((size / 1024).toFixed(1) + " KB");
+      } catch (error) {
+        showToast("Error compressing image", "error");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   /**
-   * Compress and resize the image to max 800px wide at 80% quality.
-   * This significantly reduces upload size (typically 70-90% smaller).
+   * Compress and resize the image to a maximum of 500KB.
+   * Ensures data consciousness before upload.
    */
-  const compressImage = async (uri: string): Promise<string> => {
-    const result = await ImageManipulator.manipulateAsync(
+  const compressImage = async (
+    uri: string,
+  ): Promise<{ uri: string; size: number }> => {
+    let quality = 0.8;
+    let width = 800;
+
+    let result = await ImageManipulator.manipulateAsync(
       uri,
-      [
-        // Resize: keep aspect ratio, cap at 800px on the longest side
-        { resize: { width: 800 } },
-      ],
+      [{ resize: { width } }],
       {
-        compress: 0.8,
+        compress: quality,
         format: ImageManipulator.SaveFormat.JPEG,
       },
     );
-    return result.uri;
+
+    let fileInfo = await FileSystem.getInfoAsync(
+      result.uri,
+    );
+    let size =
+      fileInfo.exists && !fileInfo.isDirectory
+        ? fileInfo.size
+        : 0;
+
+    // Max 500KB = 500 * 1024 bytes = 512000 bytes
+    while (size > 512000 && quality > 0.1) {
+      quality -= 0.1;
+      width = Math.floor(width * 0.9);
+      result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width } }],
+        {
+          compress: quality,
+          format: ImageManipulator.SaveFormat.JPEG,
+        },
+      );
+      fileInfo = await FileSystem.getInfoAsync(result.uri);
+      size =
+        fileInfo.exists && !fileInfo.isDirectory
+          ? fileInfo.size
+          : 0;
+    }
+
+    return { uri: result.uri, size };
   };
 
   const handlePost = async () => {
@@ -138,14 +200,13 @@ export default function CreatePost() {
 
       // Upload image if selected
       if (selectedImage) {
-        // → Compress to max 800px @ 80% quality BEFORE uploading
-        const compressedUri = await compressImage(selectedImage);
+        // Image is already compressed during selection
 
         // Get upload URL
         const uploadUrl = await generateUploadUrl();
 
         // Upload compressed image
-        const response = await fetch(compressedUri);
+        const response = await fetch(selectedImage);
         const blob = await response.blob();
 
         const uploadResponse = await fetch(uploadUrl, {
@@ -169,6 +230,7 @@ export default function CreatePost() {
       setTitle("");
       setContent("");
       setSelectedImage(null);
+      setImageSize(null);
       showToast("Post shared! 🎉", "success");
       router.push("/(tabs)");
     } catch {
@@ -222,14 +284,34 @@ export default function CreatePost() {
             onPress={pickImage}
           >
             {selectedImage ? (
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles.selectedImage}
-                contentFit="cover"
-                placeholder={{ blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6." }}
-                transition={200}
-                recyclingKey={selectedImage}
-              />
+              <>
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={styles.selectedImage}
+                  contentFit="cover"
+                  placeholder={{
+                    blurhash:
+                      "LGFFaXYk^6#M@-5c,1J5@[or[Q6.",
+                  }}
+                  transition={200}
+                  recyclingKey={selectedImage}
+                />
+                {imageSize && (
+                  <View style={styles.imageSizeBadge}>
+                    <Ionicons
+                      name="document-outline"
+                      size={14}
+                      color={theme.colors.text}
+                    />
+                    <Typography
+                      variant="caption"
+                      weight="medium"
+                    >
+                      {imageSize}
+                    </Typography>
+                  </View>
+                )}
+              </>
             ) : (
               <View style={{ alignItems: "center" }}>
                 <Ionicons

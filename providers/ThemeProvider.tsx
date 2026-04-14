@@ -51,7 +51,7 @@ export const ThemeProvider: React.FC<
   useEffect(() => {
     if (loadedFonts) {
       setFontsLoaded(true);
-      SplashScreen.hideAsync();
+      // Let InitialLayout hide the splash screen once routing is settled
     }
   }, [loadedFonts]);
 

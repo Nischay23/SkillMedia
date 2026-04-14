@@ -1,25 +1,28 @@
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Typography } from "@/components/ui/Typography";
+import { api } from "@/convex/_generated/api";
+import {
+  useTheme,
+  useThemedStyles,
+} from "@/providers/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
 import { Image } from "expo-image";
+import { useCallback, useEffect, useState } from "react";
+import {
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import {
-  View,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  RefreshControl,
-  TouchableOpacity,
-} from "react-native";
-import {
-  useTheme,
-  useThemedStyles,
-} from "@/providers/ThemeProvider";
-import { useState, useCallback, useEffect } from "react";
 
 export default function Bookmarks() {
   const { theme, isDark } = useTheme();
@@ -27,9 +30,10 @@ export default function Bookmarks() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const headerOpacity = useSharedValue(1);
 
-  // For now, use dummy data since bookmarks API doesn't exist yet
-  // const bookmarkedPosts = useQuery(api.bookmarks.getBookmarkedPosts);
-  const bookmarkedPosts: any[] = []; // Empty array for now
+  const bookmarkedPostsQuery = useQuery(
+    api.savedContent.getBookmarkedContent,
+  );
+  const bookmarkedPosts = bookmarkedPostsQuery ?? [];
 
   // Disable entering animations after first data load
   useEffect(() => {
@@ -143,22 +147,73 @@ export default function Bookmarks() {
           />
         }
       >
-        {bookmarkedPosts.map((post, index) => {
-          if (!post) return null;
+        {bookmarkedPosts.map((item, index) => {
+          if (!item) return null;
+
+          const isFilterOption =
+            item.itemType === "filterOption";
+          const imageUrl = isFilterOption
+            ? item.image
+            : item.imageUrl;
+          const titleText = isFilterOption
+            ? item.name
+            : item.title || item.content;
+
           return (
-            <View key={post._id} style={styles.gridItem}>
+            <View key={item._id} style={styles.gridItem}>
               <AnimatedCard
                 delay={Math.min(index * 100, 500)}
                 useEnteringAnimation={isFirstLoad}
               >
-                <TouchableOpacity>
-                  <Image
-                    source={post.imageUrl}
-                    style={styles.gridImage}
-                    contentFit="cover"
-                    transition={200}
-                    cachePolicy="memory-disk"
-                  />
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: theme.colors.surface,
+                    borderRadius: theme.borderRadius.sm,
+                    overflow: "hidden",
+                  }}
+                >
+                  {imageUrl ? (
+                    <Image
+                      source={imageUrl}
+                      style={styles.gridImage}
+                      contentFit="cover"
+                      transition={200}
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.gridImage,
+                        {
+                          justifyContent: "center",
+                          alignItems: "center",
+                          padding: 8,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={
+                          isFilterOption
+                            ? "briefcase-outline"
+                            : "document-text-outline"
+                        }
+                        size={24}
+                        color={theme.colors.primary}
+                      />
+                      <Typography
+                        variant="caption"
+                        color="text"
+                        numberOfLines={2}
+                        style={{
+                          textAlign: "center",
+                          marginTop: 4,
+                        }}
+                      >
+                        {titleText}
+                      </Typography>
+                    </View>
+                  )}
                 </TouchableOpacity>
               </AnimatedCard>
             </View>

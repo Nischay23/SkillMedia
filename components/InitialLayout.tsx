@@ -1,9 +1,10 @@
 import { api } from "@/convex/_generated/api";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
+import * as SplashScreen from "expo-splash-screen";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, View, ActivityIndicator } from "react-native";
 
 export default function InitialLayout() {
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
@@ -87,17 +88,18 @@ export default function InitialLayout() {
 
     async function ensureUserAndRoute() {
       if (!isSignedIn) {
+        hasCreatedRef.current = false;
+        hasUpdatedStreakRef.current = false;
+        hasCheckedOnboardingRef.current = false;
         if (!inAuthScreen) router.replace("/(auth)/login");
+        setTimeout(() => SplashScreen.hideAsync(), 100);
         return;
       }
 
-      if (
-        !hasCreatedRef.current &&
-        user &&
-        existingUser === undefined
-      ) {
+      // Check if user is fully new and needs creation
+      if (user && existingUser === null && !hasCreatedRef.current) {
+        hasCreatedRef.current = true;
         try {
-          hasCreatedRef.current = true;
           const email =
             user.primaryEmailAddress?.emailAddress ||
             user.emailAddresses[0]?.emailAddress ||
@@ -117,34 +119,30 @@ export default function InitialLayout() {
             clerkId: user.id,
           });
         } catch (err) {
-          // no-op: if creation fails, allow subsequent retries on next render
+          // If creation failed, reset so it retries
           hasCreatedRef.current = false;
+          setTimeout(() => SplashScreen.hideAsync(), 100);
         }
+        // Still wait for `existingUser` to reflect the newly created user in subsequent renders
+        return; 
       }
 
-      // Check onboarding status after user exists
-      if (
-        existingUser &&
-        onboardingStatus !== undefined &&
-        !hasCheckedOnboardingRef.current
-      ) {
-        hasCheckedOnboardingRef.current = true;
+      const isNewUserCheckFinished = existingUser !== undefined;
+      const isOnboardingStatusFinished = onboardingStatus !== undefined;
 
-        if (!onboardingStatus && !inOnboarding) {
-          // User hasn't completed onboarding, redirect
+      if (!isNewUserCheckFinished || !isOnboardingStatusFinished) return;
+
+      if (onboardingStatus === false) {
+        if (!inOnboarding) {
           router.replace("/onboarding");
-          return;
         }
-      }
-
-      if (inAuthScreen) {
-        // Check onboarding before going to tabs
-        if (onboardingStatus === false && !inOnboarding) {
-          router.replace("/onboarding");
-        } else {
+      } else if (onboardingStatus === true) {
+        if (inAuthScreen || inOnboarding) {
           router.replace("/(tabs)");
         }
       }
+
+      setTimeout(() => SplashScreen.hideAsync(), 100);
     }
 
     void ensureUserAndRoute();
@@ -158,7 +156,13 @@ export default function InitialLayout() {
     segments,
   ]);
 
-  if (!isAuthLoaded) return null;
+  if (!isAuthLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0F1115", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: '#0F1115' } }} />;
 }

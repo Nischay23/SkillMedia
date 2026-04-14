@@ -11,13 +11,15 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as NavigationBar from "expo-navigation-bar";
 import { SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   SafeAreaView,
 } from "react-native-safe-area-context";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { useAuth } from "@clerk/clerk-expo";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,38 +46,40 @@ function ThemedApp() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <ToastProvider>
-          <PushNotificationProvider>
-            <SafeAreaProvider>
-              <SafeAreaView
-                style={{
-                  flex: 1,
-                  backgroundColor: theme.colors.background,
-                }}
-              >
-                <InitialLayout />
-              </SafeAreaView>
-              <StatusBar
-                style={isDark ? "light" : "dark"}
-                translucent
-                backgroundColor="transparent"
-              />
-            </SafeAreaProvider>
-          </PushNotificationProvider>
-        </ToastProvider>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+    <BottomSheetModalProvider>
+      <ToastProvider>
+        <PushNotificationProvider>
+          <SafeAreaProvider>
+            <SafeAreaView
+              style={{
+                flex: 1,
+                backgroundColor: theme.colors.background,
+              }}
+            >
+              <InitialLayout />
+            </SafeAreaView>
+            <StatusBar
+              style={isDark ? "light" : "dark"}
+              translucent
+              backgroundColor="transparent"
+            />
+          </SafeAreaProvider>
+        </PushNotificationProvider>
+      </ToastProvider>
+    </BottomSheetModalProvider>
   );
 }
 
 export default function RootLayout() {
   return (
-    <ClerkAndConvexProvider>
-      <ThemeProvider>
-        <ThemedApp />
-      </ThemeProvider>
-    </ClerkAndConvexProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <ClerkAndConvexProvider>
+          <ThemeProvider>
+            <ThemedApp />
+          </ThemeProvider>
+        </ClerkAndConvexProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }

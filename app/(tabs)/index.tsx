@@ -126,7 +126,9 @@ export default function FeedScreen() {
 
   // Cursor = the _id of the last post we've seen. null = start.
   const [cursor, setCursor] = useState<string | null>(null);
-  const [allPosts, setAllPosts] = useState<CommunityPostType[]>([]);
+  const [allPosts, setAllPosts] = useState<
+    CommunityPostType[]
+  >([]);
   const [isDone, setIsDone] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -141,12 +143,17 @@ export default function FeedScreen() {
   const regularPage = useQuery(
     api.communityPosts.paginateCommunityPosts,
     !hasCompletedOnboarding && !lastSelectedFilterId
-      ? { paginationOpts: { numItems: PAGE_SIZE, cursor }, statusFilter: "published" }
+      ? {
+          paginationOpts: { numItems: PAGE_SIZE, cursor },
+          statusFilter: "published",
+        }
       : "skip",
   );
 
   // Which paginated result to use
-  const activePage = hasCompletedOnboarding ? personalizedPage : regularPage;
+  const activePage = hasCompletedOnboarding
+    ? personalizedPage
+    : regularPage;
 
   // Accumulate pages into allPosts
   useEffect(() => {
@@ -159,7 +166,10 @@ export default function FeedScreen() {
       // Subsequent pages — append, dedup by _id
       setAllPosts((prev) => {
         const seen = new Set(prev.map((p) => p._id));
-        return [...prev, ...newPosts.filter((p) => !seen.has(p._id))];
+        return [
+          ...prev,
+          ...newPosts.filter((p) => !seen.has(p._id)),
+        ];
       });
     }
     setIsDone(activePage.isDone);
@@ -340,21 +350,15 @@ export default function FeedScreen() {
     transform: [{ rotate: `${spinValue.value * 360}deg` }],
   }));
 
-  const handleFilterPress = useCallback(
-    () => {
-      Haptics.selectionAsync();
-      setShowFilterModal(true);
-    },
-    [],
-  );
+  const handleFilterPress = useCallback(() => {
+    Haptics.selectionAsync();
+    setShowFilterModal(true);
+  }, []);
 
-  const handleChipPress = useCallback(
-    (index: number) => {
-      setSelectedFilters((prev) => prev.slice(0, index + 1));
-      setShowFilterModal(true);
-    },
-    [],
-  );
+  const handleChipPress = useCallback((index: number) => {
+    setSelectedFilters((prev) => prev.slice(0, index + 1));
+    setShowFilterModal(true);
+  }, []);
 
   const handleClearFilters = useCallback(
     () => setSelectedFilters([]),
@@ -392,7 +396,6 @@ export default function FeedScreen() {
     [],
   );
 
-
   // ─── Loading guards ────────────────────────────────────
 
   // Disable entering animations after first data load
@@ -421,7 +424,11 @@ export default function FeedScreen() {
 
   const isDiscussionPost = useCallback(
     (post: CommunityPostType): boolean => {
-      const text = (post.title || post.content || "").trim();
+      const text = (
+        post.title ||
+        post.content ||
+        ""
+      ).trim();
       return (
         QUESTION_PATTERN.test(text) || text.endsWith("?")
       );
@@ -521,8 +528,14 @@ export default function FeedScreen() {
       );
     }
     return null;
-  }, [isDone, allPosts.length, loadingMore, handleLoadMore, isViewingSpecificPath, theme]);
-
+  }, [
+    isDone,
+    allPosts.length,
+    loadingMore,
+    handleLoadMore,
+    isViewingSpecificPath,
+    theme,
+  ]);
 
   // ─── Render helpers (memoized) ─────────────────────────
   const renderPostItem = useCallback(
@@ -546,7 +559,9 @@ export default function FeedScreen() {
             <PostCardWrapper
               post={item}
               variant="expert"
-              onOpenComments={() => handleOpenComments(item._id)}
+              onOpenComments={() =>
+                handleOpenComments(item._id)
+              }
             />
           </AnimatedCard>
         );
@@ -562,7 +577,9 @@ export default function FeedScreen() {
             <PostCardWrapper
               post={item}
               variant="discussion"
-              onOpenComments={() => handleOpenComments(item._id)}
+              onOpenComments={() =>
+                handleOpenComments(item._id)
+              }
             />
           </AnimatedCard>
         );
@@ -576,14 +593,20 @@ export default function FeedScreen() {
         >
           <CommunityPost
             post={item}
-            onOpenComments={() => handleOpenComments(item._id)}
+            onOpenComments={() =>
+              handleOpenComments(item._id)
+            }
           />
         </AnimatedCard>
       );
     },
-    [isFirstLoad, isExpertPost, isDiscussionPost, handleOpenComments],
+    [
+      isFirstLoad,
+      isExpertPost,
+      isDiscussionPost,
+      handleOpenComments,
+    ],
   );
-
 
   const renderEmptyExplore = useCallback(
     () => (
@@ -612,7 +635,6 @@ export default function FeedScreen() {
     ),
     [handleFilterPress],
   );
-
 
   // ─── Loading guards ────────────────────────────────────
 
@@ -756,7 +778,7 @@ export default function FeedScreen() {
           {posts.length > 0
             ? posts.map((item, index) => {
                 const post = item as CommunityPostType;
-              const staggerDelay = Math.min(
+                const staggerDelay = Math.min(
                   (index + 1) * 60,
                   300,
                 );
@@ -900,211 +922,225 @@ export default function FeedScreen() {
               )}
 
             {/* Recommended for you carousel */}
-            {recommendedPosts && recommendedPosts.length > 0 && (
-              <Animated.View
-                entering={FadeIn.duration(400).delay(100)}
-                style={{ marginBottom: theme.spacing.lg }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingHorizontal: theme.spacing.lg,
-                    marginBottom: theme.spacing.sm,
-                  }}
+            {recommendedPosts &&
+              recommendedPosts.length > 0 && (
+                <Animated.View
+                  entering={FadeIn.duration(400).delay(100)}
+                  style={{ marginBottom: theme.spacing.lg }}
                 >
                   <View
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      gap: 8,
+                      justifyContent: "space-between",
+                      paddingHorizontal: theme.spacing.lg,
+                      marginBottom: theme.spacing.sm,
                     }}
                   >
-                    <Ionicons
-                      name="bulb"
-                      size={18}
-                      color={theme.colors.warning}
-                    />
-                    <Typography
-                      variant="body"
-                      weight="semibold"
-                      color="text"
-                    >
-                      Recommended for you
-                    </Typography>
-                  </View>
-                </View>
-                <FlatList
-                  horizontal
-                  data={recommendedPosts as CommunityPostType[]}
-                  keyExtractor={(item) => `rec-${item._id}`}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    paddingHorizontal: theme.spacing.md,
-                    gap: theme.spacing.sm,
-                  }}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      onPress={() => setCommentsPostId(item._id)}
+                    <View
                       style={{
-                        width: 280,
-                        backgroundColor:
-                          theme.colors.surface,
-                        borderRadius: 16,
-                        padding: theme.spacing.md,
-                        borderWidth: 1,
-                        borderColor: theme.colors.border,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.08,
-                        shadowRadius: 8,
-                        elevation: 3,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
                       }}
                     >
-                      <View
+                      <Ionicons
+                        name="bulb"
+                        size={18}
+                        color={theme.colors.warning}
+                      />
+                      <Typography
+                        variant="body"
+                        weight="semibold"
+                        color="text"
+                      >
+                        Recommended for you
+                      </Typography>
+                    </View>
+                  </View>
+                  <FlatList
+                    horizontal
+                    data={
+                      recommendedPosts as CommunityPostType[]
+                    }
+                    keyExtractor={(item) =>
+                      `rec-${item._id}`
+                    }
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                      paddingHorizontal: theme.spacing.md,
+                      gap: theme.spacing.sm,
+                    }}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() =>
+                          setCommentsPostId(item._id)
+                        }
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          marginBottom: 10,
-                          gap: 10,
+                          width: 280,
+                          backgroundColor:
+                            theme.colors.surface,
+                          borderRadius: 16,
+                          padding: theme.spacing.md,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          shadowColor: "#000",
+                          shadowOffset: {
+                            width: 0,
+                            height: 2,
+                          },
+                          shadowOpacity: 0.08,
+                          shadowRadius: 8,
+                          elevation: 3,
                         }}
                       >
-                        {item.user?.profileImage ? (
-                          <View
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 18,
-                              overflow: "hidden",
-                              backgroundColor:
-                                theme.colors.border,
-                            }}
-                          >
-                            <Animated.Image
-                              source={{
-                                uri: item.user.profileImage,
-                              }}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: 10,
+                            gap: 10,
+                          }}
+                        >
+                          {item.user?.profileImage ? (
+                            <View
                               style={{
                                 width: 36,
                                 height: 36,
+                                borderRadius: 18,
+                                overflow: "hidden",
+                                backgroundColor:
+                                  theme.colors.border,
                               }}
-                            />
-                          </View>
-                        ) : (
-                          <View
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 18,
-                              backgroundColor:
-                                theme.colors.primary + "30",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Ionicons
-                              name="person"
-                              size={18}
-                              color={theme.colors.primary}
-                            />
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Typography
-                            variant="caption"
-                            weight="semibold"
-                            color="text"
-                            numberOfLines={1}
-                          >
-                            {item.user?.fullname ||
-                              item.user?.username ||
-                              "User"}
-                          </Typography>
-                          {item.user?.isAdmin && (
+                            >
+                              <Animated.Image
+                                source={{
+                                  uri: item.user
+                                    .profileImage,
+                                }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                }}
+                              />
+                            </View>
+                          ) : (
                             <View
                               style={{
-                                flexDirection: "row",
+                                width: 36,
+                                height: 36,
+                                borderRadius: 18,
+                                backgroundColor:
+                                  theme.colors.primary +
+                                  "30",
                                 alignItems: "center",
-                                gap: 4,
+                                justifyContent: "center",
                               }}
                             >
                               <Ionicons
-                                name="checkmark-circle"
-                                size={12}
+                                name="person"
+                                size={18}
                                 color={theme.colors.primary}
                               />
-                              <Typography
-                                variant="caption"
-                                color="primary"
-                              >
-                                Expert
-                              </Typography>
                             </View>
                           )}
+                          <View style={{ flex: 1 }}>
+                            <Typography
+                              variant="caption"
+                              weight="semibold"
+                              color="text"
+                              numberOfLines={1}
+                            >
+                              {item.user?.fullname ||
+                                item.user?.username ||
+                                "User"}
+                            </Typography>
+                            {item.user?.isAdmin && (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                <Ionicons
+                                  name="checkmark-circle"
+                                  size={12}
+                                  color={
+                                    theme.colors.primary
+                                  }
+                                />
+                                <Typography
+                                  variant="caption"
+                                  color="primary"
+                                >
+                                  Expert
+                                </Typography>
+                              </View>
+                            )}
+                          </View>
                         </View>
-                      </View>
-                      <Typography
-                        variant="body"
-                        weight="medium"
-                        color="text"
-                        numberOfLines={2}
-                        style={{ marginBottom: 8 }}
-                      >
-                        {item.title || item.content}
-                      </Typography>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 12,
-                        }}
-                      >
+                        <Typography
+                          variant="body"
+                          weight="medium"
+                          color="text"
+                          numberOfLines={2}
+                          style={{ marginBottom: 8 }}
+                        >
+                          {item.title || item.content}
+                        </Typography>
                         <View
                           style={{
                             flexDirection: "row",
                             alignItems: "center",
-                            gap: 4,
+                            gap: 12,
                           }}
                         >
-                          <Ionicons
-                            name="heart"
-                            size={14}
-                            color={theme.colors.textMuted}
-                          />
-                          <Typography
-                            variant="caption"
-                            color="textMuted"
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
                           >
-                            {item.likes || 0}
-                          </Typography>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          <Ionicons
-                            name="chatbubble"
-                            size={14}
-                            color={theme.colors.textMuted}
-                          />
-                          <Typography
-                            variant="caption"
-                            color="textMuted"
+                            <Ionicons
+                              name="heart"
+                              size={14}
+                              color={theme.colors.textMuted}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="textMuted"
+                            >
+                              {item.likes || 0}
+                            </Typography>
+                          </View>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
                           >
-                            {item.comments || 0}
-                          </Typography>
+                            <Ionicons
+                              name="chatbubble"
+                              size={14}
+                              color={theme.colors.textMuted}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="textMuted"
+                            >
+                              {item.comments || 0}
+                            </Typography>
+                          </View>
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                />
-              </Animated.View>
-            )}
+                      </TouchableOpacity>
+                    )}
+                  />
+                </Animated.View>
+              )}
 
             {/* Refresh banner */}
             {refreshing && careerFact ? (

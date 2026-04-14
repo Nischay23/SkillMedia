@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -5,12 +6,11 @@ import BottomSheet, {
   BottomSheetTextInput,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { useUser } from "@clerk/clerk-expo";
-import { LinearGradient } from "expo-linear-gradient";
-import { Image } from "expo-image";
-import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
 import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { LinearGradient } from "expo-linear-gradient";
 import React, {
   useCallback,
   useEffect,
@@ -43,7 +43,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -56,7 +55,11 @@ import {
   useTheme,
   useThemedStyles,
 } from "@/providers/ThemeProvider";
-import { useAction, useMutation, useQuery } from "convex/react";
+import {
+  useAction,
+  useMutation,
+  useQuery,
+} from "convex/react";
 import {
   useLocalSearchParams,
   useRouter,
@@ -1026,8 +1029,12 @@ export default function GroupChatScreen() {
   // AI Chatbot
   const { user: clerkUser } = useUser();
   const askAIAction = useAction(api.ai.askAI);
-  const aiHistory = useQuery(api.ai.getAIHistory, { groupId });
-  const remainingAIQueries = useQuery(api.ai.getRemainingAIQueries);
+  const aiHistory = useQuery(api.ai.getAIHistory, {
+    groupId,
+  });
+  const remainingAIQueries = useQuery(
+    api.ai.getRemainingAIQueries,
+  );
 
   // State
   const [inputText, setInputText] = useState("");
@@ -1055,6 +1062,7 @@ export default function GroupChatScreen() {
   const [selectedReason, setSelectedReason] = useState<
     string | null
   >(null);
+  [];
   const [toastMessage, setToastMessage] = useState<
     string | null
   >(null);
@@ -1062,11 +1070,22 @@ export default function GroupChatScreen() {
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiMessages, setAiMessages] = useState<Array<{ type: "user" | "ai"; text: string; id: string; timestamp?: number }>>([]);
-  const [aiKeyboardHeight, setAiKeyboardHeight] = useState(0);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [aiMessages, setAiMessages] = useState<
+    Array<{
+      type: "user" | "ai";
+      text: string;
+      id: string;
+      timestamp?: number;
+    }>
+  >([]);
+  const [aiKeyboardHeight, setAiKeyboardHeight] =
+    useState(0);
+  const [copiedMessageId, setCopiedMessageId] = useState<
+    string | null
+  >(null);
   // Keyboard height for main chat (Keyboard.addListener approach)
-  const [chatKeyboardHeight, setChatKeyboardHeight] = useState(0);
+  const [chatKeyboardHeight, setChatKeyboardHeight] =
+    useState(0);
 
   // Refs
   const flatListRef = useRef<FlatList>(null);
@@ -1142,19 +1161,28 @@ export default function GroupChatScreen() {
   // Main chat keyboard handling — scroll to bottom when keyboard opens
   useEffect(() => {
     const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      Platform.OS === "ios"
+        ? "keyboardWillShow"
+        : "keyboardDidShow",
       (e: KeyboardEvent) => {
         if (!aiChatOpen) {
           setChatKeyboardHeight(e.endCoordinates.height);
           // Scroll to bottom so latest message stays above keyboard
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, Platform.OS === "ios" ? 50 : 100);
+          setTimeout(
+            () => {
+              flatListRef.current?.scrollToEnd({
+                animated: true,
+              });
+            },
+            Platform.OS === "ios" ? 50 : 100,
+          );
         }
       },
     );
     const hideSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      Platform.OS === "ios"
+        ? "keyboardWillHide"
+        : "keyboardDidHide",
       () => {
         if (!aiChatOpen) {
           setChatKeyboardHeight(0);
@@ -1170,20 +1198,24 @@ export default function GroupChatScreen() {
   // AI Chat keyboard handling
   useEffect(() => {
     const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      Platform.OS === "ios"
+        ? "keyboardWillShow"
+        : "keyboardDidShow",
       (e: KeyboardEvent) => {
         if (aiChatOpen) {
           setAiKeyboardHeight(e.endCoordinates.height);
         }
-      }
+      },
     );
     const hideSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      Platform.OS === "ios"
+        ? "keyboardWillHide"
+        : "keyboardDidHide",
       () => {
         if (aiChatOpen) {
           setAiKeyboardHeight(0);
         }
-      }
+      },
     );
     return () => {
       showSub.remove();
@@ -1195,7 +1227,9 @@ export default function GroupChatScreen() {
   useEffect(() => {
     if (aiKeyboardHeight > 0 && aiMessages.length > 0) {
       setTimeout(() => {
-        aiChatListRef.current?.scrollToEnd({ animated: true });
+        aiChatListRef.current?.scrollToEnd({
+          animated: true,
+        });
       }, 150);
     }
   }, [aiKeyboardHeight, aiMessages.length]);
@@ -1283,17 +1317,14 @@ export default function GroupChatScreen() {
       const response = await fetch(selectedImage);
       const blob = await response.blob();
 
-      await fetch(uploadUrl, {
-        method: "PUT",
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
         headers: { "Content-Type": blob.type },
         body: blob,
       });
-
-      // Extract storage ID from upload URL
-      const url = new URL(uploadUrl);
-      const storageId = url.searchParams.get(
-        "storageId",
-      ) as Id<"_storage">;
+      const uploadResult = await uploadResponse.json();
+      const storageId =
+        uploadResult.storageId as Id<"_storage">;
 
       // Send image message
       await sendImageMessageMutation({
@@ -1341,13 +1372,35 @@ export default function GroupChatScreen() {
     setAiChatOpen(true);
     // Load history into local state
     if (aiHistory && aiHistory.length > 0) {
-      const historicalMessages = aiHistory.flatMap((conv: { _id: string; question: string; answer: string; createdAt?: number }) => [
-        { type: "user" as const, text: conv.question, id: `q-${conv._id}`, timestamp: conv.createdAt },
-        { type: "ai" as const, text: conv.answer, id: `a-${conv._id}`, timestamp: conv.createdAt },
-      ]).reverse();
+      const historicalMessages = aiHistory
+        .flatMap(
+          (conv: {
+            _id: string;
+            question: string;
+            answer: string;
+            createdAt?: number;
+          }) => [
+            {
+              type: "user" as const,
+              text: conv.question,
+              id: `q-${conv._id}`,
+              timestamp: conv.createdAt,
+            },
+            {
+              type: "ai" as const,
+              text: conv.answer,
+              id: `a-${conv._id}`,
+              timestamp: conv.createdAt,
+            },
+          ],
+        )
+        .reverse();
       setAiMessages(historicalMessages);
     }
-    setTimeout(() => aiChatRef.current?.snapToIndex(0), 100);
+    setTimeout(
+      () => aiChatRef.current?.snapToIndex(0),
+      100,
+    );
   }, [aiHistory]);
 
   const handleAskAI = useCallback(async () => {
@@ -1361,12 +1414,26 @@ export default function GroupChatScreen() {
     const tempUserId = `user-${now}`;
 
     // Add user message immediately
-    setAiMessages(prev => [...prev, { type: "user", text: question, id: tempUserId, timestamp: now }]);
+    setAiMessages((prev) => [
+      ...prev,
+      {
+        type: "user",
+        text: question,
+        id: tempUserId,
+        timestamp: now,
+      },
+    ]);
     setAiInput("");
     setAiLoading(true);
 
     // Scroll to bottom
-    setTimeout(() => aiChatListRef.current?.scrollToEnd({ animated: true }), 100);
+    setTimeout(
+      () =>
+        aiChatListRef.current?.scrollToEnd({
+          animated: true,
+        }),
+      100,
+    );
 
     try {
       const result = await askAIAction({
@@ -1375,25 +1442,60 @@ export default function GroupChatScreen() {
       });
 
       // Add AI response
-      setAiMessages(prev => [...prev, { type: "ai", text: result.answer, id: `ai-${Date.now()}`, timestamp: Date.now() }]);
-      setTimeout(() => aiChatListRef.current?.scrollToEnd({ animated: true }), 100);
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          type: "ai",
+          text: result.answer,
+          id: `ai-${Date.now()}`,
+          timestamp: Date.now(),
+        },
+      ]);
+      setTimeout(
+        () =>
+          aiChatListRef.current?.scrollToEnd({
+            animated: true,
+          }),
+        100,
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "AI service unavailable";
-      setAiMessages(prev => [...prev, { type: "ai", text: `Error: ${errorMessage}`, id: `error-${Date.now()}`, timestamp: Date.now() }]);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "AI service unavailable";
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          type: "ai",
+          text: `Error: ${errorMessage}`,
+          id: `error-${Date.now()}`,
+          timestamp: Date.now(),
+        },
+      ]);
     } finally {
       setAiLoading(false);
     }
-  }, [aiInput, clerkUser?.id, groupId, askAIAction, aiLoading, remainingAIQueries]);
+  }, [
+    aiInput,
+    clerkUser?.id,
+    groupId,
+    askAIAction,
+    aiLoading,
+    remainingAIQueries,
+  ]);
 
   const handleAIChipPress = useCallback((chip: string) => {
     setAiInput(chip);
   }, []);
 
-  const handleCopyAIMessage = useCallback((text: string, id: string) => {
-    Clipboard.setStringAsync(text);
-    setCopiedMessageId(id);
-    setTimeout(() => setCopiedMessageId(null), 1500);
-  }, []);
+  const handleCopyAIMessage = useCallback(
+    (text: string, id: string) => {
+      Clipboard.setStringAsync(text);
+      setCopiedMessageId(id);
+      setTimeout(() => setCopiedMessageId(null), 1500);
+    },
+    [],
+  );
 
   const handleDeleteMessage = useCallback(async () => {
     if (!actionMessageId) return;
@@ -1429,7 +1531,9 @@ export default function GroupChatScreen() {
       if (!targetId) return;
 
       // Haptic feedback on reaction
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(
+        Haptics.ImpactFeedbackStyle.Light,
+      );
 
       try {
         await toggleReactionMutation({
@@ -1963,52 +2067,11 @@ export default function GroupChatScreen() {
             });
           }}
           onPress={() => {
-            if (Platform.OS === "android") {
-              Alert.alert(group.name, undefined, [
-                {
-                  text: "View Members",
-                  onPress: () =>
-                    router.push(
-                      `/group/${id}/members` as any,
-                    ),
-                },
-                {
-                  text: "Group Info",
-                  onPress: () =>
-                    router.push(`/group/${id}/info` as any),
-                },
-                {
-                  text: "Leave Group",
-                  style: "destructive",
-                  onPress: () => {
-                    Alert.alert(
-                      "Leave Group",
-                      "Are you sure?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Leave",
-                          style: "destructive",
-                          onPress: async () => {
-                            await leaveGroupMutation({
-                              groupId,
-                            });
-                            router.back();
-                          },
-                        },
-                      ],
-                    );
-                  },
-                },
-                { text: "Cancel", style: "cancel" },
-              ]);
-            } else {
-              setMenuOpen(true);
-              setTimeout(
-                () => menuRef.current?.snapToIndex(0),
-                100,
-              );
-            }
+            setMenuOpen(true);
+            setTimeout(
+              () => menuRef.current?.snapToIndex(0),
+              100,
+            );
           }}
         >
           <Animated.View
@@ -2178,15 +2241,25 @@ export default function GroupChatScreen() {
         {/* AI Assistant button */}
         <Pressable
           onPressIn={() => {
-            aiBtnScale.value = withSpring(0.9, { damping: 15 });
+            aiBtnScale.value = withSpring(0.9, {
+              damping: 15,
+            });
           }}
           onPressOut={() => {
-            aiBtnScale.value = withSpring(1, { damping: 15 });
+            aiBtnScale.value = withSpring(1, {
+              damping: 15,
+            });
           }}
           onPress={handleOpenAIChat}
         >
-          <Animated.View style={[styles.iconButton, aiBtnStyle]}>
-            <Ionicons name="sparkles-outline" size={18} color={theme.colors.primary} />
+          <Animated.View
+            style={[styles.iconButton, aiBtnStyle]}
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={18}
+              color={theme.colors.primary}
+            />
           </Animated.View>
         </Pressable>
 
@@ -2270,8 +2343,8 @@ export default function GroupChatScreen() {
         onClose={() => setFullscreenImage(null)}
       />
 
-      {/* Menu Bottom Sheet (iOS only) */}
-      {menuOpen && Platform.OS === "ios" && (
+      {/* Menu Bottom Sheet */}
+      {menuOpen && (
         <BottomSheet
           ref={menuRef}
           index={0}
@@ -2921,29 +2994,38 @@ export default function GroupChatScreen() {
           handleIndicatorStyle={{
             backgroundColor: "rgba(255,255,255,0.3)",
             width: 36,
-            height: 4
+            height: 4,
           }}
           keyboardBehavior="extend"
           android_keyboardInputMode="adjustResize"
         >
           <View style={{ flex: 1 }}>
             {/* Header */}
-            <View style={{
-              paddingHorizontal: 20,
-              paddingTop: 8,
-              paddingBottom: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: "rgba(255,255,255,0.08)"
-            }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingTop: 8,
+                paddingBottom: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "rgba(255,255,255,0.08)",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
                 {/* AI Avatar with glow */}
-                <View style={{
-                  shadowColor: "#6C5DD3",
-                  shadowOpacity: 0.5,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 0 },
-                  elevation: 8,
-                }}>
+                <View
+                  style={{
+                    shadowColor: "#6C5DD3",
+                    shadowOpacity: 0.5,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 0 },
+                    elevation: 8,
+                  }}
+                >
                   <LinearGradient
                     colors={["#6C5DD3", "#8676FF"]}
                     style={{
@@ -2951,37 +3033,62 @@ export default function GroupChatScreen() {
                       height: 38,
                       borderRadius: 19,
                       alignItems: "center",
-                      justifyContent: "center"
+                      justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+                    <Ionicons
+                      name="sparkles"
+                      size={18}
+                      color="#FFFFFF"
+                    />
                   </LinearGradient>
                 </View>
 
                 {/* Title and subtitle */}
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Typography variant="body" weight="semibold" style={{ color: "#FFFFFF" }}>
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    style={{ color: "#FFFFFF" }}
+                  >
                     AI Career Assistant
                   </Typography>
-                  <Typography variant="caption" color="textMuted" numberOfLines={1}>
-                    {group?.name ? `Expert on ${group.name}` : "Career guidance"}
+                  <Typography
+                    variant="caption"
+                    color="textMuted"
+                    numberOfLines={1}
+                  >
+                    {group?.name
+                      ? `Expert on ${group.name}`
+                      : "Career guidance"}
                   </Typography>
                 </View>
 
                 {/* Queries remaining pill */}
-                <View style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "rgba(160,166,255,0.15)",
-                  borderRadius: 20,
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                  borderWidth: 1,
-                  borderColor: "rgba(160,166,255,0.3)",
-                  gap: 4,
-                }}>
-                  <Ionicons name="flash" size={10} color={theme.colors.primary} />
-                  <Typography variant="caption" color="primary" weight="medium">
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor:
+                      "rgba(160,166,255,0.15)",
+                    borderRadius: 20,
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderWidth: 1,
+                    borderColor: "rgba(160,166,255,0.3)",
+                    gap: 4,
+                  }}
+                >
+                  <Ionicons
+                    name="flash"
+                    size={10}
+                    color={theme.colors.primary}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="primary"
+                    weight="medium"
+                  >
                     {remainingAIQueries ?? 0} / 10
                   </Typography>
                 </View>
@@ -2995,11 +3102,17 @@ export default function GroupChatScreen() {
               keyExtractor={(item) => item.id}
               renderItem={({ item, index }) => {
                 const isUser = item.type === "user";
-                const showAiAvatar = !isUser && (index === 0 || aiMessages[index - 1]?.type === "user");
+                const showAiAvatar =
+                  !isUser &&
+                  (index === 0 ||
+                    aiMessages[index - 1]?.type === "user");
                 const formatMessageTime = (ts?: number) => {
                   if (!ts) return "";
                   const d = new Date(ts);
-                  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  return d.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
                 };
 
                 return (
@@ -3012,18 +3125,30 @@ export default function GroupChatScreen() {
                   >
                     {isUser ? (
                       // USER MESSAGE (right aligned)
-                      <View style={{ alignItems: "flex-end" }}>
-                        <View style={{
-                          backgroundColor: "rgba(108, 93, 211, 0.25)",
-                          borderWidth: 1,
-                          borderColor: "rgba(108, 93, 211, 0.4)",
-                          borderRadius: 20,
-                          borderBottomRightRadius: 6,
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          maxWidth: SCREEN_WIDTH * 0.78,
-                        }}>
-                          <Typography variant="body" style={{ color: "#FFFFFF", lineHeight: 22 }}>
+                      <View
+                        style={{ alignItems: "flex-end" }}
+                      >
+                        <View
+                          style={{
+                            backgroundColor:
+                              "rgba(108, 93, 211, 0.25)",
+                            borderWidth: 1,
+                            borderColor:
+                              "rgba(108, 93, 211, 0.4)",
+                            borderRadius: 20,
+                            borderBottomRightRadius: 6,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            maxWidth: SCREEN_WIDTH * 0.78,
+                          }}
+                        >
+                          <Typography
+                            variant="body"
+                            style={{
+                              color: "#FFFFFF",
+                              lineHeight: 22,
+                            }}
+                          >
                             {item.text}
                           </Typography>
                         </View>
@@ -3031,15 +3156,26 @@ export default function GroupChatScreen() {
                           <Typography
                             variant="caption"
                             color="textMuted"
-                            style={{ fontSize: 10, marginTop: 4 }}
+                            style={{
+                              fontSize: 10,
+                              marginTop: 4,
+                            }}
                           >
-                            {formatMessageTime(item.timestamp)}
+                            {formatMessageTime(
+                              item.timestamp,
+                            )}
                           </Typography>
                         )}
                       </View>
                     ) : (
                       // AI MESSAGE (left aligned)
-                      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "flex-start",
+                          gap: 10,
+                        }}
+                      >
                         {/* AI Avatar or spacer */}
                         {showAiAvatar ? (
                           <LinearGradient
@@ -3049,10 +3185,14 @@ export default function GroupChatScreen() {
                               height: 32,
                               borderRadius: 16,
                               alignItems: "center",
-                              justifyContent: "center"
+                              justifyContent: "center",
                             }}
                           >
-                            <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                            <Ionicons
+                              name="sparkles"
+                              size={14}
+                              color="#FFFFFF"
+                            />
                           </LinearGradient>
                         ) : (
                           <View style={{ width: 32 }} />
@@ -3070,39 +3210,81 @@ export default function GroupChatScreen() {
                             </Typography>
                           )}
 
-                          <View style={{
-                            backgroundColor: "rgba(255,255,255,0.06)",
-                            borderWidth: 1,
-                            borderColor: "rgba(255,255,255,0.08)",
-                            borderRadius: 20,
-                            borderTopLeftRadius: showAiAvatar ? 6 : 20,
-                            paddingHorizontal: 16,
-                            paddingVertical: 14,
-                          }}>
-                            <Typography variant="body" style={{ color: "#FFFFFF", lineHeight: 24 }}>
+                          <View
+                            style={{
+                              backgroundColor:
+                                "rgba(255,255,255,0.06)",
+                              borderWidth: 1,
+                              borderColor:
+                                "rgba(255,255,255,0.08)",
+                              borderRadius: 20,
+                              borderTopLeftRadius:
+                                showAiAvatar ? 6 : 20,
+                              paddingHorizontal: 16,
+                              paddingVertical: 14,
+                            }}
+                          >
+                            <Typography
+                              variant="body"
+                              style={{
+                                color: "#FFFFFF",
+                                lineHeight: 24,
+                              }}
+                            >
                               {item.text}
                             </Typography>
                           </View>
 
                           {/* Action row */}
-                          <View style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 8,
-                            gap: 16
-                          }}>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginTop: 8,
+                              gap: 16,
+                            }}
+                          >
                             <Pressable
-                              onPress={() => handleCopyAIMessage(item.text, item.id)}
+                              onPress={() =>
+                                handleCopyAIMessage(
+                                  item.text,
+                                  item.id,
+                                )
+                              }
                               hitSlop={8}
                             >
-                              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
                                 <Ionicons
-                                  name={copiedMessageId === item.id ? "checkmark" : "copy-outline"}
+                                  name={
+                                    copiedMessageId ===
+                                    item.id
+                                      ? "checkmark"
+                                      : "copy-outline"
+                                  }
                                   size={14}
-                                  color={copiedMessageId === item.id ? "#22C55E" : theme.colors.textMuted}
+                                  color={
+                                    copiedMessageId ===
+                                    item.id
+                                      ? "#22C55E"
+                                      : theme.colors
+                                          .textMuted
+                                  }
                                 />
-                                {copiedMessageId === item.id && (
-                                  <Typography variant="caption" style={{ color: "#22C55E", fontSize: 11 }}>
+                                {copiedMessageId ===
+                                  item.id && (
+                                  <Typography
+                                    variant="caption"
+                                    style={{
+                                      color: "#22C55E",
+                                      fontSize: 11,
+                                    }}
+                                  >
                                     Copied!
                                   </Typography>
                                 )}
@@ -3113,9 +3295,14 @@ export default function GroupChatScreen() {
                               <Typography
                                 variant="caption"
                                 color="textMuted"
-                                style={{ fontSize: 10, marginLeft: "auto" }}
+                                style={{
+                                  fontSize: 10,
+                                  marginLeft: "auto",
+                                }}
                               >
-                                {formatMessageTime(item.timestamp)}
+                                {formatMessageTime(
+                                  item.timestamp,
+                                )}
                               </Typography>
                             )}
                           </View>
@@ -3137,62 +3324,114 @@ export default function GroupChatScreen() {
                   }}
                 >
                   {/* Animated sparkle icon */}
-                  <View style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "rgba(108, 93, 211, 0.15)",
-                  }}>
-                    <Ionicons name="sparkles" size={36} color={theme.colors.primary} />
+                  <View
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 40,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor:
+                        "rgba(108, 93, 211, 0.15)",
+                    }}
+                  >
+                    <Ionicons
+                      name="sparkles"
+                      size={36}
+                      color={theme.colors.primary}
+                    />
                   </View>
 
-                  <Typography variant="h3" weight="bold" style={{ marginTop: 20, color: "#FFFFFF" }}>
+                  <Typography
+                    variant="h3"
+                    weight="bold"
+                    style={{
+                      marginTop: 20,
+                      color: "#FFFFFF",
+                    }}
+                  >
                     Ask me anything
                   </Typography>
                   <Typography
                     variant="body"
                     color="textMuted"
-                    style={{ marginTop: 8, textAlign: "center", lineHeight: 22 }}
+                    style={{
+                      marginTop: 8,
+                      textAlign: "center",
+                      lineHeight: 22,
+                    }}
                   >
                     {group?.name
                       ? `I know all about ${group.name}.\nAsk me about exams, salary, preparation...`
-                      : "Ask me about career paths, exams,\nsalary ranges, and preparation tips..."
-                    }
+                      : "Ask me about career paths, exams,\nsalary ranges, and preparation tips..."}
                   </Typography>
 
                   {/* Suggested question chips */}
-                  <View style={{ marginTop: 24, gap: 10, width: "100%" }}>
+                  <View
+                    style={{
+                      marginTop: 24,
+                      gap: 10,
+                      width: "100%",
+                    }}
+                  >
                     {[
-                      { text: "What exams do I need?", emoji: "📝" },
-                      { text: "What's the salary range?", emoji: "💰" },
-                      { text: "How do I start preparing?", emoji: "🎯" },
-                      { text: "What skills are required?", emoji: "🛠️" },
+                      {
+                        text: "What exams do I need?",
+                        emoji: "📝",
+                      },
+                      {
+                        text: "What's the salary range?",
+                        emoji: "💰",
+                      },
+                      {
+                        text: "How do I start preparing?",
+                        emoji: "🎯",
+                      },
+                      {
+                        text: "What skills are required?",
+                        emoji: "🛠️",
+                      },
                     ].map((chip, idx) => (
                       <Animated.View
                         key={chip.text}
-                        entering={FadeInUp.duration(300).delay(300 + idx * 80)}
+                        entering={FadeInUp.duration(
+                          300,
+                        ).delay(300 + idx * 80)}
                       >
                         <Pressable
-                          onPress={() => handleAIChipPress(chip.text)}
+                          onPress={() =>
+                            handleAIChipPress(chip.text)
+                          }
                           style={({ pressed }) => ({
-                            backgroundColor: "rgba(255,255,255,0.06)",
+                            backgroundColor:
+                              "rgba(255,255,255,0.06)",
                             borderWidth: 1,
-                            borderColor: "rgba(255,255,255,0.12)",
+                            borderColor:
+                              "rgba(255,255,255,0.12)",
                             borderRadius: 20,
                             paddingHorizontal: 16,
                             paddingVertical: 12,
                             flexDirection: "row",
                             alignItems: "center",
                             gap: 8,
-                            transform: [{ scale: pressed ? 0.96 : 1 }],
+                            transform: [
+                              { scale: pressed ? 0.96 : 1 },
+                            ],
                           })}
                         >
-                          <Typography variant="body" style={{ fontSize: 14 }}>
+                          <Typography
+                            variant="body"
+                            style={{ fontSize: 14 }}
+                          >
                             {chip.emoji}
                           </Typography>
-                          <Typography variant="body" style={{ color: "#FFFFFF", fontSize: 14 }}>
+                          <Typography
+                            variant="body"
+                            style={{
+                              color: "#FFFFFF",
+                              fontSize: 14,
+                            }}
+                          >
                             {chip.text}
                           </Typography>
                         </Pressable>
@@ -3229,22 +3468,29 @@ export default function GroupChatScreen() {
                     height: 32,
                     borderRadius: 16,
                     alignItems: "center",
-                    justifyContent: "center"
+                    justifyContent: "center",
                   }}
                 >
-                  <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                  <Ionicons
+                    name="sparkles"
+                    size={14}
+                    color="#FFFFFF"
+                  />
                 </LinearGradient>
-                <View style={{
-                  backgroundColor: "rgba(255,255,255,0.06)",
-                  borderWidth: 1,
-                  borderColor: "rgba(255,255,255,0.08)",
-                  borderRadius: 20,
-                  borderTopLeftRadius: 6,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  flexDirection: "row",
-                  gap: 4,
-                }}>
+                <View
+                  style={{
+                    backgroundColor:
+                      "rgba(255,255,255,0.06)",
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.08)",
+                    borderRadius: 20,
+                    borderTopLeftRadius: 6,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    flexDirection: "row",
+                    gap: 4,
+                  }}
+                >
                   {[0, 1, 2].map((i) => (
                     <Animated.View
                       key={i}
@@ -3252,7 +3498,8 @@ export default function GroupChatScreen() {
                         width: 8,
                         height: 8,
                         borderRadius: 4,
-                        backgroundColor: theme.colors.textMuted,
+                        backgroundColor:
+                          theme.colors.textMuted,
                       }}
                     />
                   ))}
@@ -3277,41 +3524,60 @@ export default function GroupChatScreen() {
                   gap: 10,
                 }}
               >
-                <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
-                <Typography variant="caption" style={{ color: "#EF4444", flex: 1 }}>
-                  Daily limit reached. Resets tomorrow at midnight.
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={16}
+                  color="#EF4444"
+                />
+                <Typography
+                  variant="caption"
+                  style={{ color: "#EF4444", flex: 1 }}
+                >
+                  Daily limit reached. Resets tomorrow at
+                  midnight.
                 </Typography>
               </Animated.View>
             )}
 
             {/* Input bar */}
-            <View style={{
-              backgroundColor: "#1C1C1E",
-              borderTopWidth: 1,
-              borderTopColor: "rgba(255,255,255,0.08)",
-              paddingHorizontal: 12,
-              paddingTop: 10,
-              paddingBottom: aiKeyboardHeight > 0 ? aiKeyboardHeight + 10 : insets.bottom + 10,
-              opacity: (remainingAIQueries ?? 0) <= 0 ? 0.5 : 1,
-            }}>
-              <View style={{
-                flexDirection: "row",
-                alignItems: "flex-end",
-                gap: 8,
-              }}>
-                {/* Text input wrapper */}
-                <View style={{
-                  flex: 1,
-                  backgroundColor: "rgba(255,255,255,0.07)",
-                  borderRadius: 24,
-                  borderWidth: 1,
-                  borderColor: "rgba(255,255,255,0.12)",
+            <View
+              style={{
+                backgroundColor: "#1C1C1E",
+                borderTopWidth: 1,
+                borderTopColor: "rgba(255,255,255,0.08)",
+                paddingHorizontal: 12,
+                paddingTop: 10,
+                paddingBottom:
+                  aiKeyboardHeight > 0
+                    ? aiKeyboardHeight + 10
+                    : insets.bottom + 10,
+                opacity:
+                  (remainingAIQueries ?? 0) <= 0 ? 0.5 : 1,
+              }}
+            >
+              <View
+                style={{
                   flexDirection: "row",
                   alignItems: "flex-end",
-                  paddingLeft: 16,
-                  paddingRight: 8,
-                  paddingVertical: 8,
-                }}>
+                  gap: 8,
+                }}
+              >
+                {/* Text input wrapper */}
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor:
+                      "rgba(255,255,255,0.07)",
+                    borderRadius: 24,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.12)",
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    paddingLeft: 16,
+                    paddingRight: 8,
+                    paddingVertical: 8,
+                  }}
+                >
                   <BottomSheetTextInput
                     style={{
                       flex: 1,
@@ -3334,19 +3600,39 @@ export default function GroupChatScreen() {
                 {/* Send button */}
                 <Pressable
                   onPress={handleAskAI}
-                  disabled={!aiInput.trim() || aiLoading || (remainingAIQueries ?? 0) <= 0}
+                  disabled={
+                    !aiInput.trim() ||
+                    aiLoading ||
+                    (remainingAIQueries ?? 0) <= 0
+                  }
                   style={({ pressed }) => ({
-                    transform: [{ scale: pressed && aiInput.trim() && !aiLoading ? 0.85 : 1 }],
+                    transform: [
+                      {
+                        scale:
+                          pressed &&
+                          aiInput.trim() &&
+                          !aiLoading
+                            ? 0.85
+                            : 1,
+                      },
+                    ],
                   })}
                 >
-                  {aiInput.trim() && !aiLoading && (remainingAIQueries ?? 0) > 0 ? (
-                    <View style={{
-                      shadowColor: "#6C5DD3",
-                      shadowOpacity: 0.5,
-                      shadowRadius: 8,
-                      shadowOffset: { width: 0, height: 0 },
-                      elevation: 8,
-                    }}>
+                  {aiInput.trim() &&
+                  !aiLoading &&
+                  (remainingAIQueries ?? 0) > 0 ? (
+                    <View
+                      style={{
+                        shadowColor: "#6C5DD3",
+                        shadowOpacity: 0.5,
+                        shadowRadius: 8,
+                        shadowOffset: {
+                          width: 0,
+                          height: 0,
+                        },
+                        elevation: 8,
+                      }}
+                    >
                       <LinearGradient
                         colors={["#6C5DD3", "#8676FF"]}
                         style={{
@@ -3354,25 +3640,39 @@ export default function GroupChatScreen() {
                           height: 40,
                           borderRadius: 20,
                           alignItems: "center",
-                          justifyContent: "center"
+                          justifyContent: "center",
                         }}
                       >
-                        <Ionicons name="send" size={16} color="#FFFFFF" />
+                        <Ionicons
+                          name="send"
+                          size={16}
+                          color="#FFFFFF"
+                        />
                       </LinearGradient>
                     </View>
                   ) : (
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor:
+                          "rgba(255,255,255,0.08)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       {aiLoading ? (
-                        <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                        <ActivityIndicator
+                          size="small"
+                          color="rgba(255,255,255,0.5)"
+                        />
                       ) : (
-                        <Ionicons name="send" size={16} color="rgba(255,255,255,0.3)" />
+                        <Ionicons
+                          name="send"
+                          size={16}
+                          color="rgba(255,255,255,0.3)"
+                        />
                       )}
                     </View>
                   )}

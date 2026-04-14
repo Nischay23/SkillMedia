@@ -1,20 +1,25 @@
 // components/CommunityPost.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState, useEffect, memo } from "react";
+import React, { memo, useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 import { AnimatedLikeButton } from "@/components/ui/AnimatedLikeButton";
-import { Typography } from "@/components/ui/Typography";
 import { useToast } from "@/components/ui/Toast";
+import { Typography } from "@/components/ui/Typography";
 import {
-  SpacingValues,
   CardSpacing,
+  SpacingValues,
 } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import {
@@ -25,6 +30,73 @@ import { CommunityPost as CommunityPostType } from "@/types";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+
+const AnimatedPressable =
+  Animated.createAnimatedComponent(Pressable);
+
+interface ActionButtonProps {
+  icon: string;
+  label: string | number;
+  onPress?: () => void;
+  color: string;
+  activeColor: string;
+  isActive: boolean;
+}
+
+function ActionButton({
+  icon,
+  label,
+  onPress,
+  color,
+  activeColor,
+  isActive,
+}: ActionButtonProps) {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return (
+    <AnimatedPressable
+      onPressIn={() =>
+        (scale.value = withSpring(0.9, {
+          damping: 10,
+          stiffness: 200,
+        }))
+      }
+      onPressOut={() =>
+        (scale.value = withSpring(1, {
+          damping: 10,
+          stiffness: 200,
+        }))
+      }
+      onPress={onPress}
+      style={[
+        style,
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+        },
+      ]}
+      hitSlop={10}
+    >
+      <Ionicons
+        name={
+          isActive ? icon.replace("-outline", "") : icon
+        }
+        size={20}
+        color={isActive ? activeColor : color}
+      />
+      <Typography
+        variant="body"
+        color={isActive ? "primary" : "textMuted"}
+        weight="medium"
+      >
+        {label}
+      </Typography>
+    </AnimatedPressable>
+  );
+}
 
 interface CommunityPostProps {
   post: CommunityPostType;
@@ -73,18 +145,26 @@ function CommunityPostComponent({
     clerkUser ? { communityPostId: post._id } : "skip",
   );
   // Optimistic save state — flip instantly, revert on error
-  const [optimisticSaved, setOptimisticSaved] = useState<boolean | null>(null);
+  const [optimisticSaved, setOptimisticSaved] = useState<
+    boolean | null
+  >(null);
   const isSaved = optimisticSaved ?? isSavedQuery === true;
 
   // Sync optimistic saved if server state changes
   useEffect(() => {
-    if (isSavedQuery !== undefined) setOptimisticSaved(isSavedQuery);
+    if (isSavedQuery !== undefined)
+      setOptimisticSaved(isSavedQuery);
   }, [isSavedQuery]);
 
   const currentUserConvex = useQuery(
     api.users.getUserByClerkId,
     clerkUser ? { clerkId: clerkUser.id } : "skip",
   );
+
+  // ── Image Retry State ───────────────────────────────
+  const [avatarRetryCount, setAvatarRetryCount] =
+    useState(0);
+  const [imageRetryCount, setImageRetryCount] = useState(0);
 
   // ── Mutations ───────────────────────────────────────
   const toggleLikeMutation = useMutation(
@@ -241,6 +321,9 @@ function CommunityPostComponent({
       marginBottom: CardSpacing.gap,
       paddingHorizontal: 16,
     },
+    contentText: {
+      lineHeight: 22,
+    },
     // Image: simple approach — show placeholder until loaded, then swap
     imageWrapper: {
       overflow: "hidden" as const,
@@ -297,11 +380,25 @@ function CommunityPostComponent({
       <View style={styles.header}>
         {post.user?.profileImage ? (
           <Image
-            source={{ uri: post.user.profileImage }}
+            source={{
+              uri: `${post.user.profileImage}${
+                post.user.profileImage.includes("?")
+                  ? "&"
+                  : "?"
+              }retry=${avatarRetryCount}`,
+            }}
             style={styles.avatar}
             contentFit="cover"
             cachePolicy="memory-disk"
-            recyclingKey={post.user.profileImage}
+            recyclingKey={`${post.user.profileImage}-${avatarRetryCount}`}
+            onError={() => {
+              if (avatarRetryCount < 3) {
+                setTimeout(
+                  () => setAvatarRetryCount((c) => c + 1),
+                  2000,
+                );
+              }
+            }}
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
@@ -315,14 +412,31 @@ function CommunityPostComponent({
         <View style={styles.headerMeta}>
           <Typography
             variant="body"
-            weight="semibold"
+            weight="bold"
             numberOfLines={1}
           >
             {authorName}
           </Typography>
-          <Typography variant="caption" color="textMuted">
-            {formatDate(post.createdAt)}
-          </Typography>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {post.user?.username &&
+              post.user.username !== authorName && (
+                <Typography
+                  variant="caption"
+                  color="textMuted"
+                >
+                  @{post.user.username} •
+                </Typography>
+              )}
+            <Typography variant="caption" color="textMuted">
+              {formatDate(post.createdAt)}
+            </Typography>
+          </View>
         </View>
         {canDeletePost() && (
           <TouchableOpacity
@@ -352,7 +466,11 @@ function CommunityPostComponent({
 
       {/* ── Body ── */}
       <View style={styles.content}>
-        <Typography variant="body" color="text">
+        <Typography
+          variant="body"
+          color="text"
+          style={styles.contentText}
+        >
           {showFullContent
             ? post.content
             : truncateContent(post.content)}
@@ -360,7 +478,12 @@ function CommunityPostComponent({
         {post.content.length > 200 && (
           <Pressable
             onPress={() => setShowFullContent((v) => !v)}
-            style={{ flexDirection: "row" as const, alignItems: "center" as const, gap: 4, marginTop: SpacingValues.xs }}
+            style={{
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
+              gap: 4,
+              marginTop: SpacingValues.xs,
+            }}
           >
             <Typography
               variant="body"
@@ -370,7 +493,11 @@ function CommunityPostComponent({
               {showFullContent ? "Show less" : "Read more"}
             </Typography>
             <Ionicons
-              name={showFullContent ? "chevron-up" : "chevron-down"}
+              name={
+                showFullContent
+                  ? "chevron-up"
+                  : "chevron-down"
+              }
               size={14}
               color={theme.colors.primary}
             />
@@ -385,16 +512,28 @@ function CommunityPostComponent({
       {post.imageUrl ? (
         <View style={styles.imageWrapper}>
           <Image
-            source={{ uri: post.imageUrl }}
+            source={{
+              uri: `${post.imageUrl}${
+                post.imageUrl.includes("?") ? "&" : "?"
+              }retry=${imageRetryCount}`,
+            }}
             style={styles.postImage}
             contentFit="cover"
             cachePolicy="memory-disk"
-            recyclingKey={post._id}
+            recyclingKey={`${post._id}-${imageRetryCount}`}
             // Show a blurhash placeholder while loading
             placeholder={{
               blurhash: "LGFFaXYk^6#M@-5c,1J5@[or[Q6.",
             }}
             transition={300}
+            onError={() => {
+              if (imageRetryCount < 3) {
+                setTimeout(
+                  () => setImageRetryCount((c) => c + 1),
+                  2000,
+                );
+              }
+            }}
           />
         </View>
       ) : null}
@@ -426,47 +565,23 @@ function CommunityPostComponent({
           size={20}
         />
 
-        <Pressable
+        <ActionButton
+          icon="chatbubble-outline"
+          label={post.comments.toString()}
           onPress={onOpenComments}
-          style={styles.engagementItem}
-          hitSlop={10}
-        >
-          <Ionicons
-            name="chatbubble-outline"
-            size={20}
-            color={theme.colors.textMuted}
-          />
-          <Typography
-            variant="caption"
-            color="textMuted"
-            weight="medium"
-          >
-            {post.comments}
-          </Typography>
-        </Pressable>
+          color={theme.colors.textMuted}
+          activeColor={theme.colors.primary}
+          isActive={false}
+        />
 
-        <Pressable
+        <ActionButton
+          icon="bookmark-outline"
+          label={isSaved ? "Saved" : "Save"}
           onPress={handleSave}
-          style={styles.engagementItem}
-          hitSlop={10}
-        >
-          <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
-            size={20}
-            color={
-              isSaved
-                ? theme.colors.primary
-                : theme.colors.textMuted
-            }
-          />
-          <Typography
-            variant="caption"
-            color={isSaved ? "primary" : "textMuted"}
-            weight="medium"
-          >
-            {isSaved ? "Saved" : "Save"}
-          </Typography>
-        </Pressable>
+          color={theme.colors.textMuted}
+          activeColor={theme.colors.primary}
+          isActive={isSaved}
+        />
       </View>
     </View>
   );

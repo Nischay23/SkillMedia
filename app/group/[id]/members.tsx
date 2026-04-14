@@ -41,7 +41,7 @@ const SkeletonRow = ({ index }: { index: number }) => {
     const interval = setInterval(() => {
       opacity.value = withTiming(
         opacity.value === 0.3 ? 0.6 : 0.3,
-        { duration: 700 }
+        { duration: 700 },
       );
     }, 700);
     return () => clearInterval(interval);
@@ -206,21 +206,29 @@ const MemberRow = ({
     if (days === 0) return "Joined today";
     if (days === 1) return "Joined yesterday";
     if (days < 7) return `Joined ${days} days ago`;
-    if (days < 30) return `Joined ${Math.floor(days / 7)} weeks ago`;
-    if (days < 365) return `Joined ${Math.floor(days / 30)} months ago`;
+    if (days < 30)
+      return `Joined ${Math.floor(days / 7)} weeks ago`;
+    if (days < 365)
+      return `Joined ${Math.floor(days / 30)} months ago`;
     return `Joined ${Math.floor(days / 365)} years ago`;
   };
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(300).delay(Math.min(index * 50, 500))}
+      entering={FadeInDown.duration(300).delay(
+        Math.min(index * 50, 500),
+      )}
     >
       <Pressable
         onPressIn={() => {
-          bgOpacity.value = withTiming(0.03, { duration: 100 });
+          bgOpacity.value = withTiming(0.03, {
+            duration: 100,
+          });
         }}
         onPressOut={() => {
-          bgOpacity.value = withTiming(0, { duration: 200 });
+          bgOpacity.value = withTiming(0, {
+            duration: 200,
+          });
         }}
         onPress={onPress}
       >
@@ -287,7 +295,10 @@ const MemberRow = ({
               <Typography
                 variant="caption"
                 weight="bold"
-                style={{ color: theme.colors.primary, fontSize: 11 }}
+                style={{
+                  color: theme.colors.primary,
+                  fontSize: 11,
+                }}
               >
                 Admin
               </Typography>
@@ -314,7 +325,9 @@ export default function MembersScreen() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const groupId = id as Id<"groups">;
-  const members = useQuery(api.groups.getGroupMembers, { groupId });
+  const members = useQuery(api.groups.getGroupMembers, {
+    groupId,
+  });
 
   const styles = useThemedStyles((t) => ({
     container: {
@@ -397,23 +410,33 @@ export default function MembersScreen() {
       ? members.filter(
           (m: any) =>
             m.fullname?.toLowerCase().includes(query) ||
-            m.username?.toLowerCase().includes(query)
+            m.username?.toLowerCase().includes(query),
         )
       : members;
 
     return {
-      admins: filtered.filter((m: any) => m.role === "admin"),
-      regularMembers: filtered.filter((m: any) => m.role === "member"),
+      admins: filtered.filter(
+        (m: any) => m.role === "admin",
+      ),
+      regularMembers: filtered.filter(
+        (m: any) => m.role === "member",
+      ),
     };
   }, [members, searchQuery]);
 
   const sections = useMemo(() => {
     const result = [];
     if (filteredMembers.admins.length > 0) {
-      result.push({ title: "ADMINS", data: filteredMembers.admins });
+      result.push({
+        title: "ADMINS",
+        data: filteredMembers.admins,
+      });
     }
     if (filteredMembers.regularMembers.length > 0) {
-      result.push({ title: "MEMBERS", data: filteredMembers.regularMembers });
+      result.push({
+        title: "MEMBERS",
+        data: filteredMembers.regularMembers,
+      });
     }
     return result;
   }, [filteredMembers]);
@@ -446,7 +469,11 @@ export default function MembersScreen() {
             />
           </Pressable>
           <View style={styles.headerTitle}>
-            <Typography variant="h3" weight="bold" color="text">
+            <Typography
+              variant="h3"
+              weight="bold"
+              color="text"
+            >
               Members
             </Typography>
             <Typography variant="caption" color="textMuted">
@@ -518,7 +545,9 @@ export default function MembersScreen() {
             color="text"
             style={{ marginTop: 16 }}
           >
-            {searchQuery ? "No members found" : "No members yet"}
+            {searchQuery
+              ? "No members found"
+              : "No members yet"}
           </Typography>
           <Typography
             variant="body"
@@ -554,11 +583,19 @@ export default function MembersScreen() {
               </Typography>
             </Animated.View>
           )}
-          renderItem={({ item, index }: { item: any; index: number }) => (
+          renderItem={({
+            item,
+            index,
+          }: {
+            item: any;
+            index: number;
+          }) => (
             <MemberRow
               item={item}
               index={index}
-              onPress={() => router.push(`/user/${item.userId}`)}
+              onPress={() =>
+                router.push(`/user/${item._id}`)
+              }
             />
           )}
         />
